@@ -74,6 +74,9 @@ fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 .secondary-button { color: var(--accent); background: white; }
 button:disabled { cursor: not-allowed; opacity: .45; }
 .status { margin: -5px 0 12px; color: var(--muted); font-size: .82rem; }
+.octave-controls { display: flex; align-items: center; justify-content: center; gap: 10px; margin: -2px 0 12px; }
+.octave-controls span { min-width: 112px; color: var(--muted); font-size: .78rem; font-weight: 750; text-align: center; }
+.octave-controls button { min-height: 38px; padding: 6px 10px; font-size: .78rem; }
 .diagram-frame { overflow: auto; margin-bottom: 16px; border: 1px solid var(--line); background: white; }
 .diagram-frame:empty { display: none; }
 .diagram-frame svg { display: block; width: 100%; height: auto; }
@@ -83,13 +86,12 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 .notation-svg, .fretboard-svg { font-family: Inter, Arial, sans-serif; color: var(--ink); }
 .diagram-title { fill: var(--ink); font-family: Georgia, serif; font-size: 18px; }
 .column-label { fill: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
-.row-background { fill: white; }
-.note-row:nth-of-type(even) .row-background { fill: #f5f6f1; }
-.note-row.tonic .row-background { fill: var(--accent-pale); stroke: var(--accent); stroke-width: 1; }
-.note-row.scale-note:not(.tonic) .note-label { text-decoration: underline dotted; text-underline-offset: 4px; }
+.note-entry.scale-note:not(.tonic) .note-label { text-decoration: underline dotted; text-underline-offset: 4px; }
 .staff-line, .ledger-line, .stem { stroke: var(--ink); stroke-width: 1.2; }
 .notehead { fill: var(--ink); }
-.clef { font-family: "Noto Music", "Bravura Text", serif; font-size: 47px; }
+.note-entry.tonic .notehead { fill: var(--accent); stroke: var(--ink); stroke-width: 2px; }
+.note-guide { fill: none; stroke: var(--line); stroke-width: 1; }
+.clef { font-family: "Noto Music", "Bravura Text", serif; font-size: 142px; }
 .accidental { font-family: serif; font-size: 22px; }
 .note-label { font-family: Georgia, serif; font-size: 20px; font-weight: 700; }
 .tonic .note-label { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
@@ -130,5 +132,6 @@ button:disabled { cursor: not-allowed; opacity: .45; }
   .actions button { width: 100%; }
   .segmented { grid-template-columns: 1fr; }
   .diagram-frame svg { width: 680px; max-width: none; }
+  .octave-controls { justify-content: start; overflow-x: auto; }
   .diagram-frame::after { content: "Swipe diagram to see all columns"; display: block; position: sticky; left: 0; width: fit-content; padding: 5px 8px; color: var(--muted); background: white; font-size: .7rem; }
 }

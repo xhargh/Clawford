@@ -6,4 +6,4 @@ body { color: #000; background: #fff; }
 .output-panel { padding: 0; border: 0; box-shadow: none; }
 .diagram-frame { break-inside: avoid; margin: 0 0 8mm; border: 0; }
 .diagram-frame svg { max-height: 255mm; }
-.note-row.tonic .row-background { fill: #eee; }
+.note-entry.tonic .notehead { fill: #777; }

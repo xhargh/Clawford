@@ -16,7 +16,8 @@ export const DEFAULT_STATE = {
   pitchDisplay: "written",
   fifthNumbering: "physical",
   spelling: "key",
-  staffSize: "normal"
+  staffSize: "normal",
+  notationOctave: 0
 };
 
 const ENUMS = {
@@ -46,6 +47,7 @@ function applyObject(state, source, validValues, isValidPitch) {
     const raw = source[key];
     if (key === "maxFret" && [5, 7, 12, 17, 22].includes(Number(raw))) state[key] = Number(raw);
     else if (key === "ledgerLines" && Number(raw) >= 0 && Number(raw) <= 8) state[key] = Number(raw);
+    else if (key === "notationOctave" && Number.isInteger(Number(raw)) && Number(raw) >= -2 && Number(raw) <= 2) state[key] = Number(raw);
     else if (key === "showOctave" || key === "showDegree") state[key] = raw === true || raw === "true";
     else if (ENUMS[key]?.includes(raw)) state[key] = raw;
     else if (key === "tuning" && validValues.tunings.includes(raw)) state[key] = raw;

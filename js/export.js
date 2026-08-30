@@ -6,10 +6,9 @@ export function downloadSvg(svg, filename) {
     text { fill: #20231f; font-family: Arial, sans-serif; }
     .diagram-title { font-family: Georgia, serif; font-size: 18px; }
     .column-label, .degree-label, .empty-label, .string-number, .fret-number { fill: #687067; font-size: 11px; font-weight: bold; }
-    .row-background { fill: #fff; } .note-row:nth-of-type(even) .row-background { fill: #f5f6f1; }
-    .note-row.tonic .row-background { fill: #dce9df; stroke: #285a45; }
     .staff-line, .ledger-line, .stem, .fret, .nut, .string-line { stroke: #20231f; }
-    .notehead { fill: #20231f; } .clef { font-family: serif; font-size: 47px; }
+    .notehead { fill: #20231f; } .note-entry.tonic .notehead { fill: #285a45; stroke: #20231f; stroke-width: 2px; }
+    .note-guide { fill: none; stroke: #c9cec4; } .clef { font-family: serif; font-size: 142px; }
     .accidental { font-family: serif; font-size: 22px; } .note-label { font-family: Georgia, serif; font-size: 20px; font-weight: bold; }
     .tonic .note-label { text-decoration: underline; } .scale-note:not(.tonic) .note-label { text-decoration: underline dotted; }
     .position-label { font-family: monospace; font-size: 17px; font-weight: bold; }

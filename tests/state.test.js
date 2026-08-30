@@ -29,8 +29,16 @@ test("URL state takes precedence and ignores invalid values individually", () =>
 });
 
 test("serializes non-default state into query parameters", () => {
-  const params = stateToSearchParams({ ...DEFAULT_STATE, key: "F", showOctave: true });
+  const params = stateToSearchParams({ ...DEFAULT_STATE, key: "F", showOctave: true, notationOctave: 1 });
   assert.equal(params.get("key"), "F");
   assert.equal(params.get("showOctave"), "true");
+  assert.equal(params.get("notationOctave"), "1");
   assert.equal(params.has("scale"), false);
+});
+
+test("loads only supported written notation octave shifts", () => {
+  const shifted = stateFromSources(null, new URLSearchParams("notationOctave=-1"), validValues, isValidPitch);
+  const invalid = stateFromSources(null, new URLSearchParams("notationOctave=3"), validValues, isValidPitch);
+  assert.equal(shifted.notationOctave, -1);
+  assert.equal(invalid.notationOctave, 0);
 });

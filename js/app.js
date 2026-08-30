@@ -33,6 +33,8 @@ render();
 
 form.addEventListener("input", updateFromForm);
 document.querySelector("#print-button").addEventListener("click", () => window.print());
+document.querySelector("#octave-down").addEventListener("click", () => shiftNotationOctave(-1));
+document.querySelector("#octave-up").addEventListener("click", () => shiftNotationOctave(1));
 document.querySelector("#download-button").addEventListener("click", () => {
   const notationSvg = notationOutput.querySelector("svg");
   const fretboardSvg = fretboardOutput.querySelector("svg");
@@ -113,8 +115,12 @@ function render() {
   document.querySelector("#download-button").disabled = false;
   notationOutput.hidden = state.view === "fretboard";
   fretboardOutput.hidden = state.view === "notation";
-  status.textContent = `${notes.length} playable written ${notes.length === 1 ? "note" : "notes"}. Root notes are shaded and underlined.`;
+  status.textContent = `${notes.length} playable written ${notes.length === 1 ? "note" : "notes"}. Root notes are emphasized and underlined.`;
   document.querySelector(".fifth-note").hidden = state.fifthMode === "excluded" || !notes.some((note) => note.positions.some((position) => position.string === 5));
+  document.querySelector("#octave-controls").hidden = state.view === "fretboard";
+  document.querySelector("#octave-down").disabled = state.notationOctave <= -2;
+  document.querySelector("#octave-up").disabled = state.notationOctave >= 2;
+  document.querySelector("#octave-value").textContent = state.notationOctave === 0 ? "Written octave" : `Written octave ${state.notationOctave > 0 ? "+" : ""}${state.notationOctave}`;
   document.title = `${key.value} ${scale.name} — Banjo Note Map`;
   saveStoredState(state);
   const params = stateToSearchParams(state);
@@ -124,6 +130,11 @@ function render() {
   }
   const query = params.toString();
   history.replaceState(null, "", `${location.pathname}${query ? `?${query}` : ""}`);
+}
+
+function shiftNotationOctave(amount) {
+  state.notationOctave = Math.max(-2, Math.min(2, state.notationOctave + amount));
+  render();
 }
 
 function isValidPitch(value) {

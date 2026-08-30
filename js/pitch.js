@@ -34,10 +34,8 @@ export function midiToPitch(midi, preference = "sharp") {
   return `${names[midi % 12]}${Math.floor(midi / 12) - 1}`;
 }
 
-// Written and sounding pitch currently share concert pitch. Keeping the convention here
-// prevents notation transposition rules from leaking into mapping or rendering later.
 export function toDisplayedMidi(soundingMidi, pitchDisplay = "written") {
-  return pitchDisplay === "sounding" ? soundingMidi : soundingMidi;
+  return pitchDisplay === "written" ? soundingMidi + 12 : soundingMidi;
 }
 
 export function splitNoteName(name) {

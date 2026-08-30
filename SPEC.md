@@ -157,6 +157,8 @@ Provide a setting:
 
 Default: `Written pitch`.
 
+Standard five-string banjo notation is written one octave above sounding pitch. For example, sounding `D3` is placed on the staff as written `D4`; this does not change its string/fret mapping.
+
 The exact octave convention must be isolated in one conversion function rather than spread throughout the application.
 
 ---
@@ -434,21 +436,21 @@ D    2:3 / 1:0
 
 The primary output should visually resemble a notation reference card.
 
-Each row represents one written pitch.
+One shared staff represents the complete displayed pitch range. Notes are arranged from low at the bottom to high at the top, with each note name and its banjo positions aligned beside it.
 
-Recommended row layout:
+Recommended layout:
 
 ```text
-[staff note]   G     4:5 / 3:0
+[note on shared staff]   G     4:5 / 3:0
 ```
 
-The three main columns are:
+The three aligned parts are:
 
 1. standard notation,
 2. note name,
 3. banjo positions.
 
-On narrow screens, the note name may be placed above or beside the position if needed.
+The renderer must not repeat a complete staff for every note. On narrow screens, the diagram may scroll within its frame if needed.
 
 ### Required information
 
@@ -501,6 +503,8 @@ The renderer must support:
 - configurable note spacing.
 
 The diagram does not need rhythm notation.
+
+Users must be able to move the written staff display up or down by octaves without changing sounding pitches or string/fret positions.
 
 ---
 

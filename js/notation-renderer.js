@@ -68,7 +68,7 @@ function drawStaff(svg, yForDiatonic, step, keySignature, noteX) {
   const clefAnchorY = yForDiatonic(4 * 7 + LETTER_INDEX.G);
   svg.append(element("text", {
     x: clefX,
-    y: yForDiatonic(E4) - step * 0.55,
+    y: yForDiatonic(E4) - step * 0.75,
     class: "clef",
     transform: `translate(${clefAnchorX} ${clefAnchorY}) scale(1.65) translate(${-clefAnchorX} ${-clefAnchorY})`
   }, "𝄞"));

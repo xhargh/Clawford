@@ -9,7 +9,7 @@ export function downloadSvg(svg, filename) {
     .staff-line, .ledger-line, .stem, .fret, .nut, .string-line { stroke: #20231f; }
     .notehead { fill: #20231f; } .note-entry.tonic .notehead { fill: #285a45; stroke: #20231f; stroke-width: 2px; }
     .note-guide { fill: none; stroke: #c9cec4; } .clef { font-family: serif; font-size: 142px; }
-    .accidental, .key-signature { font-family: serif; font-size: 38px; } .note-label { font-family: Georgia, serif; font-size: 20px; font-weight: bold; }
+    .accidental, .key-signature { font-family: serif; } .note-label { font-family: Georgia, serif; font-size: 20px; font-weight: bold; }
     .tonic .note-label { text-decoration: underline; } .scale-note:not(.tonic) .note-label { text-decoration: underline dotted; }
     .position-label { font-family: monospace; font-size: 17px; font-weight: bold; }
     .fret-note circle { fill: #fff; stroke: #8b9188; stroke-width: 1; } .fret-note.scale-note circle { stroke: #285a45; stroke-width: 3; } .fret-note text { font-size: 11px; font-weight: bold; }

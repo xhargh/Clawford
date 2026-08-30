@@ -37,7 +37,11 @@ test("renders scale accidentals in the key signature", () => {
   const scaleSvg = renderNotation(scaleNotes, "G major", { keySignature });
   const scaleElements = descendants(scaleSvg);
 
-  assert.deepEqual(scaleElements.filter((node) => node.attributes.class === "key-signature").map((node) => node.textContent), ["♯"]);
+  const signature = scaleElements.filter((node) => node.attributes.class === "key-signature");
+  assert.deepEqual(signature.map((node) => node.textContent), ["♯"]);
+  assert.equal(signature[0].attributes["font-size"], "84");
+  const topStaffLine = Math.min(...scaleElements.filter((node) => node.attributes.class === "staff-line").map((node) => Number(node.attributes.y1)));
+  assert.ok(Math.abs(Number(signature[0].attributes.y) - topStaffLine - 26.6) < 0.001);
   assert.ok(scaleElements.some((node) => node.attributes.class === "note-label" && node.textContent === "F#"));
   assert.equal(scaleElements.some((node) => node.attributes.class === "accidental"), false);
 

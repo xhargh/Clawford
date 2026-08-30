@@ -24,7 +24,10 @@ export function renderNotation(notes, title, options = {}) {
   const bottomDiatonic = Math.min(E4, ...preparedNotes.map((note) => note.diatonic));
   const contentTop = 120;
   const contentBottom = 160;
-  const noteX = Math.max(350, 295 + keySignature.length * 18);
+  const signatureX = 250;
+  const signatureGap = step * 1.5;
+  const signatureWidth = Math.max(0, keySignature.length - 1) * signatureGap;
+  const noteX = Math.max(350, signatureX + signatureWidth + step * 2.6);
   const labelX = noteX + 50;
   const positionX = labelX + 120;
   const width = Math.max(760, positionX + 220);
@@ -37,7 +40,7 @@ export function renderNotation(notes, title, options = {}) {
   svg.append(element("text", { x: labelX, y: 57, class: "column-label" }, "Note"));
   svg.append(element("text", { x: positionX, y: 57, class: "column-label" }, "String : fret"));
 
-  drawStaff(svg, yForDiatonic, step, keySignature, noteX);
+  drawStaff(svg, yForDiatonic, step, keySignature, noteX, signatureX, signatureGap);
   const duplicateCounts = countByDiatonic(preparedNotes);
   const duplicateIndexes = new Map();
   preparedNotes.forEach((note) => {
@@ -56,7 +59,7 @@ function prepareNote(note, octaveShift) {
   return { ...note, parsed, displayOctave, diatonic: displayOctave * 7 + LETTER_INDEX[parsed.letter] };
 }
 
-function drawStaff(svg, yForDiatonic, step, keySignature, noteX) {
+function drawStaff(svg, yForDiatonic, step, keySignature, noteX, signatureX, signatureGap) {
   const left = 72;
   const right = noteX + 22;
   for (let line = 0; line < 5; line += 1) {
@@ -75,7 +78,12 @@ function drawStaff(svg, yForDiatonic, step, keySignature, noteX) {
   const positions = positionsForKeySignature(keySignature);
   keySignature.forEach((item, index) => {
     const symbol = item.accidental === "#" ? "♯" : "♭";
-    svg.append(element("text", { x: 250 + index * 18, y: yForDiatonic(positions[index]) + 9, class: "key-signature" }, symbol));
+    svg.append(element("text", {
+      x: signatureX + index * signatureGap,
+      y: yForDiatonic(positions[index]) + step * 0.95,
+      class: "key-signature",
+      "font-size": step * 3
+    }, symbol));
   });
 }
 
@@ -97,7 +105,12 @@ function drawNote(svg, note, staffY, step, duplicateIndex, duplicateCount, optio
   const writtenAccidental = accidentalForNote(note.parsed, options.keySignature || []);
   if (writtenAccidental) {
     const accidental = [...writtenAccidental].map((character) => character === "#" ? "♯" : character === "b" ? "♭" : "♮").join("");
-    group.append(element("text", { x: noteX - noteRadiusX - 30, y: staffY + 11, class: "accidental" }, accidental));
+    group.append(element("text", {
+      x: noteX - noteRadiusX - step * 2,
+      y: staffY + step * 0.95,
+      class: "accidental",
+      "font-size": step * 3
+    }, accidental));
   }
   group.append(element("ellipse", { cx: noteX, cy: staffY, rx: noteRadiusX, ry: noteRadiusY, transform: `rotate(-18 ${noteX} ${staffY})`, class: "notehead" }));
   group.append(element("line", { x1: noteX + noteRadiusX - 1, x2: noteX + noteRadiusX - 1, y1: staffY, y2: staffY - step * 1.5, class: "stem" }));

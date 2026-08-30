@@ -92,7 +92,7 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 .note-entry.tonic .notehead { fill: var(--accent); stroke: var(--ink); stroke-width: 2px; }
 .note-guide { fill: none; stroke: var(--line); stroke-width: 1; }
 .clef { font-family: "Noto Music", "Bravura Text", serif; font-size: 142px; }
-.accidental { font-family: serif; font-size: 22px; }
+.accidental, .key-signature { font-family: serif; font-size: 22px; }
 .note-label { font-family: Georgia, serif; font-size: 20px; font-weight: 700; }
 .tonic .note-label { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
 .position-label { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 17px; font-weight: 700; }

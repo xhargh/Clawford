@@ -25,6 +25,16 @@ export const KEYS = [
 
 const LETTERS = ["C", "D", "E", "F", "G", "A", "B"];
 const NATURAL_PCS = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+const SHARP_ORDER = ["F", "C", "G", "D", "A", "E", "B"];
+const FLAT_ORDER = ["B", "E", "A", "D", "G", "C", "F"];
+const SIGNATURE_INTERVALS = {
+  major: [0, 2, 4, 5, 7, 9, 11],
+  "major-pentatonic": [0, 2, 4, 5, 7, 9, 11],
+  "natural-minor": [0, 2, 3, 5, 7, 8, 10],
+  "minor-pentatonic": [0, 2, 3, 5, 7, 8, 10],
+  mixolydian: [0, 2, 4, 5, 7, 9, 10],
+  dorian: [0, 2, 3, 5, 7, 9, 10]
+};
 
 export function getScale(id) {
   return SCALES.find((scale) => scale.id === id);
@@ -55,4 +65,19 @@ export function chromaticName(pitchClass, preference = "sharp") {
   const sharps = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
   const flats = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
   return (preference === "flat" ? flats : sharps)[pitchClass];
+}
+
+export function keySignatureFor(key, scale) {
+  const intervals = SIGNATURE_INTERVALS[scale.id];
+  if (!intervals) return [];
+  const names = spellScale(key, { intervals });
+  const altered = names.filter((name) => name.length > 1);
+  if (!altered.length) return [];
+  const accidental = altered[0].slice(1);
+  if ((accidental !== "#" && accidental !== "b") || altered.some((name) => name.slice(1) !== accidental)) return [];
+  const order = accidental === "#" ? SHARP_ORDER : FLAT_ORDER;
+  const letters = new Set(altered.map((name) => name[0]));
+  const expected = order.slice(0, letters.size);
+  if (expected.some((letter) => !letters.has(letter))) return [];
+  return expected.map((letter) => ({ letter, accidental }));
 }

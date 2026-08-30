@@ -500,7 +500,10 @@ The renderer must support:
 - flats,
 - naturals,
 - ledger lines,
+- conventional key signatures,
 - configurable note spacing.
+
+Accidentals that belong to the selected key and scale should appear once in the key signature rather than before every affected note. Note names still include their spelling, such as `F#`. Chromatic exceptions use note-level accidentals or naturals as required.
 
 The diagram does not need rhythm notation.
 

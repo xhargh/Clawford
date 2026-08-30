@@ -3,7 +3,7 @@ import { renderFretboard } from "./fretboard-renderer.js";
 import { generateFretboardNotes, generateNotes } from "./mapping.js";
 import { renderNotation } from "./notation-renderer.js";
 import { parsePitch } from "./pitch.js";
-import { KEYS, SCALES, getKey, getScale } from "./scales.js";
+import { KEYS, SCALES, getKey, getScale, keySignatureFor } from "./scales.js";
 import { DEFAULT_STATE, stateFromSources, stateToSearchParams } from "./state.js";
 import { loadCustomTuning, loadStoredState, saveCustomTuning, saveStoredState } from "./storage.js";
 import { BUILT_IN_TUNINGS, createCustomTuning } from "./tunings.js";
@@ -110,7 +110,7 @@ function render() {
   const notes = generateNotes({ ...state, tuning, key, scale, range });
   const fretNotes = generateFretboardNotes({ ...state, tuning, key, scale });
 
-  notationOutput.replaceChildren(renderNotation(notes, title, state));
+  notationOutput.replaceChildren(renderNotation(notes, title, { ...state, keySignature: keySignatureFor(key, scale) }));
   fretboardOutput.replaceChildren(renderFretboard(fretNotes, state.maxFret, title, state.fifthMode));
   document.querySelector("#download-button").disabled = false;
   notationOutput.hidden = state.view === "fretboard";

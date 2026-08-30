@@ -1,0 +1,8 @@
+{
+  "name": "banjo-note-map",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  }
+}

@@ -78,6 +78,7 @@ function updateFromForm() {
     highNote: data.get("highNote"),
     ledgerLines: Number(data.get("ledgerLines")),
     staffSize: data.get("staffSize"),
+    showNoteSymbols: data.has("showNoteSymbols"),
     showOctave: data.has("showOctave"),
     showDegree: data.has("showDegree")
   };

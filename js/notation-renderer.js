@@ -27,10 +27,12 @@ export function renderNotation(notes, title, options = {}) {
   const signatureX = 250;
   const signatureGap = step * 1.5;
   const signatureWidth = Math.max(0, keySignature.length - 1) * signatureGap;
+  const showNoteSymbols = options.showNoteSymbols !== false;
   const noteX = Math.max(350, signatureX + signatureWidth + step * 2.6);
-  const labelX = noteX + 50;
-  const positionX = labelX + 120;
-  const width = Math.max(760, positionX + 220);
+  const staffRight = showNoteSymbols ? noteX + 22 : Math.max(330, signatureX + signatureWidth + step * 1.5);
+  const positionX = showNoteSymbols ? noteX + 170 : staffRight + 28;
+  const labelX = showNoteSymbols ? noteX + 50 : positionX + 190;
+  const width = Math.max(760, positionX + 220, labelX + 150);
   const height = contentTop + (topDiatonic - bottomDiatonic) * step + contentBottom;
   const yForDiatonic = (diatonic) => contentTop + (topDiatonic - diatonic) * step;
   const svg = element("svg", { class: "notation-svg", viewBox: `0 0 ${width} ${height}`, role: "img", "aria-labelledby": "diagram-svg-title diagram-svg-desc", xmlns: NS });
@@ -40,7 +42,7 @@ export function renderNotation(notes, title, options = {}) {
   svg.append(element("text", { x: labelX, y: 57, class: "column-label" }, "Note"));
   svg.append(element("text", { x: positionX, y: 57, class: "column-label" }, "String : fret"));
 
-  drawStaff(svg, yForDiatonic, step, keySignature, noteX, signatureX, signatureGap);
+  drawStaff(svg, yForDiatonic, step, keySignature, staffRight, signatureX, signatureGap);
   const duplicateCounts = countByDiatonic(preparedNotes);
   const duplicateIndexes = new Map();
   preparedNotes.forEach((note) => {
@@ -59,12 +61,11 @@ function prepareNote(note, octaveShift) {
   return { ...note, parsed, displayOctave, diatonic: displayOctave * 7 + LETTER_INDEX[parsed.letter] };
 }
 
-function drawStaff(svg, yForDiatonic, step, keySignature, noteX, signatureX, signatureGap) {
+function drawStaff(svg, yForDiatonic, step, keySignature, staffRight, signatureX, signatureGap) {
   const left = 72;
-  const right = noteX + 22;
   for (let line = 0; line < 5; line += 1) {
     const y = yForDiatonic(E4 + line * 2);
-    svg.append(element("line", { x1: left, x2: right, y1: y, y2: y, class: "staff-line" }));
+    svg.append(element("line", { x1: left, x2: staffRight, y1: y, y2: y, class: "staff-line" }));
   }
   const clefX = 86;
   const clefAnchorX = 138;
@@ -101,20 +102,22 @@ function drawNote(svg, note, staffY, step, duplicateIndex, duplicateCount, optio
   const noteX = geometry.noteX + duplicateOffset * (noteRadiusX * 2 + 5);
   const labelY = staffY + duplicateOffset * 18;
   group.append(element("title", {}, accessibleDescription(note, note.displayOctave)));
-  drawLedgerLines(group, noteX, staffY, note.diatonic, step);
-  const writtenAccidental = accidentalForNote(note.parsed, options.keySignature || []);
-  if (writtenAccidental) {
-    const accidental = [...writtenAccidental].map((character) => character === "#" ? "♯" : character === "b" ? "♭" : "♮").join("");
-    group.append(element("text", {
-      x: noteX - noteRadiusX - step * 2,
-      y: staffY + step * 0.95,
-      class: "accidental",
-      "font-size": step * 3
-    }, accidental));
+  if (options.showNoteSymbols !== false) {
+    drawLedgerLines(group, noteX, staffY, note.diatonic, step);
+    const writtenAccidental = accidentalForNote(note.parsed, options.keySignature || []);
+    if (writtenAccidental) {
+      const accidental = [...writtenAccidental].map((character) => character === "#" ? "♯" : character === "b" ? "♭" : "♮").join("");
+      group.append(element("text", {
+        x: noteX - noteRadiusX - step * 2,
+        y: staffY + step * 0.95,
+        class: "accidental",
+        "font-size": step * 3
+      }, accidental));
+    }
+    group.append(element("ellipse", { cx: noteX, cy: staffY, rx: noteRadiusX, ry: noteRadiusY, transform: `rotate(-18 ${noteX} ${staffY})`, class: "notehead" }));
+    group.append(element("line", { x1: noteX + noteRadiusX - 1, x2: noteX + noteRadiusX - 1, y1: staffY, y2: staffY - step * 1.5, class: "stem" }));
+    group.append(element("path", { d: `M ${noteX + noteRadiusX + 5} ${staffY} L ${geometry.labelX - 16} ${labelY}`, class: "note-guide" }));
   }
-  group.append(element("ellipse", { cx: noteX, cy: staffY, rx: noteRadiusX, ry: noteRadiusY, transform: `rotate(-18 ${noteX} ${staffY})`, class: "notehead" }));
-  group.append(element("line", { x1: noteX + noteRadiusX - 1, x2: noteX + noteRadiusX - 1, y1: staffY, y2: staffY - step * 1.5, class: "stem" }));
-  group.append(element("path", { d: `M ${noteX + noteRadiusX + 5} ${staffY} L ${geometry.labelX - 16} ${labelY}`, class: "note-guide" }));
   const displayName = `${note.noteName}${options.showOctave ? note.displayOctave : ""}`;
   group.append(element("text", { x: geometry.labelX, y: labelY + 6, class: "note-label" }, displayName));
   if (options.showDegree && note.scaleDegree) group.append(element("text", { x: geometry.labelX + 62, y: labelY + 5, class: "degree-label" }, `degree ${note.scaleDegree}`));

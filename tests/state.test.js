@@ -42,3 +42,9 @@ test("loads only supported written notation octave shifts", () => {
   assert.equal(shifted.notationOctave, -1);
   assert.equal(invalid.notationOctave, 0);
 });
+
+test("persists the note-symbol visibility option", () => {
+  const hidden = stateFromSources(null, new URLSearchParams("showNoteSymbols=false"), validValues, isValidPitch);
+  assert.equal(hidden.showNoteSymbols, false);
+  assert.equal(stateToSearchParams(hidden).get("showNoteSymbols"), "false");
+});

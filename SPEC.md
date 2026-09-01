@@ -463,6 +463,8 @@ Every row must be able to show:
 - scale degree (optional),
 - string/fret position(s).
 
+Users may hide noteheads and related note-level symbols. In this compact mode, the string/fret column sits immediately beside the staff and the note-name column follows it on the right.
+
 ### Optional information
 
 - tonic highlighting,

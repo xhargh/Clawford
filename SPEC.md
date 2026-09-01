@@ -280,7 +280,6 @@ At minimum:
 - Minor pentatonic
 - Mixolydian
 - Dorian
-- Chromatic
 
 Optional later additions:
 
@@ -473,7 +472,6 @@ Suggested view selector:
 
 - `Notation`
 - `Fretboard`
-- `Both`
 
 Default: `Notation`.
 

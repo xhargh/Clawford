@@ -22,7 +22,7 @@ export const DEFAULT_STATE = {
   notationOctave: 0
 };
 
-const ENUMS = { view: ["notation", "fretboard", "both"] };
+const ENUMS = { view: ["notation", "fretboard"] };
 const USER_SETTINGS = new Set(["tuning", "key", "scale", "view"]);
 
 export function stateFromSources(stored, searchParams, validValues) {

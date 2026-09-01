@@ -32,3 +32,8 @@ test("enforces fixed simplified settings including String columns", () => {
   assert.equal(state.notationOctave, 0);
   assert.equal(state.rangeMode, "auto");
 });
+
+test("rejects the removed combined view", () => {
+  const state = stateFromSources(null, new URLSearchParams("view=both"), validValues);
+  assert.equal(state.view, "notation");
+});

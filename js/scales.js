@@ -4,8 +4,7 @@ export const SCALES = [
   { id: "major-pentatonic", name: "Major pentatonic", intervals: [0, 2, 4, 7, 9] },
   { id: "minor-pentatonic", name: "Minor pentatonic", intervals: [0, 3, 5, 7, 10] },
   { id: "mixolydian", name: "Mixolydian", intervals: [0, 2, 4, 5, 7, 9, 10] },
-  { id: "dorian", name: "Dorian", intervals: [0, 2, 3, 5, 7, 9, 10] },
-  { id: "chromatic", name: "Chromatic", intervals: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] }
+  { id: "dorian", name: "Dorian", intervals: [0, 2, 3, 5, 7, 9, 10] }
 ];
 
 export const KEYS = [

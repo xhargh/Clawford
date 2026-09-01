@@ -31,6 +31,7 @@ h1 { margin-bottom: 0; font-family: Georgia, "Times New Roman", serif; font-size
 h2 { margin-bottom: 0; font-family: Georgia, "Times New Roman", serif; font-weight: 500; }
 .eyebrow { margin-bottom: 4px; color: var(--warm); font-size: .72rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
 .site-header .eyebrow { color: #ee9a74; }
+.warning-banner { margin-top: 10px; margin-bottom: 0; padding: 8px 12px; color: #2a1c14; font-size: .82rem; font-weight: 700; border: 1px solid var(--warm); border-radius: 3px; background: #fff3ec; }
 
 .app-shell { display: grid; gap: 18px; width: min(1500px, 100%); margin: 0 auto; padding: 18px; }
 .settings-panel, .output-panel { min-width: 0; border: 1px solid var(--line); background: var(--paper); box-shadow: 0 6px 24px rgb(40 45 38 / 7%); }

@@ -79,12 +79,13 @@ function render() {
   const chordRoot = getKey(state.chordRoot);
   const chordQuality = CHORD_QUALITIES.find((quality) => quality.id === state.chordQuality);
   const title = `5-String Banjo — ${tuning.name} — ${key.value} ${scale.name} — Frets 0–${state.maxFret}`;
+  const fretboardTitle = `5-String Banjo — ${tuning.name}`;
   const notes = generateNotes({ ...state, tuning, key, scale });
   updateChordOptionAvailability(tuning);
   const chordBoard = generateChordBoardNotes(tuning, chordRoot.pitchClass, chordQuality.id);
 
   notationOutput.replaceChildren(renderNotation(notes, title, { ...state, keySignature: keySignatureFor(key, scale) }));
-  fretboardOutput.replaceChildren(renderChordBoard(chordBoard, title, tuning, chordRoot, chordQuality));
+  fretboardOutput.replaceChildren(renderChordBoard(chordBoard, fretboardTitle, tuning, chordRoot, chordQuality));
   notationOutput.hidden = state.view === "fretboard";
   fretboardOutput.hidden = state.view === "notation";
   document.querySelector("#chord-root-control").hidden = state.view !== "fretboard";

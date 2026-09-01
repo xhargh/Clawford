@@ -62,7 +62,7 @@ function render() {
   const fretNotes = generateFretboardNotes({ ...state, tuning, key, scale });
 
   notationOutput.replaceChildren(renderNotation(notes, title, { ...state, keySignature: keySignatureFor(key, scale) }));
-  fretboardOutput.replaceChildren(renderFretboard(fretNotes, state.maxFret, title, state.fifthMode));
+  fretboardOutput.replaceChildren(renderFretboard(fretNotes, state.maxFret, title, state.fifthMode, tuning));
   notationOutput.hidden = state.view === "fretboard";
   fretboardOutput.hidden = state.view === "notation";
   document.title = `${key.value} ${scale.name} — Banjo Note Map`;

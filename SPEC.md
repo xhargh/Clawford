@@ -462,7 +462,9 @@ It should show:
 - note names,
 - scale notes,
 - root notes,
-- open strings.
+- open-string tuning labels beside each string.
+
+The board begins at fret 1. Open pitches appear in labels such as `1 - D` rather than as note markers in a fret-zero cell.
 
 This view is useful for understanding the tuning itself.
 

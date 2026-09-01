@@ -48,7 +48,7 @@ The application should run entirely in the browser using HTML, CSS, and JavaScri
 ### Secondary goals
 
 - Make it easy to add new tunings.
-- Allow custom tunings.
+- Keep tuning definitions data-driven.
 - Allow configurable position-selection rules.
 - Support both simple beginner diagrams and more complete advanced diagrams.
 
@@ -221,7 +221,7 @@ The tuning system must be data-driven so additional tunings can be added without
 
 ## 6. Custom tunings
 
-Users must be able to define a custom tuning.
+Custom tuning is not exposed in the simplified interface. The underlying tuning model remains data-driven so additional tunings can be added later without changing the mapping algorithm.
 
 For each string:
 
@@ -239,7 +239,7 @@ Example:
 1: E4
 ```
 
-Custom tunings may optionally be saved in `localStorage`.
+The application does not persist custom tunings.
 
 Validation must reject impossible or malformed pitch names but should not impose assumptions about traditional banjo tunings.
 
@@ -294,12 +294,7 @@ Optional later additions:
 
 ### 7.3 Scale behavior
 
-The user must be able to choose:
-
-- **Scale notes only**
-- **All chromatic notes, highlight scale notes**
-
-Default: `Scale notes only`.
+The diagram always displays scale notes only. There is no all-chromatic display toggle.
 
 For a G-major diagram, the displayed pitch classes would therefore be:
 
@@ -325,9 +320,7 @@ Internally, C# and Db can both map to pitch class `1`, but the notation renderer
 
 ## 8. Display range
 
-Users must be able to control the generated pitch range.
-
-Provide three modes.
+The generated pitch range is determined automatically. Note-range and staff-range controls are not exposed.
 
 ### 8.1 Automatic
 
@@ -354,17 +347,7 @@ Default for Open G beginner mode should approximately cover the useful first-pos
 
 ## 9. Maximum fret
 
-Provide a configurable maximum fret.
-
-Suggested presets:
-
-- 5
-- 7
-- 12
-- 17
-- 22
-
-Default: `5`.
+The maximum fret is fixed at `5`.
 
 A low maximum fret is useful for beginner translation charts.
 
@@ -394,33 +377,7 @@ The mapping algorithm must not contain hard-coded Open G note mappings.
 
 ## 11. Position preference
 
-When several positions exist, the user should be able to select how they are ordered.
-
-Initial modes:
-
-### Lowest fret
-
-Prefer the smallest fret number.
-
-### Higher string
-
-Prefer string 1 before 2 before 3 before 4 before 5.
-
-### Lower string
-
-Prefer string 4 before 3 before 2 before 1.
-
-### Minimize hand movement
-
-For vertically adjacent notes in the diagram, choose a sequence of preferred positions that minimizes fretboard movement.
-
-This may be added after the initial implementation.
-
-### Show all
-
-Show every valid position.
-
-Default: `Show all`.
+The interface always shows every valid position. Position-preference controls are not exposed.
 
 Example:
 
@@ -436,38 +393,22 @@ D    2:3 / 1:0
 
 The primary output should visually resemble a notation reference card.
 
-One shared staff represents the complete displayed pitch range. Notes are arranged from low at the bottom to high at the top, with each note name and its banjo positions aligned beside it.
+One shared staff represents the complete displayed pitch range. String/fret positions are arranged from low at the bottom to high at the top in four fixed string columns.
 
 Recommended layout:
 
 ```text
-[note on shared staff]   G     4:5 / 3:0
+String 4    String 3    String 2    String 1
+4:5         3:0
 ```
-
-The three aligned parts are:
-
-1. standard notation,
-2. note name,
-3. banjo positions.
 
 The renderer must not repeat a complete staff for every note. On narrow screens, the diagram may scroll within its frame if needed.
 
 ### Required information
 
-Every row must be able to show:
+The diagram shows string/fret positions at their written staff pitch. Note spelling is communicated by vertical placement and the conventional key signature rather than noteheads or separate note-name labels.
 
-- staff note,
-- note name,
-- accidental,
-- octave number (optional),
-- scale degree (optional),
-- string/fret position(s).
-
-Users may hide noteheads and related note-level symbols. In this compact mode, the string/fret column sits immediately beside the staff and the note-name column follows it on the right.
-
-An alternate stair layout places only string/fret labels at their written staff pitches. Labels progress horizontally as pitches ascend, use ` - ` between alternate positions, and remain spaced so their left-to-right sequence is readable independently of vertical pitch.
-
-A string-column layout places positions in four fixed columns ordered `4, 3, 2, 1` from left to right. Each position remains vertically aligned to its written staff pitch. Fifth-string positions are omitted from this layout even when enabled elsewhere.
+A string-column layout places positions in four fixed columns ordered `4, 3, 2, 1` from left to right. Each position remains vertically aligned to its written staff pitch. This is the only notation layout, and fifth-string positions are omitted.
 
 ### Optional information
 
@@ -500,20 +441,14 @@ The renderer must support:
 
 - treble clef,
 - five staff lines,
-- noteheads,
-- stems where desired,
 - sharps,
 - flats,
-- naturals,
-- ledger lines,
 - conventional key signatures,
-- configurable note spacing.
+- four staff-aligned string/fret columns.
 
-Accidentals that belong to the selected key and scale should appear once in the key signature rather than before every affected note. Note names still include their spelling, such as `F#`. Chromatic exceptions use note-level accidentals or naturals as required.
+Accidentals that belong to the selected key and scale appear in the key signature.
 
 The diagram does not need rhythm notation.
-
-Users must be able to move the written staff display up or down by octaves without changing sounding pitches or string/fret positions.
 
 ---
 
@@ -546,30 +481,12 @@ Default: `Notation`.
 
 ## 15. Controls
 
-### Required controls
-
 - Tuning
 - Key
 - Scale
-- Maximum fret
-- Include fifth string
-- Position preference
-- Scale notes only / chromatic
-- Note range
-- Show octave numbers
 - View mode
 
-### Advanced controls
-
-Place less frequently used controls under an expandable `Advanced` section:
-
-- custom tuning,
-- written/sounding pitch,
-- fifth-string fret numbering,
-- enharmonic spelling override,
-- note range,
-- staff size,
-- export options.
+There is no Advanced section. Removed settings remain fixed at their defaults: fret 5 maximum, fifth string excluded, all positions shown, scale notes only, automatic range, written pitch, key-based spelling, normal staff size, octave/degree labels hidden, and String columns notation layout.
 
 ---
 
@@ -654,23 +571,7 @@ The printed result should work well on A4 and Letter paper.
 
 ## 18. Export
 
-Provide:
-
-- `Print`
-- `Download SVG`
-
-Optional:
-
-- `Download PNG`
-
-SVG export should be preferred because the diagram is vector-based.
-
-The exported diagram must include enough metadata/title text to identify:
-
-- tuning,
-- key,
-- scale,
-- maximum fret.
+The simplified interface does not provide Print, Download SVG, or Download PNG actions.
 
 ---
 
@@ -703,7 +604,6 @@ Use `localStorage` for:
 - last selected scale,
 - last maximum fret,
 - UI preferences,
-- custom tunings.
 
 Do not require cookies or accounts.
 
@@ -1006,7 +906,7 @@ The app must still load.
 
 ## 30. Initial UI defaults
 
-Recommended defaults:
+The simplified interface fixes the following behavior:
 
 ```text
 Tuning: Open G
@@ -1019,6 +919,8 @@ Position preference: Show all
 View: Notation
 Pitch display: Written pitch
 Show octave number: Off
+Staff size: Normal
+Notation layout: String columns
 ```
 
 These defaults intentionally reproduce the common beginner diagram represented by the original hand-written reference.
@@ -1070,16 +972,14 @@ The MVP is complete when all of the following are true:
 4. Notes are generated algorithmically from tuning + scale.
 5. Correct string/fret positions are generated for each note.
 6. Multiple positions are shown when applicable.
-7. Maximum fret is configurable.
-8. The fifth string can be enabled or disabled.
+7. Maximum fret is fixed at 5.
+8. The fifth string is excluded.
 9. A readable treble-clef notation diagram is rendered.
 10. The interface works at 320 px width without horizontal page scrolling.
 11. The desktop interface uses available screen space effectively.
-12. The diagram can be printed cleanly.
-13. The diagram can be exported as SVG.
-14. Current settings can be represented in the URL.
-15. Core pitch/mapping functions have automated tests.
-16. The Open G / G major reference mapping in section 27 passes exactly.
+12. Current visible settings can be represented in the URL.
+13. Core pitch/mapping functions have automated tests.
+14. The Open G / G major reference mapping in section 27 passes exactly.
 
 ---
 

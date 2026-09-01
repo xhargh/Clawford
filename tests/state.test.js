@@ -1,6 +1,5 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parsePitch } from "../js/pitch.js";
 import { DEFAULT_STATE, stateFromSources, stateToSearchParams } from "../js/state.js";
 
 const validValues = {
@@ -9,53 +8,27 @@ const validValues = {
   scales: ["major", "dorian"]
 };
 
-const isValidPitch = (pitch) => {
-  try {
-    parsePitch(pitch);
-    return true;
-  } catch {
-    return false;
-  }
-};
-
-test("URL state takes precedence and ignores invalid values individually", () => {
-  const params = new URLSearchParams("key=F&scale=bogus&maxFret=7&lowNote=C99&highNote=A4");
-  const state = stateFromSources({ key: "G", scale: "dorian", lowNote: "E3" }, params, validValues, isValidPitch);
+test("URL state takes precedence for visible settings", () => {
+  const state = stateFromSources({ key: "G", scale: "dorian" }, new URLSearchParams("key=F&scale=bogus"), validValues);
   assert.equal(state.key, "F");
   assert.equal(state.scale, "dorian");
-  assert.equal(state.maxFret, 7);
-  assert.equal(state.lowNote, "E3");
-  assert.equal(state.highNote, "A4");
 });
 
-test("serializes non-default state into query parameters", () => {
-  const params = stateToSearchParams({ ...DEFAULT_STATE, key: "F", showOctave: true, notationOctave: 1 });
+test("serializes only visible settings", () => {
+  const params = stateToSearchParams({ ...DEFAULT_STATE, key: "F", showOctave: true, notationLayout: "stair" });
   assert.equal(params.get("key"), "F");
-  assert.equal(params.get("showOctave"), "true");
-  assert.equal(params.get("notationOctave"), "1");
-  assert.equal(params.has("scale"), false);
+  assert.equal(params.has("showOctave"), false);
+  assert.equal(params.has("notationLayout"), false);
 });
 
-test("loads only supported written notation octave shifts", () => {
-  const shifted = stateFromSources(null, new URLSearchParams("notationOctave=-1"), validValues, isValidPitch);
-  const invalid = stateFromSources(null, new URLSearchParams("notationOctave=3"), validValues, isValidPitch);
-  assert.equal(shifted.notationOctave, -1);
-  assert.equal(invalid.notationOctave, 0);
-});
-
-test("persists the note-symbol visibility option", () => {
-  const hidden = stateFromSources(null, new URLSearchParams("showNoteSymbols=false"), validValues, isValidPitch);
-  assert.equal(hidden.showNoteSymbols, false);
-  assert.equal(stateToSearchParams(hidden).get("showNoteSymbols"), "false");
-});
-
-test("persists the stair notation layout", () => {
-  const state = stateFromSources(null, new URLSearchParams("notationLayout=stair"), validValues, isValidPitch);
-  assert.equal(state.notationLayout, "stair");
-  assert.equal(stateToSearchParams(state).get("notationLayout"), "stair");
-});
-
-test("accepts the string-column notation layout", () => {
-  const state = stateFromSources(null, new URLSearchParams("notationLayout=strings"), validValues, isValidPitch);
+test("enforces fixed simplified settings including String columns", () => {
+  const params = new URLSearchParams("maxFret=22&fifthMode=included&preference=lower-string&displayMode=chromatic&notationLayout=columns&notationOctave=2");
+  const state = stateFromSources({ showNoteSymbols: false, rangeMode: "notes" }, params, validValues);
+  assert.equal(state.maxFret, 5);
+  assert.equal(state.fifthMode, "excluded");
+  assert.equal(state.preference, "all");
+  assert.equal(state.displayMode, "scale");
   assert.equal(state.notationLayout, "strings");
+  assert.equal(state.notationOctave, 0);
+  assert.equal(state.rangeMode, "auto");
 });

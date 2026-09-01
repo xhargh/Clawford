@@ -28,31 +28,6 @@
           <label>Tuning<select id="tuning" name="tuning"></select></label>
           <label>Key<select id="key" name="key"></select></label>
           <label>Scale<select id="scale" name="scale"></select></label>
-          <label>Maximum fret
-            <select id="maxFret" name="maxFret">
-              <option>5</option><option>7</option><option>12</option><option>17</option><option>22</option>
-            </select>
-          </label>
-          <label>Fifth string
-            <select id="fifthMode" name="fifthMode">
-              <option value="excluded">Excluded</option>
-              <option value="included">Included</option>
-              <option value="drone">Drone only</option>
-            </select>
-          </label>
-          <label>Positions
-            <select id="preference" name="preference">
-              <option value="all">Show all</option>
-              <option value="lowest-fret">Lowest fret</option>
-              <option value="higher-string">Higher string</option>
-              <option value="lower-string">Lower string</option>
-            </select>
-          </label>
-          <fieldset class="segmented full-control">
-            <legend>Notes displayed</legend>
-            <label><input type="radio" name="displayMode" value="scale"> Scale only</label>
-            <label><input type="radio" name="displayMode" value="chromatic"> Chromatic</label>
-          </fieldset>
           <fieldset class="segmented full-control">
             <legend>View</legend>
             <label><input type="radio" name="view" value="notation"> Notation</label>
@@ -60,75 +35,16 @@
             <label><input type="radio" name="view" value="both"> Both</label>
           </fieldset>
         </div>
-
-        <details class="advanced">
-          <summary>Advanced settings</summary>
-          <div class="advanced-body">
-            <label>Pitch convention
-              <select id="pitchDisplay" name="pitchDisplay"><option value="written">Written pitch</option><option value="sounding">Sounding pitch</option></select>
-            </label>
-            <label>Fifth-string fret labels
-              <select id="fifthNumbering" name="fifthNumbering"><option value="physical">Physical fret</option><option value="relative">Relative to open</option></select>
-            </label>
-            <label>Note spelling
-              <select id="spelling" name="spelling"><option value="key">Follow key</option><option value="sharp">Prefer sharps</option><option value="flat">Prefer flats</option></select>
-            </label>
-            <label>Range mode
-              <select id="rangeMode" name="rangeMode"><option value="auto">Automatic</option><option value="notes">Note range</option><option value="staff">Staff ledger lines</option></select>
-            </label>
-            <div id="note-range-controls" class="range-controls">
-              <label>Lowest note<input id="lowNote" name="lowNote" value="D3" inputmode="text"></label>
-              <label>Highest note<input id="highNote" name="highNote" value="G4" inputmode="text"></label>
-            </div>
-            <label id="ledger-control">Ledger lines
-              <input id="ledgerLines" name="ledgerLines" type="number" min="0" max="8" step="1">
-            </label>
-            <label>Staff spacing
-              <select id="staffSize" name="staffSize"><option value="compact">Compact</option><option value="normal">Normal</option><option value="large">Large</option></select>
-            </label>
-            <label>Notation layout
-              <select id="notationLayout" name="notationLayout"><option value="columns">Columns</option><option value="stair">String/fret stair</option><option value="strings">String columns</option></select>
-            </label>
-            <label id="note-symbol-control" class="check-control"><input id="showNoteSymbols" name="showNoteSymbols" type="checkbox"> Show note symbols</label>
-            <label class="check-control"><input id="showOctave" name="showOctave" type="checkbox"> Show octave numbers</label>
-            <label class="check-control"><input id="showDegree" name="showDegree" type="checkbox"> Show scale degrees</label>
-
-            <fieldset class="custom-tuning">
-              <legend>Custom tuning</legend>
-              <p>Enter concert pitches including octave.</p>
-              <label>Name<input id="custom-name" value="My tuning"></label>
-              <div class="custom-pitches">
-                <label>String 1<input id="custom-1" value="D4"></label>
-                <label>String 2<input id="custom-2" value="B3"></label>
-                <label>String 3<input id="custom-3" value="G3"></label>
-                <label>String 4<input id="custom-4" value="D3"></label>
-                <label>String 5<input id="custom-5" value="G4"></label>
-              </div>
-              <button id="save-custom" type="button" class="secondary-button">Save and use tuning</button>
-              <p id="custom-error" class="error-message" role="alert"></p>
-            </fieldset>
-          </div>
-        </details>
       </form>
     </aside>
 
     <section class="output-panel" aria-labelledby="output-title">
       <div class="output-heading no-print">
         <div><p class="eyebrow">Generated reference</p><h2 id="output-title">Your diagram</h2></div>
-        <div class="actions">
-          <button id="print-button" type="button" class="secondary-button">Print</button>
-          <button id="download-button" type="button" class="primary-button">Download SVG</button>
-        </div>
       </div>
       <p id="status" class="status" role="status" aria-live="polite"></p>
-      <div id="octave-controls" class="octave-controls no-print" aria-label="Written notation octave">
-        <button id="octave-down" type="button" class="secondary-button" aria-label="Move written notes down one octave">Octave down</button>
-        <span id="octave-value" aria-live="polite">Written octave</span>
-        <button id="octave-up" type="button" class="secondary-button" aria-label="Move written notes up one octave">Octave up</button>
-      </div>
       <div id="notation-output" class="diagram-frame"></div>
       <div id="fretboard-output" class="diagram-frame"></div>
-      <p class="fifth-note">* Fifth-string positions use the selected fret-numbering convention.</p>
     </section>
   </main>
   <script type="module" src="js/app.js"></script>

@@ -10,7 +10,7 @@ export const DEFAULT_STATE = {
   lowNote: "D3",
   highNote: "G4",
   ledgerLines: 2,
-  notationLayout: "columns",
+  notationLayout: "strings",
   showNoteSymbols: true,
   showOctave: false,
   showDegree: false,
@@ -22,48 +22,34 @@ export const DEFAULT_STATE = {
   notationOctave: 0
 };
 
-const ENUMS = {
-  fifthMode: ["excluded", "included", "drone"],
-  preference: ["all", "lowest-fret", "higher-string", "lower-string"],
-  displayMode: ["scale", "chromatic"],
-  rangeMode: ["auto", "notes", "staff"],
-  view: ["notation", "fretboard", "both"],
-  pitchDisplay: ["written", "sounding"],
-  fifthNumbering: ["physical", "relative"],
-  spelling: ["key", "sharp", "flat"],
-  staffSize: ["compact", "normal", "large"],
-  notationLayout: ["columns", "stair", "strings"]
-};
+const ENUMS = { view: ["notation", "fretboard", "both"] };
+const USER_SETTINGS = new Set(["tuning", "key", "scale", "view"]);
 
-export function stateFromSources(stored, searchParams, validValues, isValidPitch = () => true) {
+export function stateFromSources(stored, searchParams, validValues) {
   const state = { ...DEFAULT_STATE };
-  applyObject(state, stored, validValues, isValidPitch);
+  applyObject(state, stored, validValues);
   const query = Object.fromEntries(searchParams.entries());
-  applyObject(state, query, validValues, isValidPitch);
+  applyObject(state, query, validValues);
   return state;
 }
 
-function applyObject(state, source, validValues, isValidPitch) {
+function applyObject(state, source, validValues) {
   if (!source || typeof source !== "object") return;
   for (const key of Object.keys(DEFAULT_STATE)) {
+    if (!USER_SETTINGS.has(key)) continue;
     if (!(key in source)) continue;
     const raw = source[key];
-    if (key === "maxFret" && [5, 7, 12, 17, 22].includes(Number(raw))) state[key] = Number(raw);
-    else if (key === "ledgerLines" && Number(raw) >= 0 && Number(raw) <= 8) state[key] = Number(raw);
-    else if (key === "notationOctave" && Number.isInteger(Number(raw)) && Number(raw) >= -2 && Number(raw) <= 2) state[key] = Number(raw);
-    else if (key === "showNoteSymbols" || key === "showOctave" || key === "showDegree") state[key] = raw === true || raw === "true";
-    else if (ENUMS[key]?.includes(raw)) state[key] = raw;
+    if (ENUMS[key]?.includes(raw)) state[key] = raw;
     else if (key === "tuning" && validValues.tunings.includes(raw)) state[key] = raw;
     else if (key === "key" && validValues.keys.includes(raw)) state[key] = raw;
     else if (key === "scale" && validValues.scales.includes(raw)) state[key] = raw;
-    else if ((key === "lowNote" || key === "highNote") && isValidPitch(raw)) state[key] = raw;
   }
 }
 
 export function stateToSearchParams(state) {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(state)) {
-    if (value !== DEFAULT_STATE[key]) params.set(key, String(value));
+    if (USER_SETTINGS.has(key) && value !== DEFAULT_STATE[key]) params.set(key, String(value));
   }
   return params;
 }

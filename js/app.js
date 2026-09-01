@@ -90,6 +90,8 @@ function render() {
   fretboardOutput.hidden = state.view === "notation";
   document.querySelector("#chord-root-control").hidden = state.view !== "fretboard";
   document.querySelector("#chord-quality-control").hidden = state.view !== "fretboard";
+  document.querySelector("#key-control").hidden = state.view === "fretboard";
+  document.querySelector("#scale-control").hidden = state.view === "fretboard";
   document.title = `${key.value} ${scale.name} — Banjo Note Map`;
   saveStoredState(state);
   const query = stateToSearchParams(state).toString();

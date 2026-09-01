@@ -468,7 +468,7 @@ The lowest voicing is the complete four-string shape (every chord tone present, 
 
 The board always starts at fret 1 and grows rightward to include the shape's highest fret, up to a search cap of fret 12. If no complete voicing exists within 12 frets for the active tuning, that specific Root/Chord combination is disabled in its control, and selecting it directly shows a "no shape found" message instead of a fret grid.
 
-Defaults to G major and persists (including in the URL) independently of the Notation view's Key/Scale selection. Chord controls only appear when the Fretboard view is active.
+Defaults to G major and persists (including in the URL) independently of the Notation view's Key/Scale selection. Chord controls only appear when the Fretboard view is active; conversely, Key and Scale only appear when the Notation view is active.
 
 Suggested view selector:
 
@@ -482,8 +482,7 @@ Default: `Notation`.
 ## 15. Controls
 
 - Tuning
-- Key
-- Scale
+- Key and Scale (visible only in Notation view)
 - View mode
 - Chord Root and Chord quality (visible only in Fretboard view)
 

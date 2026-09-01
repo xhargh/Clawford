@@ -19,11 +19,13 @@ export const DEFAULT_STATE = {
   fifthNumbering: "physical",
   spelling: "key",
   staffSize: "normal",
-  notationOctave: 0
+  notationOctave: 0,
+  chordRoot: "G",
+  chordQuality: "major"
 };
 
 const ENUMS = { view: ["notation", "fretboard"] };
-const USER_SETTINGS = new Set(["tuning", "key", "scale", "view"]);
+const USER_SETTINGS = new Set(["tuning", "key", "scale", "view", "chordRoot", "chordQuality"]);
 
 export function stateFromSources(stored, searchParams, validValues) {
   const state = { ...DEFAULT_STATE };
@@ -43,6 +45,8 @@ function applyObject(state, source, validValues) {
     else if (key === "tuning" && validValues.tunings.includes(raw)) state[key] = raw;
     else if (key === "key" && validValues.keys.includes(raw)) state[key] = raw;
     else if (key === "scale" && validValues.scales.includes(raw)) state[key] = raw;
+    else if (key === "chordRoot" && validValues.chordRoots.includes(raw)) state[key] = raw;
+    else if (key === "chordQuality" && validValues.chordQualities.includes(raw)) state[key] = raw;
   }
 }
 

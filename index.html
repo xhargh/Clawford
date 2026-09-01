@@ -31,9 +31,12 @@
             <label><input type="radio" name="view" value="notation"> Notation</label>
             <label><input type="radio" name="view" value="fretboard"> Fretboard</label>
           </fieldset>
+          <label id="chord-root-control">Root<select id="chord-root" name="chordRoot"></select></label>
+          <label id="chord-quality-control">Chord<select id="chord-quality" name="chordQuality"></select></label>
         </div>
       </form>
     </aside>
+
 
     <section class="output-panel" aria-label="Generated banjo diagram">
       <div id="notation-output" class="diagram-frame"></div>

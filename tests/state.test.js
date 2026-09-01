@@ -37,3 +37,20 @@ test("rejects the removed combined view", () => {
   const state = stateFromSources(null, new URLSearchParams("view=both"), validValues);
   assert.equal(state.view, "notation");
 });
+
+test("persists chord root and quality independently from key/scale", () => {
+  const withChordValidValues = { ...validValues, chordRoots: ["G", "C"], chordQualities: ["major", "dom7"] };
+  const state = stateFromSources(null, new URLSearchParams("chordRoot=C&chordQuality=dom7"), withChordValidValues);
+  assert.equal(state.chordRoot, "C");
+  assert.equal(state.chordQuality, "dom7");
+  assert.equal(state.key, DEFAULT_STATE.key);
+
+  const params = stateToSearchParams({ ...DEFAULT_STATE, chordRoot: "C", chordQuality: "dom7" });
+  assert.equal(params.get("chordRoot"), "C");
+  assert.equal(params.get("chordQuality"), "dom7");
+});
+
+test("defaults chord root and quality to G major", () => {
+  assert.equal(DEFAULT_STATE.chordRoot, "G");
+  assert.equal(DEFAULT_STATE.chordQuality, "major");
+});

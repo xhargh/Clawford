@@ -48,3 +48,14 @@ test("persists the note-symbol visibility option", () => {
   assert.equal(hidden.showNoteSymbols, false);
   assert.equal(stateToSearchParams(hidden).get("showNoteSymbols"), "false");
 });
+
+test("persists the stair notation layout", () => {
+  const state = stateFromSources(null, new URLSearchParams("notationLayout=stair"), validValues, isValidPitch);
+  assert.equal(state.notationLayout, "stair");
+  assert.equal(stateToSearchParams(state).get("notationLayout"), "stair");
+});
+
+test("accepts the string-column notation layout", () => {
+  const state = stateFromSources(null, new URLSearchParams("notationLayout=strings"), validValues, isValidPitch);
+  assert.equal(state.notationLayout, "strings");
+});

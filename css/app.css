@@ -96,6 +96,10 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 .note-label { font-family: Georgia, serif; font-size: 20px; font-weight: 700; }
 .tonic .note-label { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
 .position-label { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 17px; font-weight: 700; }
+.stair-position { font-size: 34px; stroke: white; stroke-width: 8px; stroke-linejoin: round; paint-order: stroke fill; }
+.stair-entry.tonic .stair-position { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
+.string-column-position { stroke: white; stroke-width: 7px; stroke-linejoin: round; paint-order: stroke fill; }
+.string-column-entry.tonic .string-column-position { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
 .degree-label, .empty-label { fill: var(--muted); font-size: 11px; }
 .fret, .nut { stroke: #6e756c; stroke-width: 1; }
 .nut { stroke: var(--ink); stroke-width: 4; }

@@ -465,6 +465,10 @@ Every row must be able to show:
 
 Users may hide noteheads and related note-level symbols. In this compact mode, the string/fret column sits immediately beside the staff and the note-name column follows it on the right.
 
+An alternate stair layout places only string/fret labels at their written staff pitches. Labels progress horizontally as pitches ascend, use ` - ` between alternate positions, and remain spaced so their left-to-right sequence is readable independently of vertical pitch.
+
+A string-column layout places positions in four fixed columns ordered `4, 3, 2, 1` from left to right. Each position remains vertically aligned to its written staff pitch. Fifth-string positions are omitted from this layout even when enabled elsewhere.
+
 ### Optional information
 
 - tonic highlighting,

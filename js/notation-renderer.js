@@ -27,29 +27,46 @@ export function renderNotation(notes, title, options = {}) {
   const signatureX = 250;
   const signatureGap = step * 1.5;
   const signatureWidth = Math.max(0, keySignature.length - 1) * signatureGap;
+  const stairLayout = options.notationLayout === "stair";
+  const stringColumnLayout = options.notationLayout === "strings";
   const showNoteSymbols = options.showNoteSymbols !== false;
   const noteX = Math.max(350, signatureX + signatureWidth + step * 2.6);
-  const staffRight = showNoteSymbols ? noteX + 22 : Math.max(330, signatureX + signatureWidth + step * 1.5);
+  const stairEntries = stairLayout ? prepareStairEntries(preparedNotes, noteX, step) : [];
+  const stairRight = stairEntries.length ? Math.max(...stairEntries.map((entry) => entry.right)) : noteX;
+  const stringColumnGap = step * 3.8;
+  const stringColumns = [4, 3, 2, 1].map((string, index) => ({ string, x: noteX + index * stringColumnGap }));
+  const stringColumnsRight = stringColumns.at(-1).x + step * 2.5;
+  const staffRight = stairLayout ? stairRight + 18 : stringColumnLayout ? stringColumnsRight : showNoteSymbols ? noteX + 22 : Math.max(330, signatureX + signatureWidth + step * 1.5);
   const positionX = showNoteSymbols ? noteX + 170 : staffRight + 28;
   const labelX = showNoteSymbols ? noteX + 50 : positionX + 190;
-  const width = Math.max(760, positionX + 220, labelX + 150);
+  const width = stairLayout || stringColumnLayout ? Math.max(760, staffRight + 30) : Math.max(760, positionX + 220, labelX + 150);
   const height = contentTop + (topDiatonic - bottomDiatonic) * step + contentBottom;
   const yForDiatonic = (diatonic) => contentTop + (topDiatonic - diatonic) * step;
   const svg = element("svg", { class: "notation-svg", viewBox: `0 0 ${width} ${height}`, role: "img", "aria-labelledby": "diagram-svg-title diagram-svg-desc", xmlns: NS });
   svg.append(element("title", { id: "diagram-svg-title" }, title));
   svg.append(element("desc", { id: "diagram-svg-desc" }, "One shared treble staff with note names and banjo string and fret positions beside each note."));
   svg.append(element("text", { x: 20, y: 29, class: "diagram-title" }, title));
-  svg.append(element("text", { x: labelX, y: 57, class: "column-label" }, "Note"));
-  svg.append(element("text", { x: positionX, y: 57, class: "column-label" }, "String : fret"));
+  if (stairLayout) svg.append(element("text", { x: noteX, y: 57, class: "column-label" }, "String : fret stair"));
+  else if (stringColumnLayout) {
+    for (const column of stringColumns) svg.append(element("text", { x: column.x, y: 57, class: "column-label" }, `String ${column.string}`));
+  }
+  else {
+    svg.append(element("text", { x: labelX, y: 57, class: "column-label" }, "Note"));
+    svg.append(element("text", { x: positionX, y: 57, class: "column-label" }, "String : fret"));
+  }
 
   drawStaff(svg, yForDiatonic, step, keySignature, staffRight, signatureX, signatureGap);
-  const duplicateCounts = countByDiatonic(preparedNotes);
-  const duplicateIndexes = new Map();
-  preparedNotes.forEach((note) => {
-    const duplicateIndex = duplicateIndexes.get(note.diatonic) || 0;
-    duplicateIndexes.set(note.diatonic, duplicateIndex + 1);
-    drawNote(svg, note, yForDiatonic(note.diatonic), step, duplicateIndex, duplicateCounts.get(note.diatonic), options, { noteX, labelX, positionX });
-  });
+  if (stairLayout) drawStairEntries(svg, stairEntries, yForDiatonic);
+  else if (stringColumnLayout) drawStringColumns(svg, preparedNotes, stringColumns, yForDiatonic, step);
+  else {
+    const duplicateCounts = countByDiatonic(preparedNotes);
+    const duplicateIndexes = new Map();
+    preparedNotes.forEach((note) => {
+      const duplicateIndex = duplicateIndexes.get(note.diatonic) || 0;
+      duplicateIndexes.set(note.diatonic, duplicateIndex + 1);
+      drawNote(svg, note, yForDiatonic(note.diatonic), step, duplicateIndex, duplicateCounts.get(note.diatonic), options, { noteX, labelX, positionX });
+    });
+  }
 
   if (!notes.length) svg.append(element("text", { x: width / 2, y: 110, "text-anchor": "middle", class: "empty-label" }, "No playable notes in this range."));
   return svg;
@@ -59,6 +76,51 @@ function prepareNote(note, octaveShift) {
   const parsed = splitNoteName(note.noteName);
   const displayOctave = note.octave + octaveShift;
   return { ...note, parsed, displayOctave, diatonic: displayOctave * 7 + LETTER_INDEX[parsed.letter] };
+}
+
+function prepareStairEntries(notes, startX, step) {
+  let x = startX;
+  return notes.map((note) => {
+    const text = stairPositionTextFor(note);
+    const width = Math.max(68, text.length * 20);
+    const entry = { note, text, x, right: x + width };
+    x += text.includes(" - ") ? width + 12 : step * 1.8;
+    return entry;
+  });
+}
+
+function stairPositionTextFor(note) {
+  const rank = { 4: 0, 3: 1, 2: 2, 1: 3, 5: 4 };
+  const positions = [...note.positions].sort((a, b) => rank[a.string] - rank[b.string] || a.fret - b.fret);
+  return positions.map((position) => `${position.string}:${position.fret}${position.string === 5 ? "*" : ""}`).join(" - ");
+}
+
+function drawStairEntries(svg, entries, yForDiatonic) {
+  for (const { note, text, x } of entries) {
+    const group = element("g", { class: `note-entry stair-entry${note.isScaleNote ? " scale-note" : ""}${note.isTonic ? " tonic" : ""}` });
+    group.append(element("title", {}, accessibleDescription(note, note.displayOctave)));
+    group.append(element("text", { x, y: yForDiatonic(note.diatonic), class: "position-label stair-position", "dominant-baseline": "middle" }, text));
+    svg.append(group);
+  }
+}
+
+function drawStringColumns(svg, notes, columns, yForDiatonic, step) {
+  const xByString = new Map(columns.map((column) => [column.string, column.x]));
+  for (const note of notes) {
+    for (const position of note.positions.filter((item) => xByString.has(item.string))) {
+      const group = element("g", { class: `note-entry string-column-entry${note.isScaleNote ? " scale-note" : ""}${note.isTonic ? " tonic" : ""}` });
+      const renderedNote = { ...note, positions: [position] };
+      group.append(element("title", {}, accessibleDescription(renderedNote, note.displayOctave)));
+      group.append(element("text", {
+        x: xByString.get(position.string),
+        y: yForDiatonic(note.diatonic),
+        class: "position-label string-column-position",
+        "dominant-baseline": "middle",
+        "font-size": step
+      }, `${position.string}:${position.fret}`));
+      svg.append(group);
+    }
+  }
 }
 
 function drawStaff(svg, yForDiatonic, step, keySignature, staffRight, signatureX, signatureGap) {
@@ -95,7 +157,7 @@ function positionsForKeySignature(keySignature) {
 
 function drawNote(svg, note, staffY, step, duplicateIndex, duplicateCount, options, geometry) {
   const group = element("g", { class: `note-entry${note.isScaleNote ? " scale-note" : ""}${note.isTonic ? " tonic" : ""}` });
-  const positionText = note.positions.map((position) => `${position.string}:${position.fret}${position.string === 5 ? "*" : ""}`).join(" / ");
+  const positionText = positionTextFor(note, " / ");
   const noteRadiusY = step / 2 - 1;
   const noteRadiusX = noteRadiusY * 1.45;
   const duplicateOffset = duplicateIndex - (duplicateCount - 1) / 2;
@@ -123,6 +185,10 @@ function drawNote(svg, note, staffY, step, duplicateIndex, duplicateCount, optio
   if (options.showDegree && note.scaleDegree) group.append(element("text", { x: geometry.labelX + 62, y: labelY + 5, class: "degree-label" }, `degree ${note.scaleDegree}`));
   group.append(element("text", { x: geometry.positionX, y: labelY + 6, class: "position-label" }, positionText));
   svg.append(group);
+}
+
+function positionTextFor(note, separator) {
+  return note.positions.map((position) => `${position.string}:${position.fret}${position.string === 5 ? "*" : ""}`).join(separator);
 }
 
 function accidentalForNote(parsed, keySignature) {

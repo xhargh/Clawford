@@ -78,6 +78,7 @@ function updateFromForm() {
     highNote: data.get("highNote"),
     ledgerLines: Number(data.get("ledgerLines")),
     staffSize: data.get("staffSize"),
+    notationLayout: data.get("notationLayout"),
     showNoteSymbols: data.has("showNoteSymbols"),
     showOctave: data.has("showOctave"),
     showDegree: data.has("showDegree")
@@ -89,6 +90,7 @@ function updateFromForm() {
 function updateConditionalControls() {
   document.querySelector("#note-range-controls").hidden = state.rangeMode !== "notes";
   document.querySelector("#ledger-control").hidden = state.rangeMode !== "staff";
+  document.querySelector("#note-symbol-control").hidden = state.notationLayout !== "columns";
 }
 
 function render() {
@@ -117,7 +119,7 @@ function render() {
   notationOutput.hidden = state.view === "fretboard";
   fretboardOutput.hidden = state.view === "notation";
   status.textContent = `${notes.length} playable written ${notes.length === 1 ? "note" : "notes"}. Root notes are emphasized and underlined.`;
-  document.querySelector(".fifth-note").hidden = state.fifthMode === "excluded" || !notes.some((note) => note.positions.some((position) => position.string === 5));
+  document.querySelector(".fifth-note").hidden = state.notationLayout === "strings" || state.fifthMode === "excluded" || !notes.some((note) => note.positions.some((position) => position.string === 5));
   document.querySelector("#octave-controls").hidden = state.view === "fretboard";
   document.querySelector("#octave-down").disabled = state.notationOctave <= -2;
   document.querySelector("#octave-up").disabled = state.notationOctave >= 2;

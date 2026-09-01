@@ -10,6 +10,7 @@ export const DEFAULT_STATE = {
   lowNote: "D3",
   highNote: "G4",
   ledgerLines: 2,
+  notationLayout: "columns",
   showNoteSymbols: true,
   showOctave: false,
   showDegree: false,
@@ -30,7 +31,8 @@ const ENUMS = {
   pitchDisplay: ["written", "sounding"],
   fifthNumbering: ["physical", "relative"],
   spelling: ["key", "sharp", "flat"],
-  staffSize: ["compact", "normal", "large"]
+  staffSize: ["compact", "normal", "large"],
+  notationLayout: ["columns", "stair", "strings"]
 };
 
 export function stateFromSources(stored, searchParams, validValues, isValidPitch = () => true) {

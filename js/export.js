@@ -12,6 +12,8 @@ export function downloadSvg(svg, filename) {
     .accidental, .key-signature { font-family: serif; } .note-label { font-family: Georgia, serif; font-size: 20px; font-weight: bold; }
     .tonic .note-label { text-decoration: underline; } .scale-note:not(.tonic) .note-label { text-decoration: underline dotted; }
     .position-label { font-family: monospace; font-size: 17px; font-weight: bold; }
+    .stair-position { font-size: 34px; stroke: white; stroke-width: 8px; stroke-linejoin: round; paint-order: stroke fill; } .stair-entry.tonic .stair-position { text-decoration: underline; }
+    .string-column-position { stroke: white; stroke-width: 7px; stroke-linejoin: round; paint-order: stroke fill; } .string-column-entry.tonic .string-column-position { text-decoration: underline; }
     .fret-note circle { fill: #fff; stroke: #8b9188; stroke-width: 1; } .fret-note.scale-note circle { stroke: #285a45; stroke-width: 3; } .fret-note text { font-size: 11px; font-weight: bold; }
     .fret-note.tonic circle { fill: #285a45; stroke: #20231f; stroke-width: 3; } .fret-note.tonic text { fill: #fff; text-decoration: underline; }
     .fret-note.open circle { stroke-dasharray: 3 2; }

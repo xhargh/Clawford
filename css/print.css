@@ -1,7 +1,7 @@
 @page { margin: 12mm; }
 * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
 body { color: #000; background: #fff; }
-.site-header, .settings-panel, .no-print, .status { display: none !important; }
+.site-header, .settings-panel, .no-print { display: none !important; }
 .app-shell { display: block; width: 100%; margin: 0; padding: 0; }
 .output-panel { padding: 0; border: 0; box-shadow: none; }
 .diagram-frame { break-inside: avoid; margin: 0 0 8mm; border: 0; }

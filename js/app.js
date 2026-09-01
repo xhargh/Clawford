@@ -12,7 +12,6 @@ const keySelect = document.querySelector("#key");
 const scaleSelect = document.querySelector("#scale");
 const notationOutput = document.querySelector("#notation-output");
 const fretboardOutput = document.querySelector("#fretboard-output");
-const status = document.querySelector("#status");
 const tunings = [...BUILT_IN_TUNINGS];
 
 populateSelect(tuningSelect, tunings.map((tuning) => ({ value: tuning.id, label: `${tuning.name} (${tuning.shortName})` })));
@@ -66,7 +65,6 @@ function render() {
   fretboardOutput.replaceChildren(renderFretboard(fretNotes, state.maxFret, title, state.fifthMode));
   notationOutput.hidden = state.view === "fretboard";
   fretboardOutput.hidden = state.view === "notation";
-  status.textContent = `${notes.length} playable written ${notes.length === 1 ? "note" : "notes"}. Root notes are emphasized and underlined.`;
   document.title = `${key.value} ${scale.name} — Banjo Note Map`;
   saveStoredState(state);
   const query = stateToSearchParams(state).toString();

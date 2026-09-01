@@ -14,14 +14,12 @@
       <p class="eyebrow">5-string reference builder</p>
       <h1>Banjo Note Map</h1>
     </div>
-    <p class="header-copy">Translate written notes into every playable string and fret position.</p>
   </header>
 
   <main class="app-shell">
     <aside class="settings-panel" aria-labelledby="settings-title">
       <div class="panel-heading">
         <h2 id="settings-title">Settings</h2>
-        <span class="live-mark" aria-hidden="true">Live</span>
       </div>
       <form id="settings-form">
         <div class="control-grid">
@@ -38,11 +36,7 @@
       </form>
     </aside>
 
-    <section class="output-panel" aria-labelledby="output-title">
-      <div class="output-heading no-print">
-        <div><p class="eyebrow">Generated reference</p><h2 id="output-title">Your diagram</h2></div>
-      </div>
-      <p id="status" class="status" role="status" aria-live="polite"></p>
+    <section class="output-panel" aria-label="Generated banjo diagram">
       <div id="notation-output" class="diagram-frame"></div>
       <div id="fretboard-output" class="diagram-frame"></div>
     </section>

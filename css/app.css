@@ -78,7 +78,7 @@ fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 .fret-note.open circle { stroke-dasharray: 3 2; }
 .chord-tone circle { fill: white; stroke: var(--accent); stroke-width: 2; }
 .chord-tone text { fill: var(--ink); font-size: 11px; font-weight: 800; }
-.chord-tone:not(.selected) circle { fill: var(--accent-pale); stroke: #8b9188; stroke-width: 1; opacity: .65; }
+.chord-tone:not(.selected) circle { fill: var(--accent-pale); stroke: #8b9188; stroke-width: 1; }
 .chord-tone.root circle { stroke: var(--warm); }
 .chord-tone.selected.root circle { fill: var(--warm); stroke: var(--ink); }
 .chord-tone.selected.root text { fill: white; }

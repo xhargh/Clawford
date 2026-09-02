@@ -41,7 +41,7 @@ function renderVertical(strings, displayMaxFret, tones, voicing, title, tuning, 
   for (let fret = 0; fret <= displayMaxFret; fret += 1) {
     const y = topY + fret * fretHeight;
     svg.append(element("line", { x1: leftX, x2: rightX, y1: y, y2: y, class: fret === 0 ? "nut" : "fret" }));
-    if (fret > 0) svg.append(element("text", { x: rightX + 12, y: topY + (fret - 0.5) * fretHeight + 5, class: "fret-number" }, fret));
+    if (fret > 0) svg.append(element("text", { x: leftX - 12, y: topY + (fret - 0.5) * fretHeight + 5, "text-anchor": "end", class: "fret-number" }, fret));
   }
   // String 1 (highest-pitched/thinnest) on the right, highest-numbered (lowest-pitched/thickest)
   // string on the left — matches holding the instrument with the pegboard up.

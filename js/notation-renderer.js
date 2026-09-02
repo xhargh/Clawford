@@ -60,24 +60,26 @@ function drawStringColumns(svg, notes, columns, yForDiatonic, step) {
   for (const note of notes) {
     for (const position of note.positions.filter((item) => xByString.has(item.string))) {
       const x = xByString.get(position.string);
+      const label = `${position.string}:${position.fret}`;
       const group = element("g", { class: `note-entry string-column-entry${note.isScaleNote ? " scale-note" : ""}${note.isTonic ? " tonic" : ""}` });
       group.append(element("title", {}, accessibleDescription(note, position)));
-      drawLedgerLines(group, x, note.diatonic, yForDiatonic, step);
+      drawLedgerLines(group, x, label, note.diatonic, yForDiatonic, step);
       group.append(element("text", {
         x,
         y: yForDiatonic(note.diatonic),
         class: "position-label string-column-position",
         "dominant-baseline": "middle",
         "font-size": step
-      }, `${position.string}:${position.fret}`));
+      }, label));
       svg.append(group);
     }
   }
 }
 
-function drawLedgerLines(group, x, diatonic, yForDiatonic, step) {
-  const centerX = x + step;
-  const halfWidth = step * 0.9;
+function drawLedgerLines(group, x, label, diatonic, yForDiatonic, step) {
+  const textWidth = label.length * step * 0.6;
+  const centerX = x + textWidth / 2;
+  const halfWidth = textWidth / 2 + step * 0.35;
   const linesAbove = Math.floor((diatonic - F5) / 2);
   for (let line = 1; line <= linesAbove; line += 1) {
     const y = yForDiatonic(F5 + line * 2);

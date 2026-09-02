@@ -104,9 +104,13 @@ Requirements to actually get the install prompt / offline behavior:
 - Everything the service worker caches is listed explicitly in `sw.js`'s
   `APP_SHELL` array. If you add a new CSS/JS/image file that the app needs at
   load time, add it to that list too, otherwise it won't be available offline.
-- The cache is versioned via `CACHE_VERSION` in `sw.js`. Bump that string
-  whenever you change the cached file list or want to force clients to fetch
-  fresh assets on next load.
+- Cache invalidation is automatic on deploy: `deploy.sh` hashes the contents
+  of the shipped files and stamps that hash into `sw.js`'s `CACHE_VERSION`
+  before uploading, so any change to a shipped file (CSS, JS, icon, etc.)
+  gives returning clients a fresh cache name and they pick up the update.
+  `sw.js` in this repo carries a `clawford-dev` placeholder that's only used
+  when serving locally (`npx serve`, opening `index.html` directly) — it's
+  never the value actually deployed.
 
 ## Documentation
 

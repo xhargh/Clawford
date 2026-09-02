@@ -1,8 +1,13 @@
 // Service worker for Clawford — enables offline use as an installed PWA.
 // Cache-first for the static app shell, with background revalidation so
 // updates are picked up on the next load without breaking offline access.
+//
+// CACHE_VERSION is stamped by deploy.sh with a hash of the app-shell file
+// contents, so the cache name changes automatically whenever a shipped file
+// changes — no manual bump needed. The placeholder below is only used for
+// local/dev serving (npx serve, opening index.html directly, etc).
 
-const CACHE_VERSION = "clawford-v1";
+const CACHE_VERSION = "clawford-dev";
 
 const APP_SHELL = [
   "./",

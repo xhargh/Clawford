@@ -45,8 +45,8 @@ test("renders four staff-aligned string columns with a conventional key signatur
   assert.deepEqual(elements.filter((node) => node.attributes.class === "key-signature").map((node) => node.textContent), ["♯"]);
   assert.deepEqual(headers.map((node) => node.textContent), ["String 4", "String 3", "String 2", "String 1"]);
   assert.deepEqual(valuesFor(4), ["4:0", "4:2", "4:4", "4:5"]);
-  assert.deepEqual(valuesFor(3), ["3:0", "3:2", "3:4", "3:5"]);
-  assert.deepEqual(valuesFor(2), ["2:0", "2:1", "2:3", "2:5"]);
+  assert.deepEqual(valuesFor(3), ["3:0", "3:2", "3:4"]);
+  assert.deepEqual(valuesFor(2), ["2:0", "2:1", "2:3"]);
   assert.deepEqual(valuesFor(1), ["1:0", "1:2", "1:4", "1:5"]);
   assert.equal(positions.some((node) => node.textContent.startsWith("5:")), false);
   assert.equal(elements.some((node) => node.attributes.class === "notehead"), false);

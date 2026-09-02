@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { generateFretboardNotes, generateNotes, positionsForMidi } from "../js/mapping.js";
+import { generateFretboardNotes, generateNotes, positionsForMidi, stringMaxFrets } from "../js/mapping.js";
 import { pitchToMidi } from "../js/pitch.js";
 import { getKey, getScale } from "../js/scales.js";
 import { BUILT_IN_TUNINGS, createCustomTuning } from "../js/tunings.js";
@@ -51,4 +51,12 @@ test("generates scale notes with key-appropriate spelling", () => {
   assert.ok(notes.some((note) => note.noteName === "F#"));
   assert.ok(!notes.some((note) => note.noteName === "Gb"));
   assert.ok(notes.every((note) => note.positions.length));
+});
+
+test("computes per-string max frets that overlap with the next-higher string, with the default on the highest string", () => {
+  const frets = stringMaxFrets(tuning("open-g"), 5);
+  assert.equal(frets.get(4), 5); // D3 -> G3 is a perfect fourth (5 semitones)
+  assert.equal(frets.get(3), 4); // G3 -> B3 is a major third (4 semitones)
+  assert.equal(frets.get(2), 3); // B3 -> D4 is a minor third (3 semitones)
+  assert.equal(frets.get(1), 5); // D4 is the highest string, falls back to the default
 });

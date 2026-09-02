@@ -4,15 +4,25 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Generate standard-notation to string-and-fret reference diagrams for fretted instruments.">
-  <title>FretMap</title>
+  <title>Clawford</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#20231f">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Clawford">
+  <link rel="icon" type="image/png" sizes="32x32" href="img/clawford-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="img/clawford-16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="img/clawford-180.png">
   <link rel="stylesheet" href="css/app.css">
   <link rel="stylesheet" href="css/print.css" media="print">
 </head>
 <body>
   <header class="site-header">
+    <img class="site-logo" src="img/clawford-112.png" alt="Clawford, a banjo-playing ferret" width="56" height="56">
     <div>
       <p class="eyebrow">Fretted-instrument reference builder</p>
-      <h1>FretMap</h1>
+      <h1>Clawford</h1>
       <p class="warning-banner" role="alert">⚠ Untested: this tool has not been verified against real instruments. Double-check every note before relying on it.</p>
     </div>
   </header>
@@ -46,5 +56,14 @@
     </section>
   </main>
   <script type="module" src="js/app.js"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("sw.js").catch((err) => {
+          console.error("Service worker registration failed:", err);
+        });
+      });
+    }
+  </script>
 </body>
 </html>

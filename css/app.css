@@ -20,10 +20,20 @@ button, input, select { font: inherit; }
 button, select, input[type="checkbox"], input[type="radio"], summary { cursor: pointer; }
 
 .site-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
   padding: 20px clamp(16px, 4vw, 56px);
   color: #f8f8f2;
   background: var(--ink);
   border-bottom: 4px solid var(--warm);
+}
+
+.site-logo {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
 }
 
 h1, h2, p { margin-top: 0; }

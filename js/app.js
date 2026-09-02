@@ -112,7 +112,7 @@ function render() {
   document.querySelector("#chord-quality-control").hidden = state.view !== "fretboard";
   document.querySelector("#key-control").hidden = state.view === "fretboard";
   document.querySelector("#scale-control").hidden = state.view === "fretboard";
-  document.title = `${key.value} ${scale.name} — FretMap`;
+  document.title = `${key.value} ${scale.name} — Clawford`;
   saveStoredState(state);
   const query = stateToSearchParams(state).toString();
   history.replaceState(null, "", `${location.pathname}${query ? `?${query}` : ""}`);

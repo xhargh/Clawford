@@ -1,4 +1,4 @@
-const STORAGE_KEY = "fretmap-state";
+const STORAGE_KEY = "clawford-state";
 
 export function loadStoredState() {
   try {

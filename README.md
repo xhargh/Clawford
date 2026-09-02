@@ -1,6 +1,8 @@
-# FretMap
+# Clawford
 
-FretMap is a client-side web app that generates note-to-string/fret reference
+<img src="img/clawford-180.png" alt="Clawford, a banjo-playing ferret" width="120" align="right">
+
+Clawford is a client-side web app that generates note-to-string/fret reference
 diagrams for fretted instruments. It answers the question:
 
 > "Where can I play this written note on my instrument in its current tuning?"
@@ -21,6 +23,7 @@ Double-check every note before relying on it.
 - Notation view and fretboard view, with vertical or horizontal orientation.
 - Print-friendly output (separate print stylesheet).
 - Runs entirely in the browser — no server or build step required.
+- Installable as a PWA with offline support (see [PWA support](#pwa-support)).
 
 ## Getting started
 
@@ -41,6 +44,10 @@ recommended).
 
 ```
 index.html                 Entry point / page markup
+manifest.webmanifest        PWA manifest (name, icons, display mode)
+sw.js                       Service worker: caches the app shell for offline use
+favicon.ico                 Legacy multi-res favicon fallback
+img/                        Project mascot (banjo-playing ferret), various sizes
 css/
   app.css                   Application styles
   print.css                 Print-specific styles
@@ -78,7 +85,28 @@ npm test
 ./deploy.sh [remote-host] [remote-path]
 ```
 
-Defaults to host `fsdata` and path `~/www/fretmap`.
+Defaults to host `fsdata` and path `~/www/clawford`.
+
+## PWA support
+
+Clawford ships as an installable Progressive Web App:
+
+- `manifest.webmanifest` declares the name, icons, and standalone display mode.
+- `sw.js` is a service worker that caches the app shell (HTML/CSS/JS/icons) on
+  first load, so the app keeps working offline and on flaky connections.
+  It's registered from `index.html`.
+
+Requirements to actually get the install prompt / offline behavior:
+
+- **HTTPS** (or `localhost`) — service workers refuse to register over plain
+  HTTP on any other host. `npx serve .` and `localhost` are fine for testing;
+  the production `deploy.sh` target must be served over HTTPS.
+- Everything the service worker caches is listed explicitly in `sw.js`'s
+  `APP_SHELL` array. If you add a new CSS/JS/image file that the app needs at
+  load time, add it to that list too, otherwise it won't be available offline.
+- The cache is versioned via `CACHE_VERSION` in `sw.js`. Bump that string
+  whenever you change the cached file list or want to force clients to fetch
+  fresh assets on next load.
 
 ## Documentation
 

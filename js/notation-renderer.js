@@ -77,7 +77,7 @@ function drawStringColumns(svg, notes, columns, yForDiatonic, step) {
 }
 
 function drawLedgerLines(group, x, label, diatonic, yForDiatonic, step) {
-  const textWidth = label.length * step * 0.6;
+  const textWidth = measureTextWidth(label, step);
   const centerX = x + textWidth / 2;
   const halfWidth = textWidth / 2 + step * 0.35;
   const linesAbove = Math.floor((diatonic - F5) / 2);
@@ -90,6 +90,22 @@ function drawLedgerLines(group, x, label, diatonic, yForDiatonic, step) {
     const y = yForDiatonic(E4 - line * 2);
     group.append(element("line", { x1: centerX - halfWidth, x2: centerX + halfWidth, y1: y, y2: y, class: "ledger-line" }));
   }
+}
+
+let measurementContext;
+function measureTextWidth(label, step) {
+  if (measurementContext === undefined) {
+    measurementContext = null;
+    if (typeof document !== "undefined" && typeof document.createElement === "function") {
+      const canvas = document.createElement("canvas");
+      measurementContext = canvas.getContext && canvas.getContext("2d");
+    }
+  }
+  if (measurementContext) {
+    measurementContext.font = `700 ${step}px ui-monospace, SFMono-Regular, Consolas, monospace`;
+    return measurementContext.measureText(label).width;
+  }
+  return label.length * step * 0.6;
 }
 
 function drawStaff(svg, yForDiatonic, step, keySignature, staffRight, signatureX, signatureGap) {

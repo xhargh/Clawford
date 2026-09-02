@@ -42,9 +42,30 @@ if (!tuningsFor(state.instrument).some((tuning) => tuning.id === state.tuning)) 
 }
 populateSelect(tuningSelect, tuningsFor(state.instrument).map((tuning) => ({ value: tuning.id, label: `${tuning.name} (${tuning.shortName})` })));
 writeForm(state);
+
+let fitScheduled = false;
 render();
 
 form.addEventListener("input", updateFromForm);
+window.addEventListener("resize", scheduleDiagramFit);
+window.addEventListener("orientationchange", scheduleDiagramFit);
+
+function scheduleDiagramFit() {
+  if (fitScheduled) return;
+  fitScheduled = true;
+  requestAnimationFrame(() => {
+    fitScheduled = false;
+    updateDiagramFit();
+  });
+}
+
+function updateDiagramFit() {
+  const visible = [notationOutput, fretboardOutput].find((el) => !el.hidden);
+  if (!visible) return;
+  const margin = 16;
+  const available = Math.max(200, window.innerHeight - visible.getBoundingClientRect().top - margin);
+  visible.style.setProperty("--diagram-fit-height", `${available}px`);
+}
 
 function populateSelect(select, options) {
   select.replaceChildren(...options.map(({ value, label }) => new Option(label, value)));
@@ -116,4 +137,5 @@ function render() {
   saveStoredState(state);
   const query = stateToSearchParams(state).toString();
   history.replaceState(null, "", `${location.pathname}${query ? `?${query}` : ""}`);
+  scheduleDiagramFit();
 }

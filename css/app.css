@@ -63,7 +63,7 @@ fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 
 .diagram-frame { overflow: auto; margin-bottom: 16px; border: 1px solid var(--line); background: white; }
 .diagram-frame:empty { display: none; }
-.diagram-frame svg { display: block; width: 100%; height: auto; }
+.diagram-frame svg { display: block; width: auto; height: auto; max-width: 100%; max-height: var(--diagram-fit-height, none); margin: 0 auto; }
 
 .notation-svg, .fretboard-svg { font-family: Inter, Arial, sans-serif; color: var(--ink); }
 .diagram-title { fill: var(--ink); font-family: Georgia, serif; font-size: 18px; }
@@ -113,6 +113,4 @@ fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
   .app-shell { padding: 10px; }
   .settings-panel, .output-panel { padding: 14px; }
   .segmented { grid-template-columns: 1fr; }
-  .diagram-frame svg { width: 680px; max-width: none; }
-  .diagram-frame::after { content: "Swipe diagram to see all columns"; display: block; position: sticky; left: 0; width: fit-content; padding: 5px 8px; color: var(--muted); background: white; font-size: .7rem; }
 }

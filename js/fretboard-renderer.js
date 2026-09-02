@@ -10,55 +10,12 @@ function element(name, attributes = {}, text = "") {
   return node;
 }
 
-export function renderChordBoard(board, title, tuning, root, quality, orientation = "vertical") {
+export function renderChordBoard(board, title, tuning, root, quality) {
   const { displayMaxFret, tones, voicing } = board;
   const strings = tuning.strings.filter((string) => string.kind !== "drone").map((string) => string.number);
   const chordLabel = `${root.label.split(" ")[0]}${quality.symbol}`;
 
-  return orientation === "vertical"
-    ? renderVertical(strings, displayMaxFret, tones, voicing, title, tuning, chordLabel, root.preference)
-    : renderHorizontal(strings, displayMaxFret, tones, voicing, title, tuning, chordLabel, root.preference);
-}
-
-function renderHorizontal(strings, displayMaxFret, tones, voicing, title, tuning, chordLabel, preference) {
-  const width = 760;
-  const stringLabelX = 16;
-  const openX = 108;
-  const nutX = 138;
-  const right = 742;
-  const top = 65;
-  const stringGap = 52;
-  const boardBottom = top + Math.max(1, strings.length - 1) * stringGap;
-  const boardWidth = right - nutX;
-  const fretWidth = boardWidth / displayMaxFret;
-  const svg = element("svg", { class: "fretboard-svg chord-board", viewBox: `0 0 ${width} ${boardBottom + 70}`, role: "img", "aria-label": `${chordLabel} chord shape on ${title}`, xmlns: NS });
-  svg.append(element("text", { x: 20, y: 29, class: "diagram-title" }, `${title} — ${chordLabel}`));
-
-  if (!voicing) {
-    svg.append(element("text", { x: 20, y: 55, class: "no-shape-message" }, `No complete ${chordLabel} shape found within 12 frets for this tuning.`));
-    return svg;
-  }
-
-  for (let fret = 0; fret <= displayMaxFret; fret += 1) {
-    const x = nutX + fret * fretWidth;
-    svg.append(element("line", { x1: x, x2: x, y1: top, y2: boardBottom, class: fret === 0 ? "nut" : "fret" }));
-    if (fret > 0) svg.append(element("text", { x: nutX + (fret - 0.5) * fretWidth, y: boardBottom + 30, "text-anchor": "middle", class: "fret-number" }, fret));
-  }
-  strings.forEach((string, index) => {
-    const y = top + index * stringGap;
-    svg.append(element("line", { x1: nutX, x2: right, y1: y, y2: y, class: "string-line" }));
-    const openString = tuning.strings.find((item) => item.number === string);
-    const openName = openString ? pitchName(openString.pitch) : "";
-    svg.append(element("text", { x: stringLabelX, y: y + 5, class: "string-number" }, openName ? `${string} - ${openName}` : String(string)));
-  });
-
-  const yForString = new Map(strings.map((string, index) => [string, top + index * stringGap]));
-  for (const tone of tones) {
-    const y = yForString.get(tone.string);
-    const x = tone.isOpen ? openX : nutX + (tone.fret - 0.5) * fretWidth;
-    appendTone(svg, tone, x, y, preference);
-  }
-  return svg;
+  return renderVertical(strings, displayMaxFret, tones, voicing, title, tuning, chordLabel, root.preference);
 }
 
 function renderVertical(strings, displayMaxFret, tones, voicing, title, tuning, chordLabel, preference) {

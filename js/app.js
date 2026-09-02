@@ -72,8 +72,7 @@ function updateFromForm() {
     scale: data.get("scale"),
     view: data.get("view"),
     chordRoot: data.get("chordRoot"),
-    chordQuality: data.get("chordQuality"),
-    fretboardOrientation: data.get("fretboardOrientation")
+    chordQuality: data.get("chordQuality")
   };
   if (instrumentChanged) {
     populateSelect(tuningSelect, tuningsFor(instrument).map((item) => ({ value: item.id, label: `${item.name} (${item.shortName})` })));
@@ -106,12 +105,11 @@ function render() {
   const chordBoard = generateChordBoardNotes(tuning, chordRoot.pitchClass, chordQuality.id);
 
   notationOutput.replaceChildren(renderNotation(notes, title, { ...state, tuning, keySignature: keySignatureFor(key, scale) }));
-  fretboardOutput.replaceChildren(renderChordBoard(chordBoard, fretboardTitle, tuning, chordRoot, chordQuality, state.fretboardOrientation));
+  fretboardOutput.replaceChildren(renderChordBoard(chordBoard, fretboardTitle, tuning, chordRoot, chordQuality));
   notationOutput.hidden = state.view === "fretboard";
   fretboardOutput.hidden = state.view === "notation";
   document.querySelector("#chord-root-control").hidden = state.view !== "fretboard";
   document.querySelector("#chord-quality-control").hidden = state.view !== "fretboard";
-  document.querySelector("#orientation-control").hidden = state.view !== "fretboard";
   document.querySelector("#key-control").hidden = state.view === "fretboard";
   document.querySelector("#scale-control").hidden = state.view === "fretboard";
   document.title = `${key.value} ${scale.name} — FretMap`;

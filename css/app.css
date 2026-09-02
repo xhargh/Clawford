@@ -47,7 +47,6 @@ h2 { margin-bottom: 0; font-family: Georgia, "Times New Roman", serif; font-weig
 .settings-panel, .output-panel { min-width: 0; border: 1px solid var(--line); background: var(--paper); box-shadow: 0 6px 24px rgb(40 45 38 / 7%); }
 .settings-panel { padding: 18px; }
 .output-panel { padding: 18px; }
-.panel-heading { margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
 
 .control-grid { display: grid; gap: 14px; }
 label, legend { color: #40473f; font-size: .8rem; font-weight: 750; letter-spacing: .02em; }

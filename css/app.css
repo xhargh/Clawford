@@ -68,6 +68,7 @@ fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 .diagram-title { fill: var(--ink); font-family: Georgia, serif; font-size: 18px; }
 .column-label { fill: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
 .staff-line { stroke: var(--ink); stroke-width: 1.2; }
+.ledger-line { stroke: var(--ink); stroke-width: 1.2; }
 .clef { font-family: "Noto Music", "Bravura Text", serif; font-size: 142px; }
 .key-signature { font-family: serif; }
 .position-label { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 17px; font-weight: 700; }

@@ -25,7 +25,7 @@ function renderVertical(strings, displayMaxFret, tones, voicing, title, tuning, 
   const stringLabelY = 82;
   const openY = 108;
   const topY = 138;
-  const boardHeight = 604;
+  const boardHeight = 302;
   const bottomY = topY + boardHeight;
   const fretHeight = boardHeight / displayMaxFret;
   const width = rightX + 70;

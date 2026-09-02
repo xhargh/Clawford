@@ -22,11 +22,12 @@ export const DEFAULT_STATE = {
   staffSize: "normal",
   notationOctave: 0,
   chordRoot: "G",
-  chordQuality: "major"
+  chordQuality: "major",
+  fretboardOrientation: "vertical"
 };
 
-const ENUMS = { view: ["notation", "fretboard"] };
-const USER_SETTINGS = new Set(["instrument", "tuning", "key", "scale", "view", "chordRoot", "chordQuality"]);
+const ENUMS = { view: ["notation", "fretboard"], fretboardOrientation: ["vertical", "horizontal"] };
+const USER_SETTINGS = new Set(["instrument", "tuning", "key", "scale", "view", "chordRoot", "chordQuality", "fretboardOrientation"]);
 
 export function stateFromSources(stored, searchParams, validValues) {
   const state = { ...DEFAULT_STATE };

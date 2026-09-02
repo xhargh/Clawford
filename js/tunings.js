@@ -19,13 +19,19 @@ export const BUILT_IN_TUNINGS = [
 
 function makeTuning(instrument, id, name, shortName, pitches, options = {}) {
   const { droneIndex } = options;
+  // Real-world string numbering starts at 1 for the thinnest/highest-pitched string.
+  // banjo5 pitch arrays are already written high-to-low (with the short drone string
+  // last), so array index already matches that convention. Every other instrument's
+  // pitch array here is written low-to-high for readability, so its numbering must
+  // be reversed to match the same "1 = highest string" convention.
+  const numberFor = (index) => (instrument === "banjo5" ? index + 1 : pitches.length - index);
   return {
     id,
     name,
     shortName,
     instrument,
     strings: pitches.map((pitch, index) => ({
-      number: index + 1,
+      number: numberFor(index),
       pitch,
       kind: index === droneIndex ? "drone" : "long",
       ...(index === droneIndex ? { startsAtPhysicalFret: 5 } : {})

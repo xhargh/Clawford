@@ -14,6 +14,11 @@ function element(name, attributes = {}, text = "") {
   return node;
 }
 
+function columnStrings(tuning) {
+  if (!tuning) return [4, 3, 2, 1];
+  return tuning.strings.filter((string) => string.kind !== "drone").map((string) => string.number).sort((a, b) => b - a);
+}
+
 export function renderNotation(notes, title, options = {}) {
   const step = options.staffSize === "compact" ? 23 : options.staffSize === "large" ? 33 : 28;
   const preparedNotes = notes.map(prepareNote);
@@ -28,14 +33,14 @@ export function renderNotation(notes, title, options = {}) {
   const signatureWidth = Math.max(0, keySignature.length - 1) * signatureGap;
   const columnStart = Math.max(350, signatureX + signatureWidth + step * 2.6);
   const columnGap = step * 3.8;
-  const columns = [4, 3, 2, 1].map((string, index) => ({ string, x: columnStart + index * columnGap }));
+  const columns = columnStrings(options.tuning).map((string, index) => ({ string, x: columnStart + index * columnGap }));
   const staffRight = columns.at(-1).x + step * 2.5;
   const width = Math.max(760, staffRight + 30);
   const height = contentTop + (topDiatonic - bottomDiatonic) * step + contentBottom;
   const yForDiatonic = (diatonic) => contentTop + (topDiatonic - diatonic) * step;
   const svg = element("svg", { class: "notation-svg", viewBox: `0 0 ${width} ${height}`, role: "img", "aria-labelledby": "diagram-svg-title diagram-svg-desc", xmlns: NS });
   svg.append(element("title", { id: "diagram-svg-title" }, title));
-  svg.append(element("desc", { id: "diagram-svg-desc" }, "A shared treble staff with separate string and fret columns for banjo strings four through one."));
+  svg.append(element("desc", { id: "diagram-svg-desc" }, `A shared treble staff with separate string and fret columns for strings ${columns.map((column) => column.string).join(" through ")}.`));
   svg.append(element("text", { x: 20, y: 29, class: "diagram-title" }, title));
   for (const column of columns) svg.append(element("text", { x: column.x, y: 57, class: "column-label" }, `String ${column.string}`));
 

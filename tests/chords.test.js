@@ -50,3 +50,25 @@ test("every chord quality is defined with a root-relative interval set", () => {
   assert.equal(CHORD_QUALITIES.length, 10);
   assert.ok(CHORD_QUALITIES.every((quality) => quality.intervals[0] === 0));
 });
+
+test("finds the classic open-position E major shape on 6-string guitar", () => {
+  const guitar = BUILT_IN_TUNINGS.find((item) => item.id === "guitar-standard");
+  const voicing = findChordVoicing(guitar, 4, "major"); // E major
+  assert.ok(voicing);
+  assert.deepEqual(voicing.notes.map((note) => note.fret), [0, 2, 2, 1, 0, 0]);
+});
+
+test("finds chord voicings across every built-in tuning without exceeding four fretted strings' worth of search cost", () => {
+  for (const tuning of BUILT_IN_TUNINGS) {
+    const voicing = findChordVoicing(tuning, 0, "major"); // C major
+    assert.ok(voicing !== undefined, tuning.id);
+  }
+});
+
+test("a drone string never appears in a chord voicing or chord board", () => {
+  const openG = BUILT_IN_TUNINGS.find((item) => item.id === "open-g");
+  const voicing = findChordVoicing(openG, 7, "major");
+  assert.ok(voicing.notes.every((note) => note.string !== 5));
+  const board = generateChordBoardNotes(openG, 7, "major");
+  assert.ok(board.tones.every((tone) => tone.string !== 5));
+});

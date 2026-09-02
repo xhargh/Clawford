@@ -12,6 +12,7 @@ function element(name, attributes = {}, text = "") {
 
 export function renderChordBoard(board, title, tuning, root, quality) {
   const { displayMaxFret, tones, voicing } = board;
+  const strings = tuning.strings.filter((string) => string.kind !== "drone").map((string) => string.number);
   const width = 760;
   const stringLabelX = 16;
   const openX = 108;
@@ -19,7 +20,7 @@ export function renderChordBoard(board, title, tuning, root, quality) {
   const right = 742;
   const top = 65;
   const stringGap = 52;
-  const boardBottom = top + 3 * stringGap;
+  const boardBottom = top + Math.max(1, strings.length - 1) * stringGap;
   const boardWidth = right - nutX;
   const fretWidth = boardWidth / displayMaxFret;
   const chordLabel = `${root.label.split(" ")[0]}${quality.symbol}`;
@@ -36,16 +37,17 @@ export function renderChordBoard(board, title, tuning, root, quality) {
     svg.append(element("line", { x1: x, x2: x, y1: top, y2: boardBottom, class: fret === 0 ? "nut" : "fret" }));
     if (fret > 0) svg.append(element("text", { x: nutX + (fret - 0.5) * fretWidth, y: boardBottom + 30, "text-anchor": "middle", class: "fret-number" }, fret));
   }
-  for (let string = 1; string <= 4; string += 1) {
-    const y = top + (string - 1) * stringGap;
+  strings.forEach((string, index) => {
+    const y = top + index * stringGap;
     svg.append(element("line", { x1: nutX, x2: right, y1: y, y2: y, class: "string-line" }));
     const openString = tuning.strings.find((item) => item.number === string);
     const openName = openString ? pitchName(openString.pitch) : "";
     svg.append(element("text", { x: stringLabelX, y: y + 5, class: "string-number" }, openName ? `${string} - ${openName}` : String(string)));
-  }
+  });
 
+  const yForString = new Map(strings.map((string, index) => [string, top + index * stringGap]));
   for (const tone of tones) {
-    const y = top + (tone.string - 1) * stringGap;
+    const y = yForString.get(tone.string);
     const x = tone.isOpen ? openX : nutX + (tone.fret - 0.5) * fretWidth;
     const noteName = chromaticName(tone.pitchClass, root.preference);
     const classes = ["fret-note", "chord-tone"];

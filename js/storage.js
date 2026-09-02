@@ -1,4 +1,4 @@
-const STORAGE_KEY = "banjo-note-map-state";
+const STORAGE_KEY = "fretmap-state";
 
 export function loadStoredState() {
   try {

@@ -1,4 +1,5 @@
 export const DEFAULT_STATE = {
+  instrument: "banjo5",
   tuning: "open-g",
   key: "G",
   scale: "major",
@@ -25,7 +26,7 @@ export const DEFAULT_STATE = {
 };
 
 const ENUMS = { view: ["notation", "fretboard"] };
-const USER_SETTINGS = new Set(["tuning", "key", "scale", "view", "chordRoot", "chordQuality"]);
+const USER_SETTINGS = new Set(["instrument", "tuning", "key", "scale", "view", "chordRoot", "chordQuality"]);
 
 export function stateFromSources(stored, searchParams, validValues) {
   const state = { ...DEFAULT_STATE };
@@ -42,6 +43,7 @@ function applyObject(state, source, validValues) {
     if (!(key in source)) continue;
     const raw = source[key];
     if (ENUMS[key]?.includes(raw)) state[key] = raw;
+    else if (key === "instrument" && validValues.instruments.includes(raw)) state[key] = raw;
     else if (key === "tuning" && validValues.tunings.includes(raw)) state[key] = raw;
     else if (key === "key" && validValues.keys.includes(raw)) state[key] = raw;
     else if (key === "scale" && validValues.scales.includes(raw)) state[key] = raw;

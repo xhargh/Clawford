@@ -3,7 +3,7 @@
 set -euo pipefail
 
 REMOTE_HOST="${1:-fsdata}"
-REMOTE_PATH="${2:-~/www/bnm}"
+REMOTE_PATH="${2:-~/www/fretmap}"
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
 

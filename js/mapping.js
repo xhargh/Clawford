@@ -1,8 +1,12 @@
 import { pitchToMidi, toDisplayedMidi } from "./pitch.js";
 import { chromaticName, scalePitchClasses, spellScale } from "./scales.js";
 
+function isDrone(string) {
+  return string.kind === "drone";
+}
+
 export function enabledStrings(tuning, fifthMode = "excluded") {
-  return tuning.strings.filter((string) => string.number !== 5 || fifthMode !== "excluded");
+  return tuning.strings.filter((string) => !isDrone(string) || fifthMode !== "excluded");
 }
 
 export function getAutomaticRange(tuning, maxFret, fifthMode = "excluded") {
@@ -10,7 +14,7 @@ export function getAutomaticRange(tuning, maxFret, fifthMode = "excluded") {
   return {
     low: Math.min(...strings.map((string) => pitchToMidi(string.pitch))),
     high: Math.max(...strings.map((string) => {
-      if (string.number !== 5) return pitchToMidi(string.pitch) + maxFret;
+      if (!isDrone(string)) return pitchToMidi(string.pitch) + maxFret;
       return pitchToMidi(string.pitch) + (fifthMode === "drone" ? 0 : Math.max(0, maxFret - string.startsAtPhysicalFret));
     }))
   };
@@ -20,26 +24,29 @@ export function positionsForMidi(midi, tuning, options = {}) {
   const { maxFret = 5, fifthMode = "excluded", fifthNumbering = "physical", preference = "all" } = options;
   const positions = [];
   for (const string of enabledStrings(tuning, fifthMode)) {
+    const drone = isDrone(string);
     const relativeFret = midi - pitchToMidi(string.pitch);
-    const physicalFret = string.number === 5 ? string.startsAtPhysicalFret + relativeFret : relativeFret;
-    if (relativeFret < 0 || physicalFret > maxFret || (string.number === 5 && fifthMode === "drone" && relativeFret !== 0)) continue;
+    const physicalFret = drone ? string.startsAtPhysicalFret + relativeFret : relativeFret;
+    if (relativeFret < 0 || physicalFret > maxFret || (drone && fifthMode === "drone" && relativeFret !== 0)) continue;
     positions.push({
       string: string.number,
-      fret: string.number === 5 && fifthNumbering === "physical" ? physicalFret : relativeFret,
+      fret: drone && fifthNumbering === "physical" ? physicalFret : relativeFret,
       relativeFret,
       physicalFret,
       isOpen: relativeFret === 0
     });
   }
-  positions.sort(positionSorter(preference));
+  positions.sort(positionSorter(preference, tuning));
   return preference === "all" ? positions : positions.slice(0, 1);
 }
 
-function positionSorter(preference) {
+function positionSorter(preference, tuning) {
   if (preference === "higher-string") return (a, b) => a.string - b.string || a.fret - b.fret;
   if (preference === "lower-string") {
-    const rank = { 4: 0, 3: 1, 2: 2, 1: 3, 5: 4 };
-    return (a, b) => rank[a.string] - rank[b.string] || a.fret - b.fret;
+    const longNumbers = tuning.strings.filter((string) => !isDrone(string)).map((string) => string.number).sort((a, b) => b - a);
+    const droneNumbers = tuning.strings.filter(isDrone).map((string) => string.number);
+    const rank = new Map([...longNumbers, ...droneNumbers].map((number, index) => [number, index]));
+    return (a, b) => rank.get(a.string) - rank.get(b.string) || a.fret - b.fret;
   }
   return (a, b) => a.fret - b.fret || b.string - a.string;
 }
@@ -84,8 +91,9 @@ export function generateFretboardNotes({ tuning, key, scale, maxFret = 5, fifthM
   const scaleNames = spellScale(key, scale);
   const notes = [];
   for (const string of enabledStrings(tuning, fifthMode)) {
+    const drone = isDrone(string);
     const openMidi = pitchToMidi(string.pitch);
-    const limit = string.number === 5 ? (fifthMode === "drone" ? 0 : Math.max(0, maxFret - string.startsAtPhysicalFret)) : maxFret;
+    const limit = drone ? (fifthMode === "drone" ? 0 : Math.max(0, maxFret - string.startsAtPhysicalFret)) : maxFret;
     for (let relativeFret = 0; relativeFret <= limit; relativeFret += 1) {
       const midi = openMidi + relativeFret;
       const pitchClass = midi % 12;
@@ -95,7 +103,7 @@ export function generateFretboardNotes({ tuning, key, scale, maxFret = 5, fifthM
       notes.push({
         string: string.number,
         relativeFret,
-        physicalFret: string.number === 5 ? string.startsAtPhysicalFret + relativeFret : relativeFret,
+        physicalFret: drone ? string.startsAtPhysicalFret + relativeFret : relativeFret,
         noteName: spelling !== "key" || scaleIndex < 0 ? chromaticName(pitchClass, preferenceName) : scaleNames[scaleIndex],
         isTonic: pitchClass === key.pitchClass,
         isScaleNote: scaleIndex >= 0,

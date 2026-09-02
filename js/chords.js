@@ -13,7 +13,6 @@ export const CHORD_QUALITIES = [
   { id: "sus4", label: "Sus4", symbol: "sus4", intervals: [0, 5, 7] }
 ];
 
-const CHORD_STRINGS = [1, 2, 3, 4];
 const MIN_DISPLAY_FRET = 5;
 
 export function getChordQuality(id) {
@@ -28,42 +27,60 @@ function compareCost(a, b) {
   return a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
 }
 
+// The strings used for chord voicings are every fretted (non-drone) string of the tuning.
+// A drone string (e.g. a banjo's fifth string) is never part of a chord shape.
+function chordStringsFor(tuning) {
+  return tuning.strings.filter((string) => string.kind !== "drone");
+}
+
+// Only frets whose resulting pitch class belongs to the chord matter, so restricting the
+// search to those candidates keeps the search fast regardless of how many strings the
+// instrument has (banjo, guitar, mandolin, ukulele, etc. all share this same algorithm).
+function candidateFrets(openMidi, pitchClasses, maxSearchFret) {
+  const frets = [];
+  for (let fret = 0; fret <= maxSearchFret; fret += 1) {
+    if (pitchClasses.has((openMidi + fret) % 12)) frets.push(fret);
+  }
+  return frets;
+}
+
 export function findChordVoicing(tuning, rootPitchClass, qualityId, options = {}) {
   const { maxSearchFret = 12 } = options;
   const quality = getChordQuality(qualityId);
   if (!quality) throw new Error(`Unknown chord quality: ${qualityId}`);
-  const strings = CHORD_STRINGS.map((number) => tuning.strings.find((string) => string.number === number));
-  if (strings.some((string) => !string)) return null;
+  const strings = chordStringsFor(tuning);
+  if (!strings.length) return null;
   const opens = strings.map((string) => pitchToMidi(string.pitch));
   const pcs = pitchClassesFor(rootPitchClass, quality);
+  const perStringCandidates = opens.map((openMidi) => candidateFrets(openMidi, pcs, maxSearchFret));
+  if (perStringCandidates.some((frets) => frets.length === 0)) return null;
+
   let best = null;
-  for (let level = 0; level <= maxSearchFret; level += 1) {
-    for (let a = 0; a <= level; a += 1) {
-      for (let b = 0; b <= level; b += 1) {
-        for (let c = 0; c <= level; c += 1) {
-          for (let d = 0; d <= level; d += 1) {
-            if (a !== level && b !== level && c !== level && d !== level) continue;
-            const frets = [a, b, c, d];
-            const pitchClasses = frets.map((fret, index) => (opens[index] + fret) % 12);
-            if (pitchClasses.some((pc) => !pcs.has(pc))) continue;
-            const covered = new Set(pitchClasses);
-            if ([...pcs].some((pc) => !covered.has(pc))) continue;
-            const fretted = frets.filter((fret) => fret > 0);
-            const span = fretted.length ? Math.max(...fretted) - Math.min(...fretted) : 0;
-            const total = frets.reduce((sum, fret) => sum + fret, 0);
-            const cost = [level, span, total];
-            if (!best || compareCost(cost, best.cost) < 0) best = { cost, frets: [...frets], pitchClasses: [...pitchClasses] };
-          }
-        }
-      }
+  const chosen = new Array(strings.length);
+  function recurse(index) {
+    if (index === strings.length) {
+      const pitchClasses = chosen.map((fret, i) => (opens[i] + fret) % 12);
+      const covered = new Set(pitchClasses);
+      if ([...pcs].some((pc) => !covered.has(pc))) return;
+      const fretted = chosen.filter((fret) => fret > 0);
+      const span = fretted.length ? Math.max(...fretted) - Math.min(...fretted) : 0;
+      const total = chosen.reduce((sum, fret) => sum + fret, 0);
+      const highestFret = Math.max(...chosen);
+      const cost = [highestFret, span, total];
+      if (!best || compareCost(cost, best.cost) < 0) best = { cost, frets: [...chosen], pitchClasses };
+      return;
     }
-    if (best) break;
+    for (const fret of perStringCandidates[index]) {
+      chosen[index] = fret;
+      recurse(index + 1);
+    }
   }
+  recurse(0);
   if (!best) return null;
   return {
     highestFret: best.cost[0],
-    notes: CHORD_STRINGS.map((number, index) => ({
-      string: number,
+    notes: strings.map((string, index) => ({
+      string: string.number,
       fret: best.frets[index],
       pitchClass: best.pitchClasses[index],
       isOpen: best.frets[index] === 0,
@@ -79,17 +96,16 @@ export function generateChordBoardNotes(tuning, rootPitchClass, qualityId, optio
   const displayMaxFret = Math.max(MIN_DISPLAY_FRET, voicing ? voicing.highestFret : MIN_DISPLAY_FRET);
   if (!voicing) return { voicing: null, displayMaxFret, tones: [] };
   const pcs = pitchClassesFor(rootPitchClass, quality);
-  const strings = CHORD_STRINGS.map((number) => tuning.strings.find((string) => string.number === number));
+  const strings = chordStringsFor(tuning);
   const tones = [];
   strings.forEach((string, index) => {
-    const stringNumber = CHORD_STRINGS[index];
     const open = pitchToMidi(string.pitch);
     const selectedFret = voicing.notes[index].fret;
     for (let fret = 0; fret <= displayMaxFret; fret += 1) {
       const pitchClass = (open + fret) % 12;
       if (!pcs.has(pitchClass)) continue;
       tones.push({
-        string: stringNumber,
+        string: string.number,
         fret,
         pitchClass,
         isOpen: fret === 0,

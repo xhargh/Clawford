@@ -51,3 +51,14 @@ test("renders four staff-aligned string columns with a conventional key signatur
   assert.equal(positions.some((node) => node.textContent.startsWith("5:")), false);
   assert.equal(elements.some((node) => node.attributes.class === "notehead"), false);
 });
+
+test("generalizes string columns to a 6-string guitar tuning", () => {
+  const key = getKey("E");
+  const scale = getScale("major");
+  const guitar = BUILT_IN_TUNINGS.find((item) => item.id === "guitar-standard");
+  const notes = generateNotes({ tuning: guitar, key, scale, pitchDisplay: "written" });
+  const svg = renderNotation(notes, "E major on guitar", { tuning: guitar, keySignature: keySignatureFor(key, scale) });
+  const elements = descendants(svg);
+  const headers = elements.filter((node) => node.attributes.class === "column-label" && node.textContent.startsWith("String "));
+  assert.deepEqual(headers.map((node) => node.textContent), ["String 6", "String 5", "String 4", "String 3", "String 2", "String 1"]);
+});

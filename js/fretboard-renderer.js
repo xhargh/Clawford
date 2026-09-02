@@ -72,7 +72,9 @@ function appendTone(svg, tone, x, y, preference) {
   const group = element("g", { class: classes.join(" ") });
   group.append(element("title", {}, `${noteName}, string ${tone.string}, ${tone.isOpen ? "open" : `fret ${tone.fret}`}`));
   group.append(element("circle", { cx: x, cy: y, r: tone.isSelected ? 16 : 9 }));
-  if (tone.isSelected) group.append(element("text", { x, y: y + 5, "text-anchor": "middle" }, noteName));
+  const noteLabelAttributes = { x, y: y + (tone.isSelected ? 5 : 3), "text-anchor": "middle" };
+  if (!tone.isSelected) noteLabelAttributes.class = "note-label-small";
+  group.append(element("text", noteLabelAttributes, noteName));
   svg.append(group);
 }
 

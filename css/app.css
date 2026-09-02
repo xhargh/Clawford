@@ -77,10 +77,12 @@ fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 .fret-note.tonic text { fill: white; text-decoration: underline; }
 .fret-note.open circle { stroke-dasharray: 3 2; }
 .chord-tone circle { fill: white; stroke: var(--accent); stroke-width: 2; }
+.chord-tone text { fill: var(--ink); font-size: 11px; font-weight: 800; }
 .chord-tone:not(.selected) circle { fill: var(--accent-pale); stroke: #8b9188; stroke-width: 1; opacity: .65; }
 .chord-tone.root circle { stroke: var(--warm); }
 .chord-tone.selected.root circle { fill: var(--warm); stroke: var(--ink); }
 .chord-tone.selected.root text { fill: white; }
+.note-label-small { font-size: 8px; }
 .no-shape-message { fill: var(--warm); font-size: 13px; }
 
 [hidden] { display: none !important; }

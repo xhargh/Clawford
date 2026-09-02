@@ -62,8 +62,12 @@ function scheduleDiagramFit() {
 function updateDiagramFit() {
   const visible = [notationOutput, fretboardOutput].find((el) => !el.hidden);
   if (!visible) return;
-  const margin = 16;
-  const available = Math.max(200, window.innerHeight - visible.getBoundingClientRect().top - margin);
+  // Size for the full viewport height (minus breathing room for the frame's
+  // own border/padding), not the space currently left below the settings
+  // panel — so once the user scrolls the settings out of view, the whole
+  // diagram fits the screen.
+  const margin = 32;
+  const available = Math.max(200, window.innerHeight - margin);
   visible.style.setProperty("--diagram-fit-height", `${available}px`);
 }
 

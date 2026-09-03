@@ -11,6 +11,17 @@ It renders a translation between standard music notation and instrument
 positions (string + fret), for a chosen key/scale or chord, and supports
 both a notation view and a fretboard view.
 
+## Background
+
+Clawford started as a learning project. I wanted to deepen my understanding
+of music theory while also gaining more experience with AI-assisted
+development and human-in-the-loop (HITL) workflows.
+
+The fact that it might become a useful tool for me — and, hopefully, for
+someone else too — is a welcome bonus. If I had had the time and knowledge to
+build it entirely by hand, I might have done so, but realistically it probably
+would never have been built at all.
+
 ⚠ **Untested**: this tool has not been verified against real instruments.
 Double-check every note before relying on it.
 

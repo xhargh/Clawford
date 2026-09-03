@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { generateNotes } from "../js/mapping.js";
-import { BASS_CLEF_REFERENCE, renderNotation, TREBLE_CLEF_REFERENCE } from "../js/notation-renderer.js";
+import { ACCIDENTAL_REFERENCES, BASS_CLEF_REFERENCE, renderNotation, TREBLE_CLEF_REFERENCE } from "../js/notation-renderer.js";
 import { getKey, getScale, keySignatureFor } from "../js/scales.js";
 import { BUILT_IN_TUNINGS } from "../js/tunings.js";
 
@@ -33,10 +33,11 @@ function descendants(node) {
   return [node, ...node.children.flatMap(descendants)];
 }
 
-function assertArtworkMatches(clef, { fixture, width, height, viewBox, label }) {
+function assertArtworkMatches(artwork, { fixture, width, height, viewBox, label, stroke = true }) {
+  const strokeAttributes = stroke ? ' stroke="#000" stroke-width="3"' : "";
   const actualSvg = [
     `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="${viewBox}">`,
-    `<path fill="#000" stroke="#000" stroke-width="3" d="${clef.attributes.d}"/>`,
+    `<path fill="#000"${strokeAttributes} d="${artwork.attributes.d}"/>`,
     "</svg>"
   ].join("");
   const workDir = mkdtempSync(join(tmpdir(), `clawford-${label}-clef-`));
@@ -56,7 +57,7 @@ function assertArtworkMatches(clef, { fixture, width, height, viewBox, label }) 
     } catch (error) {
       absoluteError = error.stderr.toString().trim();
     }
-    assert.equal(absoluteError, "0", `rendered ${label} clef differs from the Wikimedia reference by ${absoluteError} pixels`);
+    assert.equal(absoluteError, "0", `rendered ${label} differs from the Wikimedia reference by ${absoluteError} pixels`);
     assert.ok(readFileSync(actualPng).length > 0);
   } finally {
     rmSync(workDir, { recursive: true, force: true });
@@ -77,7 +78,7 @@ test("renders four staff-aligned string columns with a conventional key signatur
     return positions.filter((node) => node.attributes.x === x).map((node) => node.textContent);
   };
 
-  assert.deepEqual(elements.filter((node) => node.attributes.class === "key-signature").map((node) => node.textContent), ["♯"]);
+  assert.deepEqual(elements.filter((node) => node.attributes.class?.startsWith("key-signature ")).map((node) => node.attributes.class), ["key-signature sharp-sign"]);
   assert.deepEqual(headers.map((node) => node.textContent), ["String 4", "String 3", "String 2", "String 1"]);
   assert.deepEqual(valuesFor(4), ["4:0", "4:2", "4:4", "4:5"]);
   assert.deepEqual(valuesFor(3), ["3:0", "3:2", "3:4"]);
@@ -181,5 +182,42 @@ test("renders the public-domain Wikimedia treble clef artwork pixel-for-pixel", 
     height: 826,
     viewBox: "984 5608 1969 4066",
     label: "treble"
+  });
+});
+
+test("renders Wikimedia sharp and flat artwork in treble and bass key signatures", () => {
+  for (const clefName of ["treble", "bass"]) {
+    for (const accidental of ["#", "b"]) {
+      const svg = renderNotation([], `${clefName} ${accidental}`, { clef: clefName, keySignature: [{ accidental }] });
+      const expectedClass = accidental === "#" ? "key-signature sharp-sign" : "key-signature flat-sign";
+      const symbol = descendants(svg).find((node) => node.attributes.class === expectedClass);
+      assert.equal(symbol.name, "path", `${accidental} uses vector artwork in ${clefName} clef`);
+    }
+  }
+});
+
+test("renders public-domain Wikimedia accidental artwork pixel-for-pixel", () => {
+  const sharpSvg = renderNotation([], "Sharp reference", { keySignature: [{ accidental: "#" }] });
+  const flatSvg = renderNotation([], "Flat reference", { keySignature: [{ accidental: "b" }] });
+  const sharp = descendants(sharpSvg).find((node) => node.attributes.class === "key-signature sharp-sign");
+  const flat = descendants(flatSvg).find((node) => node.attributes.class === "key-signature flat-sign");
+
+  assert.equal(sharp.attributes.d, ACCIDENTAL_REFERENCES["#"].path);
+  assert.equal(flat.attributes.d, ACCIDENTAL_REFERENCES.b.path);
+  assertArtworkMatches(sharp, {
+    fixture: "sharp-reference.svg",
+    width: 120,
+    height: 380,
+    viewBox: "84.196 435.303 6 19",
+    label: "sharp",
+    stroke: false
+  });
+  assertArtworkMatches(flat, {
+    fixture: "flat-reference.svg",
+    width: 120,
+    height: 260,
+    viewBox: "94.947 435.28013 6 13",
+    label: "flat",
+    stroke: false
   });
 });

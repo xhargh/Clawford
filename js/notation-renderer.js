@@ -46,6 +46,16 @@ export const TREBLE_CLEF_REFERENCE = {
   staffLeftX: 984
 };
 
+// Public-domain artwork from https://commons.wikimedia.org/wiki/File:Sharp.svg
+// and https://commons.wikimedia.org/wiki/File:Flat.svg. Coordinates remain in the
+// source files' spaces so rendering tests can compare the paths directly.
+const SHARP_REFERENCE_PATH = "M 86.102000,447.45700 L 86.102000,442.75300 L 88.102000,442.20100 L 88.102000,446.88100 L 86.102000,447.45700 z M 90.040000,446.31900 L 88.665000,446.71300 L 88.665000,442.03300 L 90.040000,441.64900 L 90.040000,439.70500 L 88.665000,440.08900 L 88.665000,435.30723 L 88.102000,435.30723 L 88.102000,440.23400 L 86.102000,440.80900 L 86.102000,436.15923 L 85.571000,436.15923 L 85.571000,440.98600 L 84.196000,441.37100 L 84.196000,443.31900 L 85.571000,442.93500 L 85.571000,447.60600 L 84.196000,447.98900 L 84.196000,449.92900 L 85.571000,449.54500 L 85.571000,454.29977 L 86.102000,454.29977 L 86.102000,449.37500 L 88.102000,448.82500 L 88.102000,453.45077 L 88.665000,453.45077 L 88.665000,448.65100 L 90.040000,448.26600 L 90.040000,446.31900 z";
+const FLAT_REFERENCE_PATH = "M 98.166,443.657 C 98.166,444.232 97.950425,444.78273 97.359,445.52188 C 96.732435,446.30494 96.205,446.75313 95.51,447.28013 L 95.51,443.848 C 95.668,443.449 95.901,443.126 96.21,442.878 C 96.518,442.631 96.83,442.507 97.146,442.507 C 97.668,442.507 97.999,442.803 98.142,443.393 C 98.158,443.441 98.166,443.529 98.166,443.657 z M 98.091,441.257 C 97.66,441.257 97.222,441.376 96.776,441.615 C 96.33,441.853 95.908,442.172 95.51,442.569 L 95.51,435.29733 L 94.947,435.29733 L 94.947,447.75213 C 94.947,448.10413 95.043,448.28013 95.235,448.28013 C 95.346,448.28013 95.483913,448.18713 95.69,448.06413 C 96.27334,447.71598 96.636935,447.48332 97.032,447.23788 C 97.482617,446.95792 97.99,446.631 98.661,445.991 C 99.124,445.526 99.459,445.057 99.667,444.585 C 99.874,444.112 99.978,443.644 99.978,443.179 C 99.978,442.491 99.795,442.002 99.429,441.713 C 99.015,441.409 98.568,441.257 98.091,441.257 z";
+export const ACCIDENTAL_REFERENCES = {
+  "#": { path: SHARP_REFERENCE_PATH, className: "sharp-sign", sourceX: 84.196, sourceY: 435.303, width: 6, height: 19, anchorY: 9.5 },
+  b: { path: FLAT_REFERENCE_PATH, className: "flat-sign", sourceX: 94.947, sourceY: 435.28013, width: 6, height: 13, anchorY: 9.5 }
+};
+
 const CLEFS = {
   treble: {
     bottom: E4,
@@ -190,12 +200,7 @@ function drawStaff(svg, yForDiatonic, step, keySignature, staffRight, signatureX
   drawReferenceClef(svg, clef, clefAnchorY, step);
   const positions = positionsForKeySignature(keySignature, clef);
   keySignature.forEach((item, index) => {
-    svg.append(element("text", {
-      x: signatureX + index * signatureGap,
-      y: yForDiatonic(positions[index]) + step * 0.95,
-      class: "key-signature",
-      "font-size": step * 3
-    }, item.accidental === "#" ? "♯" : "♭"));
+    drawKeySignatureAccidental(svg, item.accidental, signatureX + index * signatureGap, yForDiatonic(positions[index]), step);
   });
 }
 
@@ -213,6 +218,18 @@ function drawReferenceClef(svg, clef, anchorLineY, step) {
   svg.append(element("path", {
     d: clef.artworkPath,
     class: `clef ${clef.artworkClass}`,
+    transform: `translate(${translateX} ${translateY}) scale(${scale})`
+  }));
+}
+
+function drawKeySignatureAccidental(svg, accidental, x, y, step) {
+  const reference = ACCIDENTAL_REFERENCES[accidental];
+  const scale = (step * 3) / reference.height;
+  const translateX = x - reference.sourceX * scale;
+  const translateY = y - (reference.sourceY + reference.anchorY) * scale;
+  svg.append(element("path", {
+    d: reference.path,
+    class: `key-signature ${reference.className}`,
     transform: `translate(${translateX} ${translateY}) scale(${scale})`
   }));
 }

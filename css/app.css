@@ -69,7 +69,8 @@ fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 .column-label { fill: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
 .staff-line { stroke: var(--ink); stroke-width: 1.2; }
 .ledger-line { stroke: var(--ink); stroke-width: 1.2; }
-.clef { font-family: "Noto Music", "Bravura Text", serif; font-size: 142px; }
+.clef { font-family: "Noto Music", "Bravura Text", serif; font-size: 142px; color: var(--ink); }
+.bass-clef, .treble-clef { fill: currentColor; stroke: currentColor; stroke-width: 3; }
 .key-signature { font-family: serif; }
 .position-label { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 17px; font-weight: 700; }
 .string-column-position { stroke: white; stroke-width: 7px; stroke-linejoin: round; paint-order: stroke fill; }

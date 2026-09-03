@@ -129,7 +129,7 @@ function render() {
   updateChordOptionAvailability(tuning);
   const chordBoard = generateChordBoardNotes(tuning, chordRoot.pitchClass, chordQuality.id);
 
-  notationOutput.replaceChildren(renderNotation(notes, title, { ...state, tuning, keySignature: keySignatureFor(key, scale) }));
+  notationOutput.replaceChildren(renderNotation(notes, title, { ...state, tuning, keySignature: keySignatureFor(key, scale), clef: instrument.clef }));
   fretboardOutput.replaceChildren(renderChordBoard(chordBoard, fretboardTitle, tuning, chordRoot, chordQuality));
   notationOutput.hidden = state.view === "fretboard";
   fretboardOutput.hidden = state.view === "notation";

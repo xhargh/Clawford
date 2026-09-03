@@ -7,6 +7,9 @@ import { KEYS, SCALES, getKey, getScale, keySignatureFor } from "./scales.js";
 import { stateFromSources, stateToSearchParams } from "./state.js";
 import { loadStoredState, saveStoredState } from "./storage.js";
 import { BUILT_IN_TUNINGS } from "./tunings.js";
+import { AudioPlayer } from "./audio/player.js";
+import { BANJO_PROFILE, GUITAR_PROFILE } from "./audio/synth.js";
+import { crossedStrings, selectTone, selectedFretsFromVoicing } from "./playback-interactions.js";
 
 const form = document.querySelector("#settings-form");
 const instrumentSelect = document.querySelector("#instrument");
@@ -37,6 +40,12 @@ let state = stateFromSources(loadStoredState(), new URLSearchParams(location.sea
   chordRoots: KEYS.map((key) => key.value),
   chordQualities: CHORD_QUALITIES.map((quality) => quality.id)
 });
+let audioPlayer = createAudioPlayer(state.instrument);
+let selectedFretsByString = new Map();
+let selectedTonesByString = new Map();
+let chordSelectionKey = "";
+let strumGesture = null;
+let suppressClicksUntil = 0;
 if (!tuningsFor(state.instrument).some((tuning) => tuning.id === state.tuning)) {
   state = { ...state, tuning: tuningsFor(state.instrument)[0].id };
 }
@@ -47,8 +56,109 @@ let fitScheduled = false;
 render();
 
 form.addEventListener("input", updateFromForm);
+notationOutput.addEventListener("click", handleNotationClick);
+notationOutput.addEventListener("keydown", handleNotationKeydown);
+fretboardOutput.addEventListener("click", handleFretboardClick);
+fretboardOutput.addEventListener("keydown", handleFretboardKeydown);
+fretboardOutput.addEventListener("pointerdown", handleStrumStart);
+fretboardOutput.addEventListener("pointermove", handleStrumMove);
+fretboardOutput.addEventListener("pointerup", handleStrumEnd);
+fretboardOutput.addEventListener("pointercancel", handleStrumEnd);
 window.addEventListener("resize", scheduleDiagramFit);
 window.addEventListener("orientationchange", scheduleDiagramFit);
+
+function createAudioPlayer(instrumentId) {
+  return new AudioPlayer({ profile: instrumentId.startsWith("banjo") ? BANJO_PROFILE : GUITAR_PROFILE });
+}
+
+function playNotes(notes) {
+  void audioPlayer.playNotes(notes).catch((error) => console.warn("Unable to play audio", error));
+}
+
+function noteFromElement(element) {
+  return { midi: Number(element.dataset.midi), string: Number(element.dataset.string) };
+}
+
+function handleNotationClick(event) {
+  const note = event.target.closest(".playable-note");
+  if (note) playNotes([noteFromElement(note)]);
+}
+
+function handleNotationKeydown(event) {
+  if (event.key !== "Enter" && event.key !== " ") return;
+  const note = event.target.closest(".playable-note");
+  if (!note) return;
+  event.preventDefault();
+  playNotes([noteFromElement(note)]);
+}
+
+function selectAndPlayFretboardTone(element) {
+  const note = noteFromElement(element);
+  selectedFretsByString = selectTone(selectedFretsByString, note.string, Number(element.dataset.fret));
+  playNotes([note]);
+  render();
+}
+
+function handleFretboardClick(event) {
+  if (performance.now() < suppressClicksUntil) return;
+  const tone = event.target.closest(".chord-tone");
+  if (tone) selectAndPlayFretboardTone(tone);
+}
+
+function handleFretboardKeydown(event) {
+  if (event.key !== "Enter" && event.key !== " ") return;
+  const tone = event.target.closest(".chord-tone");
+  if (!tone) return;
+  event.preventDefault();
+  selectAndPlayFretboardTone(tone);
+}
+
+function svgX(svg, clientX) {
+  const bounds = svg.getBoundingClientRect();
+  return svg.viewBox.baseVal.x + (clientX - bounds.left) * svg.viewBox.baseVal.width / bounds.width;
+}
+
+function handleStrumStart(event) {
+  if (!event.isPrimary || event.button !== 0) return;
+  const svg = event.target.closest(".chord-board");
+  if (!svg) return;
+  const stringPositions = new Map([...svg.querySelectorAll(".string-line")].map((line) => [
+    Number(line.dataset.string),
+    Number(line.getAttribute("x1"))
+  ]));
+  const x = svgX(svg, event.clientX);
+  strumGesture = {
+    pointerId: event.pointerId,
+    svg,
+    stringPositions,
+    startClientX: event.clientX,
+    startClientY: event.clientY,
+    previousX: x,
+    firstSegment: true,
+    strumming: false
+  };
+}
+
+function handleStrumMove(event) {
+  const gesture = strumGesture;
+  if (!gesture || gesture.pointerId !== event.pointerId) return;
+  if (!gesture.strumming && Math.hypot(event.clientX - gesture.startClientX, event.clientY - gesture.startClientY) < 6) return;
+  if (!gesture.strumming) fretboardOutput.setPointerCapture?.(event.pointerId);
+  gesture.strumming = true;
+  suppressClicksUntil = performance.now() + 300;
+  const currentX = svgX(gesture.svg, event.clientX);
+  const strings = crossedStrings(gesture.previousX, currentX, gesture.stringPositions, gesture.firstSegment);
+  gesture.firstSegment = false;
+  gesture.previousX = currentX;
+  const notes = strings.map((string) => selectedTonesByString.get(string)).filter(Boolean);
+  if (notes.length) playNotes(notes);
+}
+
+function handleStrumEnd(event) {
+  if (!strumGesture || strumGesture.pointerId !== event.pointerId) return;
+  fretboardOutput.releasePointerCapture?.(event.pointerId);
+  strumGesture = null;
+}
 
 function scheduleDiagramFit() {
   if (fitScheduled) return;
@@ -100,6 +210,8 @@ function updateFromForm() {
     chordQuality: data.get("chordQuality")
   };
   if (instrumentChanged) {
+    void audioPlayer.dispose();
+    audioPlayer = createAudioPlayer(instrument);
     populateSelect(tuningSelect, tuningsFor(instrument).map((item) => ({ value: item.id, label: `${item.name} (${item.shortName})` })));
     writeForm(state);
   }
@@ -117,6 +229,7 @@ function updateChordOptionAvailability(tuning) {
 }
 
 function render() {
+  strumGesture = null;
   const tuning = tunings.find((item) => item.id === state.tuning) || tunings[0];
   const instrument = getInstrument(tuning.instrument) || getInstrument(state.instrument);
   const key = getKey(state.key);
@@ -127,7 +240,14 @@ function render() {
   const fretboardTitle = `${instrument.name} — ${tuning.name}`;
   const notes = generateNotes({ ...state, tuning, key, scale });
   updateChordOptionAvailability(tuning);
-  const chordBoard = generateChordBoardNotes(tuning, chordRoot.pitchClass, chordQuality.id);
+  const nextSelectionKey = `${tuning.id}:${chordRoot.pitchClass}:${chordQuality.id}`;
+  if (nextSelectionKey !== chordSelectionKey) {
+    const initialBoard = generateChordBoardNotes(tuning, chordRoot.pitchClass, chordQuality.id);
+    selectedFretsByString = selectedFretsFromVoicing(initialBoard.voicing);
+    chordSelectionKey = nextSelectionKey;
+  }
+  const chordBoard = generateChordBoardNotes(tuning, chordRoot.pitchClass, chordQuality.id, { selectedFretsByString });
+  selectedTonesByString = new Map(chordBoard.tones.filter((tone) => tone.isSelected).map((tone) => [tone.string, tone]));
 
   notationOutput.replaceChildren(renderNotation(notes, title, { ...state, tuning, keySignature: keySignatureFor(key, scale), clef: instrument.clef }));
   fretboardOutput.replaceChildren(renderChordBoard(chordBoard, fretboardTitle, tuning, chordRoot, chordQuality));

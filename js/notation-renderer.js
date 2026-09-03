@@ -121,7 +121,7 @@ export function renderNotation(notes, title, options = {}) {
   const width = Math.max(760, staffRight + 30);
   const height = contentTop + (topDiatonic - bottomDiatonic) * step + contentBottom;
   const yForDiatonic = (diatonic) => contentTop + (topDiatonic - diatonic) * step;
-  const svg = element("svg", { class: "notation-svg", viewBox: `0 0 ${width} ${height}`, role: "img", "aria-labelledby": "diagram-svg-title diagram-svg-desc", xmlns: NS });
+  const svg = element("svg", { class: "notation-svg", viewBox: `0 0 ${width} ${height}`, role: "group", "aria-labelledby": "diagram-svg-title diagram-svg-desc", xmlns: NS });
   svg.append(element("title", { id: "diagram-svg-title" }, title));
   svg.append(element("desc", { id: "diagram-svg-desc" }, `A shared ${options.clef === "bass" ? "bass" : "treble"} staff with separate string and fret columns for strings ${columns.map((column) => column.string).join(" through ")}.`));
   svg.append(element("text", { x: 20, y: 29, class: "diagram-title" }, title));
@@ -144,8 +144,17 @@ function drawStringColumns(svg, notes, columns, yForDiatonic, step, clef) {
     for (const position of note.positions.filter((item) => xByString.has(item.string))) {
       const x = xByString.get(position.string);
       const label = `${position.string}:${position.fret}`;
-      const group = element("g", { class: `note-entry string-column-entry${note.isScaleNote ? " scale-note" : ""}${note.isTonic ? " tonic" : ""}` });
-      group.append(element("title", {}, accessibleDescription(note, position)));
+      const description = accessibleDescription(note, position);
+      const group = element("g", {
+        class: `note-entry string-column-entry playable-note${note.isScaleNote ? " scale-note" : ""}${note.isTonic ? " tonic" : ""}`,
+        "data-midi": note.midi,
+        "data-string": position.string,
+        "data-fret": position.fret,
+        role: "button",
+        tabindex: "0",
+        "aria-label": `Play ${description}`
+      });
+      group.append(element("title", {}, description));
       drawLedgerLines(group, x, label, note.diatonic, yForDiatonic, step, clef);
       group.append(element("text", {
         x,

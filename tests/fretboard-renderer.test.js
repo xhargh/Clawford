@@ -52,6 +52,16 @@ test("marks the selected voicing bold and other chord tones faint", () => {
   assert.ok(faint.length > 0);
   assert.ok(selected.every((node) => node.children.find((child) => child.name === "circle").attributes.r === "16"));
   assert.ok(faint.every((node) => node.children.find((child) => child.name === "circle").attributes.r === "9"));
+  assert.ok(selected.every((node) => node.attributes["data-midi"]));
+  assert.ok(selected.every((node) => node.attributes["aria-pressed"] === "true"));
+  assert.ok(faint.every((node) => node.attributes["aria-pressed"] === "false"));
+});
+
+test("exposes physical string coordinates for swipe detection", () => {
+  const board = generateChordBoardNotes(openG, root.pitchClass, "major");
+  const svg = renderChordBoard(board, "Open G", openG, root, quality);
+  const strings = descendants(svg).filter((node) => node.attributes.class === "string-line");
+  assert.deepEqual(strings.map((node) => node.attributes["data-string"]), ["1", "2", "3", "4"]);
 });
 
 test("grows the board width to the shape's highest fret when needed", () => {

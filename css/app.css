@@ -74,11 +74,16 @@ fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 .key-signature { fill: currentColor; }
 .position-label { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 17px; font-weight: 700; }
 .string-column-position { stroke: white; stroke-width: 7px; stroke-linejoin: round; paint-order: stroke fill; }
+.playable-note { cursor: pointer; outline: none; }
+.playable-note:focus-visible { filter: drop-shadow(0 0 4px rgb(40 90 69 / 70%)); }
+.notation-svg .playable-note:hover .position-label { fill: var(--warm); }
 .string-column-entry.tonic .string-column-position { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
 .degree-label, .empty-label { fill: var(--muted); font-size: 11px; }
 .fret, .nut { stroke: #6e756c; stroke-width: 1; }
 .nut { stroke: var(--ink); stroke-width: 4; }
 .string-line { stroke: var(--ink); stroke-width: 1.6; }
+.chord-board { touch-action: pan-y; user-select: none; }
+.strum-hit-area { fill: transparent; }
 .string-number, .fret-number { fill: var(--muted); font-size: 12px; font-weight: 700; }
 .fret-note circle { fill: white; stroke: var(--accent); stroke-width: 2; }
 .fret-note:not(.scale-note) circle { stroke: #8b9188; stroke-width: 1; }
@@ -93,6 +98,7 @@ fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 .chord-tone.root circle { stroke: var(--warm); }
 .chord-tone.selected.root circle { fill: var(--warm); stroke: var(--ink); }
 .chord-tone.selected.root text { fill: white; }
+.chord-tone:hover circle, .chord-tone:focus-visible circle { stroke-width: 4; }
 .note-label-small { font-size: 8px; }
 .no-shape-message { fill: var(--warm); font-size: 13px; }
 

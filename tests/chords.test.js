@@ -44,6 +44,17 @@ test("generates a board that grows to the shape's highest fret and marks the sel
   assert.ok(board.tones.some((tone) => tone.isSelected));
   assert.ok(board.tones.some((tone) => !tone.isSelected));
   assert.ok(board.tones.every((tone) => tone.fret <= board.displayMaxFret));
+  assert.ok(board.tones.every((tone) => Number.isInteger(tone.midi)));
+});
+
+test("applies one valid selected-fret override per string and ignores invalid overrides", () => {
+  const selected = new Map([[1, 5], [2, 1]]);
+  const board = generateChordBoardNotes(tuning("open-g"), 7, "major", { selectedFretsByString: selected });
+  const selectedTones = board.tones.filter((tone) => tone.isSelected);
+  assert.equal(selectedTones.length, 4);
+  assert.equal(selectedTones.find((tone) => tone.string === 1).fret, 5);
+  assert.equal(selectedTones.find((tone) => tone.string === 2).fret, 0);
+  assert.equal(selectedTones.find((tone) => tone.string === 1).midi, 67);
 });
 
 test("every chord quality is defined with a root-relative interval set", () => {

@@ -72,6 +72,7 @@ test("renders four staff-aligned string columns with a conventional key signatur
   const svg = renderNotation(notes, "G major string columns", { keySignature: keySignatureFor(key, scale) });
   const elements = descendants(svg);
   const positions = elements.filter((node) => node.attributes.class === "position-label string-column-position");
+  const playableNotes = elements.filter((node) => node.attributes.class?.includes("playable-note"));
   const headers = elements.filter((node) => node.attributes.class === "column-label" && node.textContent.startsWith("String "));
   const valuesFor = (string) => {
     const x = headers.find((node) => node.textContent === `String ${string}`).attributes.x;
@@ -79,6 +80,7 @@ test("renders four staff-aligned string columns with a conventional key signatur
   };
 
   assert.deepEqual(elements.filter((node) => node.attributes.class?.startsWith("key-signature ")).map((node) => node.attributes.class), ["key-signature sharp-sign"]);
+  assert.ok(playableNotes.every((node) => node.attributes["data-midi"] && node.attributes.role === "button"));
   assert.deepEqual(headers.map((node) => node.textContent), ["String 4", "String 3", "String 2", "String 1"]);
   assert.deepEqual(valuesFor(4), ["4:0", "4:2", "4:4", "4:5"]);
   assert.deepEqual(valuesFor(3), ["3:0", "3:2", "3:4"]);

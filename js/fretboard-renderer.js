@@ -30,13 +30,21 @@ function renderVertical(strings, displayMaxFret, tones, voicing, title, tuning, 
   const fretHeight = boardHeight / displayMaxFret;
   const width = rightX + 70;
   const height = bottomY + 40;
-  const svg = element("svg", { class: "fretboard-svg chord-board vertical", viewBox: `0 0 ${width} ${height}`, role: "img", "aria-label": `${chordLabel} chord shape on ${title}`, xmlns: NS });
+  const svg = element("svg", { class: "fretboard-svg chord-board vertical", viewBox: `0 0 ${width} ${height}`, role: "group", "aria-label": `${chordLabel} chord shape on ${title}. Select one tone per string, then swipe across the strings to strum.`, xmlns: NS });
   svg.append(element("text", { x: 20, y: 29, class: "diagram-title" }, `${title} — ${chordLabel}`));
 
   if (!voicing) {
     svg.append(element("text", { x: 20, y: 55, class: "no-shape-message" }, `No complete ${chordLabel} shape found within 12 frets for this tuning.`));
     return svg;
   }
+
+  svg.append(element("rect", {
+    x: leftX - stringGap / 2,
+    y: openY - 24,
+    width: rightX - leftX + stringGap,
+    height: bottomY - openY + 24,
+    class: "strum-hit-area"
+  }));
 
   for (let fret = 0; fret <= displayMaxFret; fret += 1) {
     const y = topY + fret * fretHeight;
@@ -49,7 +57,7 @@ function renderVertical(strings, displayMaxFret, tones, voicing, title, tuning, 
   strings.forEach((string) => {
     const x = rightX - (string - 1) * stringGap;
     xForString.set(string, x);
-    svg.append(element("line", { x1: x, x2: x, y1: topY, y2: bottomY, class: "string-line" }));
+    svg.append(element("line", { x1: x, x2: x, y1: topY, y2: bottomY, class: "string-line", "data-string": string }));
     const openString = tuning.strings.find((item) => item.number === string);
     const openName = openString ? pitchName(openString.pitch) : "";
     svg.append(element("text", { x, y: stringLabelY, "text-anchor": "middle", class: "string-number" }, openName ? `${string} - ${openName}` : String(string)));
@@ -69,8 +77,18 @@ function appendTone(svg, tone, x, y, preference) {
   if (tone.isSelected) classes.push("selected");
   if (tone.isRoot) classes.push("root");
   if (tone.isOpen) classes.push("open");
-  const group = element("g", { class: classes.join(" ") });
-  group.append(element("title", {}, `${noteName}, string ${tone.string}, ${tone.isOpen ? "open" : `fret ${tone.fret}`}`));
+  const position = tone.isOpen ? "open" : `fret ${tone.fret}`;
+  const group = element("g", {
+    class: `${classes.join(" ")} playable-note`,
+    "data-midi": tone.midi,
+    "data-string": tone.string,
+    "data-fret": tone.fret,
+    role: "button",
+    tabindex: "0",
+    "aria-pressed": String(tone.isSelected),
+    "aria-label": `${tone.isSelected ? "Selected" : "Select"} ${noteName}, string ${tone.string}, ${position}`
+  });
+  group.append(element("title", {}, `${noteName}, string ${tone.string}, ${position}`));
   group.append(element("circle", { cx: x, cy: y, r: tone.isSelected ? 16 : 9 }));
   const noteLabelAttributes = { x, y: y + (tone.isSelected ? 5 : 3), "text-anchor": "middle" };
   if (!tone.isSelected) noteLabelAttributes.class = "note-label-small";

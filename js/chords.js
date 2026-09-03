@@ -90,7 +90,7 @@ export function findChordVoicing(tuning, rootPitchClass, qualityId, options = {}
 }
 
 export function generateChordBoardNotes(tuning, rootPitchClass, qualityId, options = {}) {
-  const { maxSearchFret = 12 } = options;
+  const { maxSearchFret = 12, selectedFretsByString } = options;
   const quality = getChordQuality(qualityId);
   const voicing = findChordVoicing(tuning, rootPitchClass, qualityId, { maxSearchFret });
   const displayMaxFret = Math.max(MIN_DISPLAY_FRET, voicing ? voicing.highestFret : MIN_DISPLAY_FRET);
@@ -100,13 +100,17 @@ export function generateChordBoardNotes(tuning, rootPitchClass, qualityId, optio
   const tones = [];
   strings.forEach((string, index) => {
     const open = pitchToMidi(string.pitch);
-    const selectedFret = voicing.notes[index].fret;
+    const requestedFret = selectedFretsByString?.get(string.number);
+    const selectedFret = Number.isInteger(requestedFret) && requestedFret >= 0 && requestedFret <= displayMaxFret && pcs.has((open + requestedFret) % 12)
+      ? requestedFret
+      : voicing.notes[index].fret;
     for (let fret = 0; fret <= displayMaxFret; fret += 1) {
       const pitchClass = (open + fret) % 12;
       if (!pcs.has(pitchClass)) continue;
       tones.push({
         string: string.number,
         fret,
+        midi: open + fret,
         pitchClass,
         isOpen: fret === 0,
         isRoot: pitchClass === rootPitchClass,

@@ -116,3 +116,9 @@ Requirements to actually get the install prompt / offline behavior:
 
 See [SPEC.md](SPEC.md) for the full design specification, including musical
 assumptions, position-selection rules, and UI requirements.
+
+## License
+
+The source code and documentation are licensed under the [MIT License](LICENSE).
+
+The Clawford name, logo, and branding are not licensed as trademarks.

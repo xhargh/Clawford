@@ -8,6 +8,7 @@ export const BUILT_IN_TUNINGS = [
   makeTuning("banjo4", "plectrum-standard", "Plectrum (Standard C)", "cGBD", ["C3", "G3", "B3", "D4"]),
 
   makeTuning("guitar", "guitar-standard", "Standard", "EADGBE", ["E2", "A2", "D3", "G3", "B3", "E4"]),
+  makeTuning("guitar", "guitar-dadgad", "DADGAD", "DADGAD", ["D2", "A2", "D3", "G3", "A3", "D4"]),
 
   makeTuning("bass", "bass-standard", "Standard", "EADG", ["E1", "A1", "D2", "G2"]),
 

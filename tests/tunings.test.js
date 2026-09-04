@@ -12,7 +12,7 @@ test("provides tunings for banjo (5- and 4-string), guitar, bass, mandolin, and 
   const byInstrument = (id) => BUILT_IN_TUNINGS.filter((tuning) => tuning.instrument === id);
   assert.equal(byInstrument("banjo5").length, 4);
   assert.equal(byInstrument("banjo4").length, 2);
-  assert.equal(byInstrument("guitar").length, 1);
+  assert.equal(byInstrument("guitar").length, 2);
   assert.equal(byInstrument("bass").length, 1);
   assert.equal(byInstrument("mandolin").length, 1);
   assert.equal(byInstrument("ukulele").length, 2);
@@ -25,6 +25,13 @@ test("ukulele includes both C and D tunings", () => {
   assert.deepEqual(cTuning.strings.map((string) => string.pitch), ["G4", "C4", "E4", "A4"]);
   const dTuning = ukulele.find((tuning) => tuning.id === "ukulele-d");
   assert.deepEqual(dTuning.strings.map((string) => string.pitch), ["A4", "D4", "F#4", "B4"]);
+});
+
+test("guitar includes DADGAD tuning", () => {
+  const dadgad = BUILT_IN_TUNINGS.find((tuning) => tuning.id === "guitar-dadgad");
+  assert.ok(dadgad);
+  assert.deepEqual(dadgad.strings.map((string) => string.pitch), ["D2", "A2", "D3", "G3", "A3", "D4"]);
+  assert.deepEqual(dadgad.strings.map((string) => string.number), [6, 5, 4, 3, 2, 1]);
 });
 
 test("only the 5-string banjo tunings have a drone string", () => {

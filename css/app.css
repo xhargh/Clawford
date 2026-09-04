@@ -92,12 +92,12 @@ fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 .fret-note.tonic circle { fill: var(--accent); stroke: var(--ink); stroke-width: 3; }
 .fret-note.tonic text { fill: white; text-decoration: underline; }
 .fret-note.open circle { stroke-dasharray: 3 2; }
-.fretboard-tone circle { fill: white; stroke: var(--accent); stroke-width: 2; }
+.fretboard-tone circle { fill: white; fill: color-mix(in srgb, var(--warm) var(--tone-strength), white); stroke: var(--warm); stroke-width: 2; }
 .fretboard-tone text { fill: var(--ink); font-size: 11px; font-weight: 800; }
-.fretboard-tone:not(.selected) circle { fill: var(--accent-pale); stroke: #8b9188; stroke-width: 1; }
-.fretboard-tone.root circle { stroke: var(--warm); }
-.fretboard-tone.selected.root circle { fill: var(--warm); stroke: var(--ink); }
-.fretboard-tone.selected.root text { fill: white; }
+.fretboard-tone:not(.selected) circle { fill: var(--accent-pale); fill: color-mix(in srgb, var(--warm) var(--tone-strength), white); stroke: #8b9188; stroke-width: 1; }
+.fretboard-tone.root circle { fill: var(--warm); stroke: var(--warm); }
+.fretboard-tone.selected circle { stroke: var(--ink); }
+.fretboard-tone.root text { fill: white; }
 .fretboard-tone:hover circle, .fretboard-tone:focus-visible circle { stroke-width: 4; }
 .note-label-small { font-size: 8px; }
 .no-shape-message { fill: var(--warm); font-size: 13px; }

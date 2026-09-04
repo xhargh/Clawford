@@ -58,6 +58,20 @@ test("marks the selected voicing bold and other chord tones faint", () => {
   assert.ok(faint.every((node) => node.attributes["aria-pressed"] === "false"));
 });
 
+test("colors fretboard tones on an orange-to-white interval gradient", () => {
+  const board = generateChordBoardNotes(openG, root.pitchClass, "major");
+  const svg = renderChordBoard(board, "Open G", openG, root, quality);
+  const tones = descendants(svg).filter((node) => node.attributes.class?.includes("chord-tone"));
+  const rootTone = tones.find((node) => node.attributes["data-interval"] === "0");
+  const thirdTone = tones.find((node) => node.attributes["data-interval"] === "4");
+  const fifthTone = tones.find((node) => node.attributes["data-interval"] === "7");
+
+  assert.equal(rootTone.attributes.style, "--tone-strength: 100%");
+  assert.equal(thirdTone.attributes.style, "--tone-strength: 70%");
+  assert.equal(fifthTone.attributes.style, "--tone-strength: 48%");
+  assert.ok(rootTone.attributes.class.includes("root"));
+});
+
 test("exposes physical string coordinates for swipe detection", () => {
   const board = generateChordBoardNotes(openG, root.pitchClass, "major");
   const svg = renderChordBoard(board, "Open G", openG, root, quality);

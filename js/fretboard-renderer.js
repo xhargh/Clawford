@@ -15,17 +15,17 @@ export function renderChordBoard(board, title, tuning, root, quality) {
   const strings = tuning.strings.filter((string) => string.kind !== "drone").map((string) => string.number);
   const chordLabel = `${root.label.split(" ")[0]}${quality.symbol}`;
 
-  return renderVertical(strings, displayMaxFret, tones, title, tuning, chordLabel, root.preference, { voicing });
+  return renderVertical(strings, displayMaxFret, tones, title, tuning, chordLabel, root.preference, { voicing, rootPitchClass: root.pitchClass });
 }
 
 export function renderScaleBoard(board, title, tuning, root, scale) {
   const strings = tuning.strings.filter((string) => string.kind !== "drone").map((string) => string.number);
   const scaleLabel = `${root.value} ${scale.name}`;
-  return renderVertical(strings, board.displayMaxFret, board.tones, title, tuning, scaleLabel, root.preference, { type: "scale" });
+  return renderVertical(strings, board.displayMaxFret, board.tones, title, tuning, scaleLabel, root.preference, { type: "scale", rootPitchClass: root.pitchClass });
 }
 
 function renderVertical(strings, displayMaxFret, tones, title, tuning, label, preference, options = {}) {
-  const { type = "chord", voicing = true } = options;
+  const { type = "chord", voicing = true, rootPitchClass } = options;
   const leftX = 65;
   const stringGap = 52;
   const rightX = leftX + Math.max(1, strings.length - 1) * stringGap;
@@ -73,13 +73,15 @@ function renderVertical(strings, displayMaxFret, tones, title, tuning, label, pr
   for (const tone of tones) {
     const x = xForString.get(tone.string);
     const y = tone.isOpen ? openY : topY + (tone.fret - 0.5) * fretHeight;
-    appendTone(svg, tone, x, y, preference, type);
+    appendTone(svg, tone, x, y, preference, rootPitchClass, type);
   }
   return svg;
 }
 
-function appendTone(svg, tone, x, y, preference, type) {
+function appendTone(svg, tone, x, y, preference, rootPitchClass, type) {
   const noteName = tone.noteName || chromaticName(tone.pitchClass, preference);
+  const interval = (tone.pitchClass - rootPitchClass + 12) % 12;
+  const toneStrength = Math.round(100 - interval * 7.5);
   const classes = ["fret-note", "fretboard-tone", `${type}-tone`];
   if (tone.isSelected) classes.push("selected");
   if (tone.isRoot) classes.push("root");
@@ -90,6 +92,8 @@ function appendTone(svg, tone, x, y, preference, type) {
     "data-midi": tone.midi,
     "data-string": tone.string,
     "data-fret": tone.fret,
+    "data-interval": interval,
+    style: `--tone-strength: ${toneStrength}%`,
     role: "button",
     tabindex: "0",
     "aria-pressed": String(tone.isSelected),

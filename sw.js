@@ -25,6 +25,7 @@ const APP_SHELL = [
   "js/notation-renderer.js",
   "js/pitch.js",
   "js/playback-interactions.js",
+  "js/scale-board.js",
   "js/scales.js",
   "js/state.js",
   "js/storage.js",

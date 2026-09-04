@@ -1,15 +1,16 @@
-import { renderChordBoard } from "./fretboard-renderer.js";
+import { renderChordBoard, renderScaleBoard } from "./fretboard-renderer.js";
 import { generateNotes } from "./mapping.js";
 import { renderNotation } from "./notation-renderer.js";
 import { CHORD_QUALITIES, generateChordBoardNotes, hasChordVoicing } from "./chords.js";
 import { INSTRUMENTS, getInstrument } from "./instruments.js";
-import { KEYS, SCALES, getKey, getScale, keySignatureFor } from "./scales.js";
+import { CHROMATIC_SCALE, KEYS, SCALES, getKey, getScale, keySignatureFor } from "./scales.js";
 import { stateFromSources, stateToSearchParams } from "./state.js";
 import { loadStoredState, saveStoredState } from "./storage.js";
 import { BUILT_IN_TUNINGS } from "./tunings.js";
 import { AudioPlayer } from "./audio/player.js";
 import { BANJO_PROFILE, GUITAR_PROFILE } from "./audio/synth.js";
 import { crossedStrings, selectTone, selectedFretsFromVoicing } from "./playback-interactions.js";
+import { generateScaleBoardNotes } from "./scale-board.js";
 
 const form = document.querySelector("#settings-form");
 const instrumentSelect = document.querySelector("#instrument");
@@ -21,6 +22,8 @@ const chordQualitySelect = document.querySelector("#chord-quality");
 const notationOutput = document.querySelector("#notation-output");
 const fretboardOutput = document.querySelector("#fretboard-output");
 const tunings = [...BUILT_IN_TUNINGS];
+const FRETBOARD_SCALES = [...SCALES, CHROMATIC_SCALE];
+const scaleOptionValue = (scale) => `scale:${scale.id}`;
 
 function tuningsFor(instrumentId) {
   return tunings.filter((tuning) => tuning.instrument === instrumentId);
@@ -30,7 +33,7 @@ populateSelect(instrumentSelect, INSTRUMENTS.map((instrument) => ({ value: instr
 populateSelect(keySelect, KEYS.map((key) => ({ value: key.value, label: key.label })));
 populateSelect(scaleSelect, SCALES.map((scale) => ({ value: scale.id, label: scale.name })));
 populateSelect(chordRootSelect, KEYS.map((key) => ({ value: key.value, label: key.label })));
-populateSelect(chordQualitySelect, CHORD_QUALITIES.map((quality) => ({ value: quality.id, label: quality.label })));
+populateFretboardPatterns();
 
 let state = stateFromSources(loadStoredState(), new URLSearchParams(location.search), {
   instruments: INSTRUMENTS.map((instrument) => instrument.id),
@@ -38,12 +41,12 @@ let state = stateFromSources(loadStoredState(), new URLSearchParams(location.sea
   keys: KEYS.map((key) => key.value),
   scales: SCALES.map((scale) => scale.id),
   chordRoots: KEYS.map((key) => key.value),
-  chordQualities: CHORD_QUALITIES.map((quality) => quality.id)
+  chordQualities: [...CHORD_QUALITIES.map((quality) => quality.id), ...FRETBOARD_SCALES.map(scaleOptionValue)]
 });
 let audioPlayer = createAudioPlayer(state.instrument);
 let selectedFretsByString = new Map();
 let selectedTonesByString = new Map();
-let chordSelectionKey = "";
+let fretboardSelectionKey = "";
 let strumGesture = null;
 let suppressClicksUntil = 0;
 if (!tuningsFor(state.instrument).some((tuning) => tuning.id === state.tuning)) {
@@ -101,13 +104,13 @@ function selectAndPlayFretboardTone(element) {
 
 function handleFretboardClick(event) {
   if (performance.now() < suppressClicksUntil) return;
-  const tone = event.target.closest(".chord-tone");
+  const tone = event.target.closest(".fretboard-tone");
   if (tone) selectAndPlayFretboardTone(tone);
 }
 
 function handleFretboardKeydown(event) {
   if (event.key !== "Enter" && event.key !== " ") return;
-  const tone = event.target.closest(".chord-tone");
+  const tone = event.target.closest(".fretboard-tone");
   if (!tone) return;
   event.preventDefault();
   selectAndPlayFretboardTone(tone);
@@ -120,7 +123,7 @@ function svgX(svg, clientX) {
 
 function handleStrumStart(event) {
   if (!event.isPrimary || event.button !== 0) return;
-  const svg = event.target.closest(".chord-board");
+  const svg = event.target.closest(".fretboard-board");
   if (!svg) return;
   const stringPositions = new Map([...svg.querySelectorAll(".string-line")].map((line) => [
     Number(line.dataset.string),
@@ -185,6 +188,16 @@ function populateSelect(select, options) {
   select.replaceChildren(...options.map(({ value, label }) => new Option(label, value)));
 }
 
+function populateFretboardPatterns() {
+  const chordGroup = document.createElement("optgroup");
+  chordGroup.label = "Chords";
+  chordGroup.append(...CHORD_QUALITIES.map((quality) => new Option(quality.label, quality.id)));
+  const scaleGroup = document.createElement("optgroup");
+  scaleGroup.label = "Scales";
+  scaleGroup.append(...FRETBOARD_SCALES.map((scale) => new Option(scale.name, scaleOptionValue(scale))));
+  chordQualitySelect.replaceChildren(chordGroup, scaleGroup);
+}
+
 function writeForm(values) {
   for (const [key, value] of Object.entries(values)) {
     const controls = form.elements.namedItem(key);
@@ -220,11 +233,12 @@ function updateFromForm() {
 
 function updateChordOptionAvailability(tuning) {
   for (const option of chordRootSelect.options) {
-    option.disabled = CHORD_QUALITIES.every((quality) => !hasChordVoicing(tuning, getKey(option.value).pitchClass, quality.id));
+    option.disabled = !state.chordQuality.startsWith("scale:")
+      && CHORD_QUALITIES.every((quality) => !hasChordVoicing(tuning, getKey(option.value).pitchClass, quality.id));
   }
   const chordRootPitchClass = getKey(state.chordRoot).pitchClass;
   for (const option of chordQualitySelect.options) {
-    option.disabled = !hasChordVoicing(tuning, chordRootPitchClass, option.value);
+    option.disabled = !option.value.startsWith("scale:") && !hasChordVoicing(tuning, chordRootPitchClass, option.value);
   }
 }
 
@@ -235,22 +249,32 @@ function render() {
   const key = getKey(state.key);
   const scale = getScale(state.scale);
   const chordRoot = getKey(state.chordRoot);
-  const chordQuality = CHORD_QUALITIES.find((quality) => quality.id === state.chordQuality);
+  const scaleId = state.chordQuality.startsWith("scale:") ? state.chordQuality.slice(6) : null;
+  const fretboardScale = scaleId ? FRETBOARD_SCALES.find((item) => item.id === scaleId) : null;
+  const chordQuality = scaleId ? null : CHORD_QUALITIES.find((quality) => quality.id === state.chordQuality);
   const title = `${instrument.name} — ${tuning.name} — ${key.value} ${scale.name} — Frets 0–${state.maxFret}`;
   const fretboardTitle = `${instrument.name} — ${tuning.name}`;
   const notes = generateNotes({ ...state, tuning, key, scale });
   updateChordOptionAvailability(tuning);
-  const nextSelectionKey = `${tuning.id}:${chordRoot.pitchClass}:${chordQuality.id}`;
-  if (nextSelectionKey !== chordSelectionKey) {
-    const initialBoard = generateChordBoardNotes(tuning, chordRoot.pitchClass, chordQuality.id);
-    selectedFretsByString = selectedFretsFromVoicing(initialBoard.voicing);
-    chordSelectionKey = nextSelectionKey;
+  const nextSelectionKey = `${tuning.id}:${chordRoot.pitchClass}:${state.chordQuality}`;
+  if (nextSelectionKey !== fretboardSelectionKey) {
+    if (fretboardScale) {
+      selectedFretsByString = new Map();
+    } else {
+      const initialBoard = generateChordBoardNotes(tuning, chordRoot.pitchClass, chordQuality.id);
+      selectedFretsByString = selectedFretsFromVoicing(initialBoard.voicing);
+    }
+    fretboardSelectionKey = nextSelectionKey;
   }
-  const chordBoard = generateChordBoardNotes(tuning, chordRoot.pitchClass, chordQuality.id, { selectedFretsByString });
-  selectedTonesByString = new Map(chordBoard.tones.filter((tone) => tone.isSelected).map((tone) => [tone.string, tone]));
+  const fretboardBoard = fretboardScale
+    ? generateScaleBoardNotes(tuning, chordRoot, fretboardScale, { selectedFretsByString })
+    : generateChordBoardNotes(tuning, chordRoot.pitchClass, chordQuality.id, { selectedFretsByString });
+  selectedTonesByString = new Map(fretboardBoard.tones.filter((tone) => tone.isSelected).map((tone) => [tone.string, tone]));
 
   notationOutput.replaceChildren(renderNotation(notes, title, { ...state, tuning, keySignature: keySignatureFor(key, scale), clef: instrument.clef }));
-  fretboardOutput.replaceChildren(renderChordBoard(chordBoard, fretboardTitle, tuning, chordRoot, chordQuality));
+  fretboardOutput.replaceChildren(fretboardScale
+    ? renderScaleBoard(fretboardBoard, fretboardTitle, tuning, chordRoot, fretboardScale)
+    : renderChordBoard(fretboardBoard, fretboardTitle, tuning, chordRoot, chordQuality));
   notationOutput.hidden = state.view === "fretboard";
   fretboardOutput.hidden = state.view === "notation";
   document.querySelector("#chord-root-control").hidden = state.view !== "fretboard";

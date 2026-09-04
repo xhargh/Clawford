@@ -1,8 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { renderChordBoard } from "../js/fretboard-renderer.js";
+import { renderChordBoard, renderScaleBoard } from "../js/fretboard-renderer.js";
 import { generateChordBoardNotes } from "../js/chords.js";
-import { getKey, chromaticName } from "../js/scales.js";
+import { generateScaleBoardNotes } from "../js/scale-board.js";
+import { getKey, getScale, chromaticName } from "../js/scales.js";
 import { BUILT_IN_TUNINGS } from "../js/tunings.js";
 
 class SvgNode {
@@ -89,4 +90,16 @@ test("spells chord tones using the root's preferred accidentals", () => {
   const names = elements.filter((node) => node.name === "g" && node.attributes.class?.includes("selected")).map((node) => node.children.find((child) => child.name === "text")?.textContent);
   assert.ok(names.some((name) => name === "Bb"));
   assert.equal(chromaticName(flatRoot.pitchClass, flatRoot.preference), "Bb");
+});
+
+test("renders a scale with selectable tones and a scale-specific label", () => {
+  const scale = getScale("major");
+  const board = generateScaleBoardNotes(openG, root, scale);
+  const svg = renderScaleBoard(board, "Open G", openG, root, scale);
+  const elements = descendants(svg);
+  const tones = elements.filter((node) => node.attributes.class?.includes("scale-tone"));
+
+  assert.ok(svg.attributes["aria-label"].includes("G Major scale"));
+  assert.equal(tones.filter((node) => node.attributes.class.includes("selected")).length, 4);
+  assert.ok(tones.every((node) => node.attributes.class.includes("fretboard-tone")));
 });

@@ -15,10 +15,17 @@ export function renderChordBoard(board, title, tuning, root, quality) {
   const strings = tuning.strings.filter((string) => string.kind !== "drone").map((string) => string.number);
   const chordLabel = `${root.label.split(" ")[0]}${quality.symbol}`;
 
-  return renderVertical(strings, displayMaxFret, tones, voicing, title, tuning, chordLabel, root.preference);
+  return renderVertical(strings, displayMaxFret, tones, title, tuning, chordLabel, root.preference, { voicing });
 }
 
-function renderVertical(strings, displayMaxFret, tones, voicing, title, tuning, chordLabel, preference) {
+export function renderScaleBoard(board, title, tuning, root, scale) {
+  const strings = tuning.strings.filter((string) => string.kind !== "drone").map((string) => string.number);
+  const scaleLabel = `${root.value} ${scale.name}`;
+  return renderVertical(strings, board.displayMaxFret, board.tones, title, tuning, scaleLabel, root.preference, { type: "scale" });
+}
+
+function renderVertical(strings, displayMaxFret, tones, title, tuning, label, preference, options = {}) {
+  const { type = "chord", voicing = true } = options;
   const leftX = 65;
   const stringGap = 52;
   const rightX = leftX + Math.max(1, strings.length - 1) * stringGap;
@@ -30,11 +37,11 @@ function renderVertical(strings, displayMaxFret, tones, voicing, title, tuning, 
   const fretHeight = boardHeight / displayMaxFret;
   const width = rightX + 70;
   const height = bottomY + 40;
-  const svg = element("svg", { class: "fretboard-svg chord-board vertical", viewBox: `0 0 ${width} ${height}`, role: "group", "aria-label": `${chordLabel} chord shape on ${title}. Select one tone per string, then swipe across the strings to strum.`, xmlns: NS });
-  svg.append(element("text", { x: 20, y: 29, class: "diagram-title" }, `${title} — ${chordLabel}`));
+  const svg = element("svg", { class: "fretboard-svg fretboard-board chord-board vertical", viewBox: `0 0 ${width} ${height}`, role: "group", "aria-label": `${label} ${type} on ${title}. Select one tone per string, then swipe across the strings to strum.`, xmlns: NS });
+  svg.append(element("text", { x: 20, y: 29, class: "diagram-title" }, `${title} — ${label}`));
 
   if (!voicing) {
-    svg.append(element("text", { x: 20, y: 55, class: "no-shape-message" }, `No complete ${chordLabel} shape found within 12 frets for this tuning.`));
+    svg.append(element("text", { x: 20, y: 55, class: "no-shape-message" }, `No complete ${label} shape found within 12 frets for this tuning.`));
     return svg;
   }
 
@@ -66,14 +73,14 @@ function renderVertical(strings, displayMaxFret, tones, voicing, title, tuning, 
   for (const tone of tones) {
     const x = xForString.get(tone.string);
     const y = tone.isOpen ? openY : topY + (tone.fret - 0.5) * fretHeight;
-    appendTone(svg, tone, x, y, preference);
+    appendTone(svg, tone, x, y, preference, type);
   }
   return svg;
 }
 
-function appendTone(svg, tone, x, y, preference) {
-  const noteName = chromaticName(tone.pitchClass, preference);
-  const classes = ["fret-note", "chord-tone"];
+function appendTone(svg, tone, x, y, preference, type) {
+  const noteName = tone.noteName || chromaticName(tone.pitchClass, preference);
+  const classes = ["fret-note", "fretboard-tone", `${type}-tone`];
   if (tone.isSelected) classes.push("selected");
   if (tone.isRoot) classes.push("root");
   if (tone.isOpen) classes.push("open");

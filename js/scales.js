@@ -7,6 +7,8 @@ export const SCALES = [
   { id: "dorian", name: "Dorian", intervals: [0, 2, 3, 5, 7, 9, 10] }
 ];
 
+export const CHROMATIC_SCALE = { id: "chromatic", name: "Chromatic", intervals: Array.from({ length: 12 }, (_, index) => index) };
+
 export const KEYS = [
   { value: "C", label: "C", pitchClass: 0, preference: "sharp" },
   { value: "Db", label: "C# / Db", pitchClass: 1, preference: "flat" },

@@ -453,9 +453,9 @@ The diagram does not need rhythm notation.
 
 ## 14. Alternative fretboard view
 
-In addition to the staff translation diagram, provide a **fretboard chord finder view**.
+In addition to the staff translation diagram, provide a **fretboard chord and scale view**.
 
-It is a dedicated chord-shape finder, not a scale map. Given a chord Root and Chord quality, it shows:
+For a chord Root and Chord quality, it shows:
 
 - strings 4 through 1 (the fifth drone string is excluded),
 - open-string tuning labels beside each string, e.g. `1 - D`,
@@ -464,11 +464,13 @@ It is a dedicated chord-shape finder, not a scale map. Given a chord Root and Ch
 
 Root: 12 combined enharmonic pitch classes (reusing the Key list). Chord quality: major, minor, 5 (power chord), dominant 7, major 7, minor 7, diminished, augmented, sus2, sus4.
 
+The same picker also includes every scale available in Notation view plus Chromatic. A scale map shows every matching tone through fret 5, with the tonic distinguished. One tone per string is selected for playback, initially the lowest available tone; selecting another tone replaces it, and swiping across the strings plays the selected tones. Root controls the tonic and note spelling for every scale, including Chromatic.
+
 The lowest voicing is the complete four-string shape (every chord tone present, duplicates allowed, no foreign tones) that minimizes, in order: the highest fret used, then the fretted-note span, then the total fret distance. Inversions are allowed — the bass note need not be the root.
 
 The board always starts at fret 1 and grows rightward to include the shape's highest fret, up to a search cap of fret 12. If no complete voicing exists within 12 frets for the active tuning, that specific Root/Chord combination is disabled in its control, and selecting it directly shows a "no shape found" message instead of a fret grid.
 
-Defaults to G major and persists (including in the URL) independently of the Notation view's Key/Scale selection. Chord controls only appear when the Fretboard view is active; conversely, Key and Scale only appear when the Notation view is active.
+Defaults to G major and persists (including in the URL) independently of the Notation view's Key/Scale selection. Fretboard controls only appear when the Fretboard view is active; conversely, Key and Scale only appear when the Notation view is active.
 
 Suggested view selector:
 
@@ -484,7 +486,7 @@ Default: `Notation`.
 - Tuning
 - Key and Scale (visible only in Notation view)
 - View mode
-- Chord Root and Chord quality (visible only in Fretboard view)
+- Root and Chord / Scale (visible only in Fretboard view)
 
 There is no Advanced section. Removed settings remain fixed at their defaults: fret 5 maximum, fifth string excluded, all positions shown, scale notes only, automatic range, written pitch, key-based spelling, normal staff size, octave/degree labels hidden, and String columns notation layout.
 

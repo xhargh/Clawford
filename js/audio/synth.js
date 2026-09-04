@@ -1,6 +1,3 @@
-// Adapted with permission from BanjoTabTs's MIT-licensed audio synthesis code.
-// See this repository's LICENSE.
-
 export const BANJO_PROFILE = Object.freeze({
   name: "banjo",
   strings: Object.freeze([

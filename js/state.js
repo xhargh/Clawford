@@ -16,6 +16,8 @@ export const DEFAULT_STATE = {
   showOctave: false,
   showDegree: false,
   view: "notation",
+  tunerMode: "chromatic",
+  tunerA4: 440,
   pitchDisplay: "written",
   fifthNumbering: "physical",
   spelling: "key",
@@ -25,8 +27,8 @@ export const DEFAULT_STATE = {
   chordQuality: "major"
 };
 
-const ENUMS = { view: ["notation", "fretboard"] };
-const USER_SETTINGS = new Set(["instrument", "tuning", "key", "scale", "view", "chordRoot", "chordQuality"]);
+const ENUMS = { view: ["notation", "fretboard", "tuner"], tunerMode: ["chromatic", "tuning"] };
+const USER_SETTINGS = new Set(["instrument", "tuning", "key", "scale", "view", "tunerMode", "tunerA4", "chordRoot", "chordQuality"]);
 
 export function stateFromSources(stored, searchParams, validValues) {
   const state = { ...DEFAULT_STATE };
@@ -43,6 +45,7 @@ function applyObject(state, source, validValues) {
     if (!(key in source)) continue;
     const raw = source[key];
     if (ENUMS[key]?.includes(raw)) state[key] = raw;
+    else if (key === "tunerA4" && Number.isFinite(Number(raw)) && Number(raw) >= 400 && Number(raw) <= 480) state[key] = Number(raw);
     else if (key === "instrument" && validValues.instruments.includes(raw)) state[key] = raw;
     else if (key === "tuning" && validValues.tunings.includes(raw)) state[key] = raw;
     else if (key === "key" && validValues.keys.includes(raw)) state[key] = raw;

@@ -42,3 +42,26 @@ export function splitNoteName(name) {
   const match = /^([A-G])([#b]*)$/.exec(name);
   return match ? { letter: match[1], accidental: match[2] } : null;
 }
+
+export function noteToFrequency(note, { a4 = 440 } = {}) {
+  validateA4(a4);
+  const midi = pitchToMidi(note);
+  return a4 * 2 ** ((midi - 69) / 12);
+}
+
+export function frequencyToNote(frequency, { a4 = 440, preference = "sharp" } = {}) {
+  validateA4(a4);
+  if (!Number.isFinite(frequency) || frequency <= 0) throw new Error(`Invalid frequency: ${frequency}`);
+  const midi = Math.round(69 + 12 * Math.log2(frequency / a4));
+  return { midi, note: midiToPitch(midi, preference), frequency: noteToFrequency(midi, { a4 }) };
+}
+
+export function centsOffset(frequency, target, { a4 = 440 } = {}) {
+  validateA4(a4);
+  if (!Number.isFinite(frequency) || frequency <= 0) throw new Error(`Invalid frequency: ${frequency}`);
+  return 1200 * Math.log2(frequency / noteToFrequency(target, { a4 }));
+}
+
+function validateA4(a4) {
+  if (!Number.isFinite(a4) || a4 <= 0) throw new Error(`Invalid A4 frequency: ${a4}`);
+}

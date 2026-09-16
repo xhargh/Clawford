@@ -38,6 +38,21 @@ test("rejects the removed combined view", () => {
   assert.equal(state.view, "notation");
 });
 
+test("accepts the tuner view", () => {
+  const state = stateFromSources(null, new URLSearchParams("view=tuner"), validValues);
+  assert.equal(state.view, "tuner");
+});
+
+test("validates and persists tuner settings", () => {
+  const state = stateFromSources({ tunerMode: "tuning", tunerA4: 442 }, new URLSearchParams(), validValues);
+  assert.equal(state.tunerMode, "tuning");
+  assert.equal(state.tunerA4, 442);
+
+  const params = stateToSearchParams({ ...DEFAULT_STATE, tunerMode: "tuning", tunerA4: 442 });
+  assert.equal(params.get("tunerMode"), "tuning");
+  assert.equal(params.get("tunerA4"), "442");
+});
+
 test("persists chord root and quality independently from key/scale", () => {
   const withChordValidValues = { ...validValues, chordRoots: ["G", "C"], chordQualities: ["major", "dom7"] };
   const state = stateFromSources(null, new URLSearchParams("chordRoot=C&chordQuality=dom7"), withChordValidValues);

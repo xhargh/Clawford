@@ -17,6 +17,8 @@ import { selectTunerTarget, selectTunerTargets } from "./tuner.js";
 import { renderTunerOutput } from "./tuner-renderer.js";
 import { viewControlVisibility } from "./view-controls.js";
 import { TunerLifecycle } from "./tuner-lifecycle.js";
+import { Metronome } from "./metronome.js";
+import { renderMetronomeOutput } from "./metronome-renderer.js";
 
 const form = document.querySelector("#settings-form");
 const instrumentSelect = document.querySelector("#instrument");
@@ -28,7 +30,10 @@ const chordQualitySelect = document.querySelector("#chord-quality");
 const notationOutput = document.querySelector("#notation-output");
 const fretboardOutput = document.querySelector("#fretboard-output");
 const tunerOutput = document.querySelector("#tuner-output");
+const metronomeOutput = document.querySelector("#metronome-output");
 const tunerControls = document.querySelector("#tuner-controls");
+const metronomeControls = document.querySelector("#metronome-controls");
+const generalControls = document.querySelector("#general-controls");
 const tunerInputDevice = document.querySelector("#tuner-input-device");
 const tunerStart = document.querySelector("#tuner-start");
 const tunerStop = document.querySelector("#tuner-stop");
@@ -64,6 +69,9 @@ let tunerAnimationFrame = null;
 let tunerStabilizer = new PitchStabilizer();
 let tunerReading = null;
 let tunerError = "";
+let metronomeBeat = 0;
+let metronomeError = "";
+const metronome = new Metronome({ onBeat: (beat) => { metronomeBeat = beat; renderMetronome(); } });
 const tunerLifecycle = new TunerLifecycle({
   createSession: createMicrophoneSession,
   onStarted: (session) => {
@@ -92,6 +100,10 @@ form.addEventListener("input", updateFromForm);
 tunerInputDevice.addEventListener("change", handleTunerInputDeviceChange);
 tunerStart.addEventListener("click", startTuner);
 tunerStop.addEventListener("click", () => { void stopTuner(); });
+metronomeOutput.addEventListener("click", (event) => {
+  if (event.target.closest("#metronome-start")) void startMetronome();
+  if (event.target.closest("#metronome-stop")) stopMetronome();
+});
 notationOutput.addEventListener("click", handleNotationClick);
 notationOutput.addEventListener("keydown", handleNotationKeydown);
 fretboardOutput.addEventListener("click", handleFretboardClick);
@@ -102,7 +114,7 @@ fretboardOutput.addEventListener("pointerup", handleStrumEnd);
 fretboardOutput.addEventListener("pointercancel", handleStrumEnd);
 window.addEventListener("resize", scheduleDiagramFit);
 window.addEventListener("orientationchange", scheduleDiagramFit);
-window.addEventListener("pagehide", () => { void stopTuner(); });
+window.addEventListener("pagehide", () => { void stopTuner(); stopMetronome(); });
 document.addEventListener("visibilitychange", handleVisibilityChange);
 
 function createAudioPlayer(instrumentId) {
@@ -238,12 +250,14 @@ function writeForm(values) {
     const controls = form.elements.namedItem(key);
     if (!controls) continue;
     if (controls instanceof RadioNodeList) controls.value = String(value);
+    else if (controls.type === "checkbox") controls.checked = Boolean(value);
     else controls.value = String(value);
   }
 }
 
 function updateFromForm() {
   const previousView = state.view;
+  const previousMetronome = state;
   const data = new FormData(form);
   const tunerA4 = Number(data.get("tunerA4"));
   const tunerA4Input = form.elements.namedItem("tunerA4");
@@ -261,6 +275,11 @@ function updateFromForm() {
     view: data.get("view"),
     tunerMode: data.get("tunerMode"),
     tunerA4: validTunerA4 ? tunerA4 : state.tunerA4,
+    metronomeBpm: validMetronomeBpm(data.get("metronomeBpm")) ? Number(data.get("metronomeBpm")) : state.metronomeBpm,
+    metronomeNumerator: validMetronomeNumerator(data.get("metronomeNumerator")) ? Number(data.get("metronomeNumerator")) : state.metronomeNumerator,
+    metronomeDenominator: Number(data.get("metronomeDenominator")),
+    metronomeFirstAccent: data.get("metronomeFirstAccent") === "on",
+    metronomeOddAccent: data.get("metronomeOddAccent") === "on",
     chordRoot: data.get("chordRoot"),
     chordQuality: data.get("chordQuality")
   };
@@ -271,11 +290,13 @@ function updateFromForm() {
     writeForm(state);
   }
   if (previousView === "tuner" && state.view !== "tuner") void stopTuner();
+  if (previousView === "metronome" && state.view !== "metronome") stopMetronome();
   if (previousView !== "tuner" && state.view === "tuner") {
     void loadInputDevices();
     void tunerLifecycle.enter();
   }
   render();
+  if (state.view === "metronome" && metronome.running && ["metronomeBpm", "metronomeNumerator", "metronomeDenominator", "metronomeFirstAccent", "metronomeOddAccent"].some((key) => state[key] !== previousMetronome[key])) void startMetronome();
 }
 
 function updateChordOptionAvailability(tuning) {
@@ -325,18 +346,55 @@ function render() {
   notationOutput.hidden = state.view !== "notation";
   fretboardOutput.hidden = state.view !== "fretboard";
   tunerOutput.hidden = state.view !== "tuner";
+  metronomeOutput.hidden = state.view !== "metronome";
   tunerControls.hidden = state.view !== "tuner";
+  metronomeControls.hidden = state.view !== "metronome";
   document.querySelector("#chord-root-control").hidden = state.view !== "fretboard";
   document.querySelector("#chord-quality-control").hidden = state.view !== "fretboard";
   const hiddenControls = viewControlVisibility(state.view);
+  generalControls.hidden = state.view === "metronome";
+  document.querySelector("#instrument-control").hidden = hiddenControls.instrument;
+  document.querySelector("#tuning-control").hidden = hiddenControls.tuning;
   document.querySelector("#key-control").hidden = hiddenControls.key;
   document.querySelector("#scale-control").hidden = hiddenControls.scale;
-  document.title = `${key.value} ${scale.name} — Clawford`;
+  document.title = state.view === "metronome" ? "Metronome — Clawford" : `${key.value} ${scale.name} — Clawford`;
   renderTuner(tuning);
+  renderMetronome();
   saveStoredState(state);
   const query = stateToSearchParams(state).toString();
   history.replaceState(null, "", `${location.pathname}${query ? `?${query}` : ""}`);
   scheduleDiagramFit();
+}
+
+function renderMetronome() {
+  metronomeOutput.innerHTML = renderMetronomeOutput({ beat: metronomeBeat, numerator: state.metronomeNumerator, running: metronome.running, error: metronomeError });
+}
+
+async function startMetronome() {
+  metronomeError = "";
+  metronomeBeat = 0;
+  try {
+    await metronome.start({ bpm: state.metronomeBpm, numerator: state.metronomeNumerator, denominator: state.metronomeDenominator, firstBeatAccent: state.metronomeFirstAccent, oddBeatAccent: state.metronomeOddAccent });
+  } catch (error) {
+    metronomeError = error.message || "Unable to start metronome";
+  }
+  renderMetronome();
+}
+
+function stopMetronome() {
+  metronome.stop();
+  metronomeBeat = 0;
+  renderMetronome();
+}
+
+function validMetronomeBpm(value) {
+  const number = Number(value);
+  return Number.isInteger(number) && number >= 30 && number <= 300;
+}
+
+function validMetronomeNumerator(value) {
+  const number = Number(value);
+  return Number.isInteger(number) && number >= 1 && number <= 12;
 }
 
 function renderTuner(tuning) {
@@ -401,11 +459,14 @@ async function handleVisibilityChange() {
     if (tunerAnimationFrame !== null) cancelAnimationFrame(tunerAnimationFrame);
     tunerAnimationFrame = null;
     await tunerLifecycle.session?.suspend();
+    await metronome.suspend();
     return;
   }
-  if (tunerLifecycle.session?.state !== "running") return;
-  await tunerLifecycle.session.resume();
-  readTunerFrame();
+  if (tunerLifecycle.session?.state === "running") {
+    await tunerLifecycle.session.resume();
+    readTunerFrame();
+  }
+  await metronome.resume();
 }
 
 function readTunerFrame(session = tunerLifecycle.session) {

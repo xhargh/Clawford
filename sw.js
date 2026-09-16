@@ -34,6 +34,8 @@ const APP_SHELL = [
   "js/tunings.js",
   "js/tuner.js",
   "js/tuner-lifecycle.js",
+  "js/metronome.js",
+  "js/metronome-renderer.js",
   "js/tuner-renderer.js",
   "js/view-controls.js",
   "img/clawford-16.png",

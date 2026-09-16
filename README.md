@@ -32,6 +32,7 @@ Double-check every note before relying on it.
 - Multiple tunings per instrument.
 - Key/scale selection, or chord root/quality selection.
 - Notation view and fretboard view, with vertical or horizontal orientation.
+- Metronome with BPM, meter, first-beat accent, odd-beat accents, and visual beat indication.
 - Print-friendly output (separate print stylesheet).
 - Runs entirely in the browser — no server or build step required.
 - Installable as a PWA with offline support (see [PWA support](#pwa-support)).
@@ -72,6 +73,8 @@ js/
   mapping.js                Note <-> string/fret mapping logic
   pitch.js                  Pitch parsing/formatting utilities
   scales.js                 Scale definitions and logic
+  metronome.js              Metronome timing and audio
+  metronome-renderer.js     Metronome beat display
   state.js                  Application state management
   storage.js                Persisted user settings
 tests/                      Unit tests (node:test)

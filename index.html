@@ -36,11 +36,14 @@
             <label><input type="radio" name="view" value="notation"> Notation</label>
             <label><input type="radio" name="view" value="fretboard"> Fretboard</label>
             <label><input type="radio" name="view" value="tuner"> Tuner</label>
+            <label><input type="radio" name="view" value="metronome"> Metronome</label>
           </fieldset>
-          <label>Instrument<select id="instrument" name="instrument"></select></label>
-          <label>Tuning<select id="tuning" name="tuning"></select></label>
-          <label id="key-control">Key<select id="key" name="key"></select></label>
-          <label id="scale-control">Scale<select id="scale" name="scale"></select></label>
+          <div id="general-controls" class="general-controls">
+            <label id="instrument-control">Instrument<select id="instrument" name="instrument"></select></label>
+            <label id="tuning-control">Tuning<select id="tuning" name="tuning"></select></label>
+            <label id="key-control">Key<select id="key" name="key"></select></label>
+            <label id="scale-control">Scale<select id="scale" name="scale"></select></label>
+          </div>
           <label id="chord-root-control">Root<select id="chord-root" name="chordRoot"></select></label>
           <label id="chord-quality-control">Chord / Scale<select id="chord-quality" name="chordQuality"></select></label>
           <fieldset id="tuner-controls" class="tuner-controls full-control" hidden>
@@ -51,8 +54,16 @@
             <label class="tuner-a4-control" for="tuner-a4">A4 calibration (Hz)<input id="tuner-a4" name="tunerA4" type="number" min="400" max="480" step="1" inputmode="decimal" required></label>
             <div class="tuner-actions">
               <button id="tuner-start" type="button">Start microphone</button>
-              <button id="tuner-stop" type="button" disabled>Stop</button>
+            <button id="tuner-stop" type="button" disabled>Stop</button>
             </div>
+          </fieldset>
+          <fieldset id="metronome-controls" class="metronome-controls full-control" hidden>
+            <legend>Metronome</legend>
+            <label>BPM<input id="metronome-bpm" name="metronomeBpm" type="number" min="30" max="300" step="1" inputmode="numeric" required></label>
+            <label>Beats per measure<input id="metronome-numerator" name="metronomeNumerator" type="number" min="1" max="12" step="1" inputmode="numeric" required></label>
+            <label>Beat value<select id="metronome-denominator" name="metronomeDenominator"><option value="2">Half note</option><option value="4">Quarter note</option><option value="8">Eighth note</option><option value="16">Sixteenth note</option></select></label>
+            <label><input type="checkbox" name="metronomeFirstAccent"> Accent first beat</label>
+            <label><input type="checkbox" name="metronomeOddAccent"> Accent odd beats</label>
           </fieldset>
         </div>
       </form>
@@ -63,6 +74,7 @@
       <div id="notation-output" class="diagram-frame"></div>
       <div id="fretboard-output" class="diagram-frame"></div>
       <div id="tuner-output" class="tuner-output" hidden></div>
+      <div id="metronome-output" class="metronome-output" hidden></div>
     </section>
   </main>
   <script type="module" src="js/app.js"></script>

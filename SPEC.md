@@ -476,6 +476,8 @@ Suggested view selector:
 
 - `Notation`
 - `Fretboard`
+- `Tuner`
+- `Metronome`
 
 Default: `Notation`.
 
@@ -487,6 +489,7 @@ Default: `Notation`.
 - Key and Scale (visible only in Notation view)
 - View mode
 - Root and Chord / Scale (visible only in Fretboard view)
+- BPM, meter, first-beat accent, and odd-beat accent (visible only in Metronome view)
 
 There is no Advanced section. Removed settings remain fixed at their defaults: fret 5 maximum, fifth string excluded, all positions shown, scale notes only, automatic range, written pitch, key-based spelling, normal staff size, octave/degree labels hidden, and String columns notation layout.
 

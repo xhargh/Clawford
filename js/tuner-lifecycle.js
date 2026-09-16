@@ -4,6 +4,7 @@ export class TunerLifecycle {
   #onError;
   #session = null;
   #transition = 0;
+  #stopPromise = null;
 
   constructor({ createSession, onStarted = () => {}, onError = () => {} }) {
     this.#createSession = createSession;
@@ -18,6 +19,8 @@ export class TunerLifecycle {
   async enter() {
     if (this.#session) return;
     const transition = ++this.#transition;
+    if (this.#stopPromise) await this.#stopPromise;
+    if (transition !== this.#transition || this.#session) return;
     const session = this.#createSession();
     this.#session = session;
     try {
@@ -38,11 +41,26 @@ export class TunerLifecycle {
     return this.enter();
   }
 
+  async restart() {
+    await this.leave();
+    return this.enter();
+  }
+
   async leave() {
     ++this.#transition;
     const session = this.#session;
     this.#session = null;
-    await session?.stop();
+    const previousStop = this.#stopPromise;
+    const stopPromise = (async () => {
+      await previousStop;
+      await session?.stop();
+    })();
+    this.#stopPromise = stopPromise;
+    try {
+      await stopPromise;
+    } finally {
+      if (this.#stopPromise === stopPromise) this.#stopPromise = null;
+    }
   }
 
   stop() {

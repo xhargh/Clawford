@@ -66,9 +66,9 @@ let tunerReading = null;
 let tunerError = "";
 const tunerLifecycle = new TunerLifecycle({
   createSession: createMicrophoneSession,
-  onStarted: () => {
+  onStarted: (session) => {
     render();
-    readTunerFrame();
+    readTunerFrame(session);
   },
   onError: (error) => {
     tunerError = error.message || "Unable to start microphone";
@@ -89,6 +89,7 @@ if (state.view === "tuner") {
 }
 
 form.addEventListener("input", updateFromForm);
+tunerInputDevice.addEventListener("change", handleTunerInputDeviceChange);
 tunerStart.addEventListener("click", startTuner);
 tunerStop.addEventListener("click", () => { void stopTuner(); });
 notationOutput.addEventListener("click", handleNotationClick);
@@ -370,17 +371,28 @@ function createMicrophoneSession() {
 }
 
 async function startTuner() {
-  tunerError = "";
-  tunerReading = null;
-  tunerStabilizer = new PitchStabilizer();
+  resetTunerState();
   await tunerLifecycle.start();
 }
 
-async function stopTuner() {
+async function handleTunerInputDeviceChange() {
+  const restart = state.view === "tuner" && Boolean(tunerLifecycle.session);
+  resetTunerState();
+  if (restart) await tunerLifecycle.restart();
+  render();
+}
+
+function resetTunerState() {
   if (tunerAnimationFrame !== null) cancelAnimationFrame(tunerAnimationFrame);
   tunerAnimationFrame = null;
-  await tunerLifecycle.stop();
+  tunerError = "";
   tunerReading = null;
+  tunerStabilizer = new PitchStabilizer();
+}
+
+async function stopTuner() {
+  resetTunerState();
+  await tunerLifecycle.stop();
   render();
 }
 
@@ -396,12 +408,12 @@ async function handleVisibilityChange() {
   readTunerFrame();
 }
 
-function readTunerFrame() {
-  if (tunerLifecycle.session?.state !== "running") return;
-  const estimate = tunerStabilizer.update(estimatePitch(tunerLifecycle.session.readFrame(), { sampleRate: tunerLifecycle.session.sampleRate }));
+function readTunerFrame(session = tunerLifecycle.session) {
+  if (tunerLifecycle.session !== session || session?.state !== "running") return;
+  const estimate = tunerStabilizer.update(estimatePitch(session.readFrame(), { sampleRate: session.sampleRate }));
   if (!estimate.isSilent && estimate.frequency && estimate.stable) tunerReading = tunerReadingFromFrequency(estimate.frequency);
   render();
-  tunerAnimationFrame = requestAnimationFrame(readTunerFrame);
+  tunerAnimationFrame = requestAnimationFrame(() => readTunerFrame(session));
 }
 
 function tunerReadingFromFrequency(frequency) {

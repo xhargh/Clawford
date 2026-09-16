@@ -35,6 +35,7 @@
             <legend>View</legend>
             <label><input type="radio" name="view" value="notation"> Notation</label>
             <label><input type="radio" name="view" value="fretboard"> Fretboard</label>
+            <label><input type="radio" name="view" value="tuner"> Tuner</label>
           </fieldset>
           <label>Instrument<select id="instrument" name="instrument"></select></label>
           <label>Tuning<select id="tuning" name="tuning"></select></label>
@@ -42,6 +43,16 @@
           <label id="scale-control">Scale<select id="scale" name="scale"></select></label>
           <label id="chord-root-control">Root<select id="chord-root" name="chordRoot"></select></label>
           <label id="chord-quality-control">Chord / Scale<select id="chord-quality" name="chordQuality"></select></label>
+          <fieldset id="tuner-controls" class="tuner-controls full-control" hidden>
+            <legend>Tuner mode</legend>
+            <label><input type="radio" name="tunerMode" value="tuning"> Tuning</label>
+            <label><input type="radio" name="tunerMode" value="chromatic"> Chromatic</label>
+            <label class="tuner-device-control">Input<select id="tuner-input-device"><option value="">Default microphone</option></select></label>
+            <div class="tuner-actions">
+              <button id="tuner-start" type="button">Start microphone</button>
+              <button id="tuner-stop" type="button" disabled>Stop</button>
+            </div>
+          </fieldset>
         </div>
       </form>
     </aside>
@@ -50,6 +61,7 @@
     <section class="output-panel" aria-label="Generated fretted-instrument diagram">
       <div id="notation-output" class="diagram-frame"></div>
       <div id="fretboard-output" class="diagram-frame"></div>
+      <div id="tuner-output" class="tuner-output" hidden></div>
     </section>
   </main>
   <script type="module" src="js/app.js"></script>

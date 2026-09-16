@@ -59,10 +59,35 @@ fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 .segmented input { width: 1px; height: 1px; margin: 0; opacity: 0; }
 .segmented label:has(input:checked) { color: white; border-color: var(--accent); background: var(--accent); }
 .segmented label:has(input:focus-visible) { outline: 3px solid rgb(40 90 69 / 25%); outline-offset: 2px; }
+.tuner-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+.tuner-controls legend, .tuner-device-control, .tuner-actions { grid-column: 1 / -1; }
+.tuner-controls label { display: flex; min-height: 42px; align-items: center; gap: 7px; padding: 8px; border: 1px solid #aeb6ab; border-radius: 3px; background: white; }
+.tuner-controls .tuner-device-control { display: block; padding: 0; border: 0; background: transparent; }
+.tuner-actions { display: flex; gap: 8px; }
+.tuner-actions button { min-height: 42px; padding: 8px 12px; color: white; border: 1px solid var(--accent); border-radius: 3px; background: var(--accent); }
+.tuner-actions button:last-child { color: var(--ink); background: white; }
+.tuner-actions button:disabled { cursor: not-allowed; opacity: .45; }
 
 .diagram-frame { overflow: auto; margin-bottom: 16px; border: 1px solid var(--line); background: white; }
 .diagram-frame:empty { display: none; }
 .diagram-frame svg { display: block; width: auto; height: auto; max-width: 100%; max-height: var(--diagram-fit-height, none); margin: 0 auto; }
+.tuner-output { min-height: 340px; border: 1px solid var(--line); background: #f7f8f2; }
+.tuner-card { display: grid; gap: 28px; max-width: 760px; margin: 0 auto; padding: clamp(28px, 7vw, 72px) clamp(18px, 6vw, 64px); text-align: center; }
+.tuner-reading { display: grid; gap: 4px; }
+.tuner-note { color: var(--accent); font-family: Georgia, serif; font-size: clamp(4rem, 16vw, 8rem); line-height: .9; }
+.tuner-frequency, .tuner-cents { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+.tuner-status { min-height: 1.5em; color: var(--warm); font-weight: 800; }
+.tuner-meter { display: grid; gap: 10px; }
+.tuner-meter-scale { position: relative; display: block; height: 24px; border-radius: 20px; background: linear-gradient(90deg, #d88a68 0 45%, var(--accent) 48% 52%, #d88a68 55% 100%); }
+.tuner-meter-scale::before, .tuner-meter-scale::after { position: absolute; top: 30px; color: var(--muted); font-size: .72rem; }
+.tuner-meter-scale::before { content: "-50"; left: 0; }
+.tuner-meter-scale::after { content: "+50"; right: 0; }
+.tuner-meter-scale i { position: absolute; top: -9px; left: calc(50% + var(--meter-position) * .5); width: 4px; height: 42px; border-radius: 3px; background: var(--ink); transform: translateX(-50%); }
+.tuner-meter-scale b { position: absolute; top: -4px; left: 50%; width: 2px; height: 32px; background: white; }
+.tuner-targets { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.tuner-target { display: grid; gap: 2px; min-width: 72px; padding: 8px; border: 1px solid var(--line); border-radius: 3px; background: white; }
+.tuner-target small { color: var(--muted); font-size: .7rem; }
+.tuner-error { margin: 0; color: var(--warm); font-weight: 700; }
 
 .notation-svg, .fretboard-svg { font-family: Inter, Arial, sans-serif; color: var(--ink); }
 .diagram-title { fill: var(--ink); font-family: Georgia, serif; font-size: 18px; }

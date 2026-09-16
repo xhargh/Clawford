@@ -11,6 +11,11 @@ import { AudioPlayer } from "./audio/player.js";
 import { BANJO_PROFILE, GUITAR_PROFILE } from "./audio/synth.js";
 import { crossedStrings, selectTone, selectedFretsFromVoicing } from "./playback-interactions.js";
 import { generateScaleBoardNotes } from "./scale-board.js";
+import { MicrophoneSession } from "./audio/microphone-session.js";
+import { estimatePitch, PitchStabilizer } from "./audio/pitch-detector.js";
+import { centsOffset, frequencyToNote } from "./pitch.js";
+import { selectTunerTargets } from "./tuner.js";
+import { renderTunerOutput } from "./tuner-renderer.js";
 
 const form = document.querySelector("#settings-form");
 const instrumentSelect = document.querySelector("#instrument");
@@ -21,6 +26,11 @@ const chordRootSelect = document.querySelector("#chord-root");
 const chordQualitySelect = document.querySelector("#chord-quality");
 const notationOutput = document.querySelector("#notation-output");
 const fretboardOutput = document.querySelector("#fretboard-output");
+const tunerOutput = document.querySelector("#tuner-output");
+const tunerControls = document.querySelector("#tuner-controls");
+const tunerInputDevice = document.querySelector("#tuner-input-device");
+const tunerStart = document.querySelector("#tuner-start");
+const tunerStop = document.querySelector("#tuner-stop");
 const tunings = [...BUILT_IN_TUNINGS];
 const FRETBOARD_SCALES = [...SCALES, CHROMATIC_SCALE];
 const scaleOptionValue = (scale) => `scale:${scale.id}`;
@@ -49,6 +59,11 @@ let selectedTonesByString = new Map();
 let fretboardSelectionKey = "";
 let strumGesture = null;
 let suppressClicksUntil = 0;
+let microphoneSession = null;
+let tunerAnimationFrame = null;
+let tunerStabilizer = new PitchStabilizer();
+let tunerReading = null;
+let tunerError = "";
 if (!tuningsFor(state.instrument).some((tuning) => tuning.id === state.tuning)) {
   state = { ...state, tuning: tuningsFor(state.instrument)[0].id };
 }
@@ -57,8 +72,11 @@ writeForm(state);
 
 let fitScheduled = false;
 render();
+if (state.view === "tuner") void loadInputDevices();
 
 form.addEventListener("input", updateFromForm);
+tunerStart.addEventListener("click", startTuner);
+tunerStop.addEventListener("click", () => { void stopTuner(); });
 notationOutput.addEventListener("click", handleNotationClick);
 notationOutput.addEventListener("keydown", handleNotationKeydown);
 fretboardOutput.addEventListener("click", handleFretboardClick);
@@ -69,6 +87,7 @@ fretboardOutput.addEventListener("pointerup", handleStrumEnd);
 fretboardOutput.addEventListener("pointercancel", handleStrumEnd);
 window.addEventListener("resize", scheduleDiagramFit);
 window.addEventListener("orientationchange", scheduleDiagramFit);
+window.addEventListener("pagehide", () => { void stopTuner(); });
 
 function createAudioPlayer(instrumentId) {
   return new AudioPlayer({ profile: instrumentId.startsWith("banjo") ? BANJO_PROFILE : GUITAR_PROFILE });
@@ -208,6 +227,7 @@ function writeForm(values) {
 }
 
 function updateFromForm() {
+  const previousView = state.view;
   const data = new FormData(form);
   const instrument = data.get("instrument");
   const instrumentChanged = instrument !== state.instrument;
@@ -219,6 +239,7 @@ function updateFromForm() {
     key: data.get("key"),
     scale: data.get("scale"),
     view: data.get("view"),
+    tunerMode: data.get("tunerMode"),
     chordRoot: data.get("chordRoot"),
     chordQuality: data.get("chordQuality")
   };
@@ -228,6 +249,8 @@ function updateFromForm() {
     populateSelect(tuningSelect, tuningsFor(instrument).map((item) => ({ value: item.id, label: `${item.name} (${item.shortName})` })));
     writeForm(state);
   }
+  if (previousView === "tuner" && state.view !== "tuner") void stopTuner();
+  if (state.view === "tuner") void loadInputDevices();
   render();
 }
 
@@ -275,15 +298,93 @@ function render() {
   fretboardOutput.replaceChildren(fretboardScale
     ? renderScaleBoard(fretboardBoard, fretboardTitle, tuning, chordRoot, fretboardScale)
     : renderChordBoard(fretboardBoard, fretboardTitle, tuning, chordRoot, chordQuality));
-  notationOutput.hidden = state.view === "fretboard";
-  fretboardOutput.hidden = state.view === "notation";
+  notationOutput.hidden = state.view !== "notation";
+  fretboardOutput.hidden = state.view !== "fretboard";
+  tunerOutput.hidden = state.view !== "tuner";
+  tunerControls.hidden = state.view !== "tuner";
   document.querySelector("#chord-root-control").hidden = state.view !== "fretboard";
   document.querySelector("#chord-quality-control").hidden = state.view !== "fretboard";
   document.querySelector("#key-control").hidden = state.view === "fretboard";
   document.querySelector("#scale-control").hidden = state.view === "fretboard";
   document.title = `${key.value} ${scale.name} — Clawford`;
+  renderTuner(tuning);
   saveStoredState(state);
   const query = stateToSearchParams(state).toString();
   history.replaceState(null, "", `${location.pathname}${query ? `?${query}` : ""}`);
   scheduleDiagramFit();
+}
+
+function renderTuner(tuning) {
+  const targets = selectTunerTargets({ mode: state.tunerMode, tuning });
+  tunerOutput.innerHTML = renderTunerOutput({
+    mode: state.tunerMode,
+    running: microphoneSession?.state === "running",
+    reading: tunerReading,
+    targets,
+    error: tunerError
+  });
+  tunerStart.disabled = microphoneSession?.state === "running";
+  tunerStop.disabled = microphoneSession?.state !== "running";
+}
+
+async function loadInputDevices() {
+  if (!navigator.mediaDevices?.enumerateDevices) return;
+  const devices = await navigator.mediaDevices.enumerateDevices().catch(() => []);
+  const current = tunerInputDevice.value;
+  tunerInputDevice.replaceChildren(new Option("Default microphone", ""), ...devices
+    .filter((device) => device.kind === "audioinput")
+    .map((device, index) => new Option(device.label || `Microphone ${index + 1}`, device.deviceId)));
+  tunerInputDevice.value = [...tunerInputDevice.options].some((option) => option.value === current) ? current : "";
+}
+
+async function startTuner() {
+  if (microphoneSession?.state === "running") return;
+  tunerError = "";
+  tunerReading = null;
+  tunerStabilizer = new PitchStabilizer();
+  const selectedDevice = tunerInputDevice.value;
+  const getUserMedia = (constraints) => navigator.mediaDevices.getUserMedia(selectedDevice
+    ? { ...constraints, audio: { deviceId: { exact: selectedDevice } } }
+    : constraints);
+  microphoneSession = new MicrophoneSession({ getUserMedia });
+  try {
+    await microphoneSession.start();
+    render();
+    readTunerFrame();
+  } catch (error) {
+    tunerError = error.message || "Unable to start microphone";
+    render();
+  }
+}
+
+async function stopTuner() {
+  if (tunerAnimationFrame !== null) cancelAnimationFrame(tunerAnimationFrame);
+  tunerAnimationFrame = null;
+  if (microphoneSession) await microphoneSession.stop();
+  microphoneSession = null;
+  tunerReading = null;
+  render();
+}
+
+function readTunerFrame() {
+  if (microphoneSession?.state !== "running") return;
+  const estimate = tunerStabilizer.update(estimatePitch(microphoneSession.readFrame(), { sampleRate: 44100 }));
+  if (!estimate.isSilent && estimate.frequency && estimate.stable) tunerReading = tunerReadingFromFrequency(estimate.frequency);
+  render();
+  tunerAnimationFrame = requestAnimationFrame(readTunerFrame);
+}
+
+function tunerReadingFromFrequency(frequency) {
+  const tuning = tunings.find((item) => item.id === state.tuning) || tunings[0];
+  const targets = selectTunerTargets({ mode: state.tunerMode, tuning });
+  const target = state.tunerMode === "chromatic"
+    ? frequencyToNote(frequency)
+    : targets.reduce((closest, candidate) => Math.abs(centsOffset(frequency, candidate.midi)) < Math.abs(centsOffset(frequency, closest.midi)) ? candidate : closest, targets[0]);
+  const cents = centsOffset(frequency, target.midi);
+  return {
+    note: target.note || target.pitch,
+    frequency,
+    cents,
+    status: Math.abs(cents) <= 5 ? "In tune" : cents < 0 ? "Tune up" : "Tune down"
+  };
 }

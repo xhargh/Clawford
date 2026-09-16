@@ -1,7 +1,8 @@
 export function renderTunerOutput({ mode = "chromatic", running = false, reading = null, targets = [], error = "" } = {}) {
   const cents = reading?.cents ?? 0;
   const meterPosition = Math.max(-50, Math.min(50, cents));
-  const status = reading?.status || (error ? "Microphone unavailable" : running ? "Listening" : "Ready");
+  const meterValue = reading?.cents == null ? "" : ` aria-valuenow="${meterPosition}"`;
+  const status = reading?.status || (error ? "Microphone unavailable" : running ? "Play a note" : "Ready");
   const note = reading?.note || "--";
   const frequency = reading?.frequency == null ? "--" : `${Number(reading.frequency).toFixed(1)} Hz`;
   const centsLabel = reading?.cents == null ? "-- cents" : `${reading.cents > 0 ? "+" : ""}${Math.round(reading.cents)} cents`;
@@ -15,8 +16,8 @@ export function renderTunerOutput({ mode = "chromatic", running = false, reading
       <span class="tuner-frequency">${escapeHtml(frequency)}</span>
       <span class="tuner-status">${escapeHtml(status)}</span>
     </div>
-    <div class="tuner-meter" role="meter" aria-label="Tuning accuracy" aria-valuemin="-50" aria-valuemax="50" aria-valuenow="${meterPosition}">
-      <span class="tuner-meter-scale"><i style="--meter-position: ${meterPosition / 2}%"></i><b></b></span>
+    <div class="tuner-meter" role="meter" aria-label="Tuning accuracy" aria-valuemin="-50" aria-valuemax="50"${meterValue} aria-valuetext="${escapeAttribute(reading?.cents == null ? status : centsLabel)}">
+      <span class="tuner-meter-scale"><i style="--meter-position: ${meterPosition}%"></i><b></b></span>
       <span class="tuner-cents">${escapeHtml(centsLabel)}</span>
     </div>
     <div class="tuner-targets" aria-label="Target strings">${targetMarkup}</div>

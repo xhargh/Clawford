@@ -60,7 +60,7 @@ fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 .segmented label:has(input:checked) { color: white; border-color: var(--accent); background: var(--accent); }
 .segmented label:has(input:focus-visible) { outline: 3px solid rgb(40 90 69 / 25%); outline-offset: 2px; }
 .tuner-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
-.tuner-controls legend, .tuner-device-control, .tuner-actions { grid-column: 1 / -1; }
+.tuner-controls legend, .tuner-device-control, .tuner-a4-control, .tuner-actions { grid-column: 1 / -1; }
 .tuner-controls label { display: flex; min-height: 42px; align-items: center; gap: 7px; padding: 8px; border: 1px solid #aeb6ab; border-radius: 3px; background: white; }
 .tuner-controls .tuner-device-control { display: block; padding: 0; border: 0; background: transparent; }
 .tuner-actions { display: flex; gap: 8px; }
@@ -82,7 +82,7 @@ fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 .tuner-meter-scale::before, .tuner-meter-scale::after { position: absolute; top: 30px; color: var(--muted); font-size: .72rem; }
 .tuner-meter-scale::before { content: "-50"; left: 0; }
 .tuner-meter-scale::after { content: "+50"; right: 0; }
-.tuner-meter-scale i { position: absolute; top: -9px; left: calc(50% + var(--meter-position) * .5); width: 4px; height: 42px; border-radius: 3px; background: var(--ink); transform: translateX(-50%); }
+.tuner-meter-scale i { position: absolute; top: -9px; left: calc(50% + var(--meter-position)); width: 4px; height: 42px; border-radius: 3px; background: var(--ink); transform: translateX(-50%); }
 .tuner-meter-scale b { position: absolute; top: -4px; left: 50%; width: 2px; height: 32px; background: white; }
 .tuner-targets { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
 .tuner-target { display: grid; gap: 2px; min-width: 72px; padding: 8px; border: 1px solid var(--line); border-radius: 3px; background: white; }
@@ -145,4 +145,9 @@ fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
   .app-shell { padding: 10px; }
   .settings-panel, .output-panel { padding: 14px; }
   .segmented { grid-template-columns: 1fr; }
+  .tuner-controls { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
 }

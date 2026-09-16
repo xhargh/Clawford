@@ -20,6 +20,10 @@ export class MicrophoneSession {
     return this.#analyser;
   }
 
+  get sampleRate() {
+    return this.#context?.sampleRate ?? null;
+  }
+
   readFrame() {
     if (!this.#analyser) throw new Error("MicrophoneSession is not running");
     const frame = new Float32Array(this.#analyser.fftSize);
@@ -57,6 +61,16 @@ export class MicrophoneSession {
     this.#analyser = null;
     this.#context = null;
     this.#state = "stopped";
+  }
+
+  async suspend() {
+    if (this.#state !== "running" || !this.#context?.suspend) return;
+    await this.#context.suspend();
+  }
+
+  async resume() {
+    if (this.#state !== "running" || !this.#context?.resume) return;
+    await this.#context.resume();
   }
 
   async dispose() {

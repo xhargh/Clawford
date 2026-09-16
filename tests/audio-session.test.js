@@ -9,6 +9,7 @@ test("starts a microphone session with injected browser audio dependencies", asy
   const analyser = { connect: () => calls.push("analyser.connect") };
   const source = { connect: (node) => { calls.push(["source.connect", node]); } };
   const context = {
+    sampleRate: 48000,
     createAnalyser: () => { calls.push("createAnalyser"); return analyser; },
     createMediaStreamSource: (value) => { calls.push(["createSource", value]); return source; },
     close: async () => calls.push("context.close")
@@ -21,6 +22,7 @@ test("starts a microphone session with injected browser audio dependencies", asy
   await session.start();
 
   assert.equal(session.state, "running");
+  assert.equal(session.sampleRate, 48000);
   assert.deepEqual(calls.slice(0, 4), [
     ["getUserMedia", { audio: true }],
     "createContext",
@@ -86,6 +88,30 @@ test("reads one time-domain frame from the analyser", async () => {
   await session.start();
 
   assert.deepEqual([...session.readFrame()].map((value) => Number(value.toFixed(3))), [0.1, -0.2, 0.3, -0.4]);
+});
+
+test("suspends and resumes audio processing without losing the session", async () => {
+  const calls = [];
+  const context = {
+    state: "running",
+    sampleRate: 44100,
+    createAnalyser: () => ({}),
+    createMediaStreamSource: () => ({ connect() {}, disconnect() {} }),
+    suspend: async () => { calls.push("suspend"); context.state = "suspended"; },
+    resume: async () => { calls.push("resume"); context.state = "running"; },
+    close: async () => {}
+  };
+  const session = new MicrophoneSession({
+    getUserMedia: async () => ({ getTracks: () => [] }),
+    createAudioContext: () => context
+  });
+
+  await session.start();
+  await session.suspend();
+  await session.resume();
+
+  assert.deepEqual(calls, ["suspend", "resume"]);
+  assert.equal(session.state, "running");
 });
 
 test("dispose permanently ends the session", async () => {

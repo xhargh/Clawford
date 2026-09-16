@@ -13,8 +13,7 @@ import { crossedStrings, selectTone, selectedFretsFromVoicing } from "./playback
 import { generateScaleBoardNotes } from "./scale-board.js";
 import { MicrophoneSession } from "./audio/microphone-session.js";
 import { estimatePitch, PitchStabilizer } from "./audio/pitch-detector.js";
-import { centsOffset, frequencyToNote } from "./pitch.js";
-import { selectTunerTargets } from "./tuner.js";
+import { selectTunerTarget, selectTunerTargets } from "./tuner.js";
 import { renderTunerOutput } from "./tuner-renderer.js";
 
 const form = document.querySelector("#settings-form");
@@ -88,6 +87,7 @@ fretboardOutput.addEventListener("pointercancel", handleStrumEnd);
 window.addEventListener("resize", scheduleDiagramFit);
 window.addEventListener("orientationchange", scheduleDiagramFit);
 window.addEventListener("pagehide", () => { void stopTuner(); });
+document.addEventListener("visibilitychange", handleVisibilityChange);
 
 function createAudioPlayer(instrumentId) {
   return new AudioPlayer({ profile: instrumentId.startsWith("banjo") ? BANJO_PROFILE : GUITAR_PROFILE });
@@ -229,6 +229,10 @@ function writeForm(values) {
 function updateFromForm() {
   const previousView = state.view;
   const data = new FormData(form);
+  const tunerA4 = Number(data.get("tunerA4"));
+  const tunerA4Input = form.elements.namedItem("tunerA4");
+  const validTunerA4 = Number.isFinite(tunerA4) && tunerA4 >= 400 && tunerA4 <= 480;
+  tunerA4Input.setCustomValidity(validTunerA4 ? "" : "A4 must be between 400 and 480 Hz.");
   const instrument = data.get("instrument");
   const instrumentChanged = instrument !== state.instrument;
   const tuning = instrumentChanged ? tuningsFor(instrument)[0].id : data.get("tuning");
@@ -240,6 +244,7 @@ function updateFromForm() {
     scale: data.get("scale"),
     view: data.get("view"),
     tunerMode: data.get("tunerMode"),
+    tunerA4: validTunerA4 ? tunerA4 : state.tunerA4,
     chordRoot: data.get("chordRoot"),
     chordQuality: data.get("chordQuality")
   };
@@ -366,9 +371,21 @@ async function stopTuner() {
   render();
 }
 
+async function handleVisibilityChange() {
+  if (document.hidden) {
+    if (tunerAnimationFrame !== null) cancelAnimationFrame(tunerAnimationFrame);
+    tunerAnimationFrame = null;
+    await microphoneSession?.suspend();
+    return;
+  }
+  if (microphoneSession?.state !== "running") return;
+  await microphoneSession.resume();
+  readTunerFrame();
+}
+
 function readTunerFrame() {
   if (microphoneSession?.state !== "running") return;
-  const estimate = tunerStabilizer.update(estimatePitch(microphoneSession.readFrame(), { sampleRate: 44100 }));
+  const estimate = tunerStabilizer.update(estimatePitch(microphoneSession.readFrame(), { sampleRate: microphoneSession.sampleRate }));
   if (!estimate.isSilent && estimate.frequency && estimate.stable) tunerReading = tunerReadingFromFrequency(estimate.frequency);
   render();
   tunerAnimationFrame = requestAnimationFrame(readTunerFrame);
@@ -376,11 +393,8 @@ function readTunerFrame() {
 
 function tunerReadingFromFrequency(frequency) {
   const tuning = tunings.find((item) => item.id === state.tuning) || tunings[0];
-  const targets = selectTunerTargets({ mode: state.tunerMode, tuning });
-  const target = state.tunerMode === "chromatic"
-    ? frequencyToNote(frequency)
-    : targets.reduce((closest, candidate) => Math.abs(centsOffset(frequency, candidate.midi)) < Math.abs(centsOffset(frequency, closest.midi)) ? candidate : closest, targets[0]);
-  const cents = centsOffset(frequency, target.midi);
+  const target = selectTunerTarget({ frequency, mode: state.tunerMode, tuning, a4: state.tunerA4 });
+  const cents = target.cents;
   return {
     note: target.note || target.pitch,
     frequency,

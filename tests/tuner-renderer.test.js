@@ -26,3 +26,18 @@ test("renders a stopped tuner without inventing a microphone reading", () => {
   assert.match(output, /Microphone unavailable/);
   assert.match(output, /Permission denied/);
 });
+
+test("renders an accessible idle meter and actionable listening status", () => {
+  const output = renderTunerOutput({ running: true });
+
+  assert.match(output, /aria-valuetext="Play a note"/);
+  assert.doesNotMatch(output, /aria-valuenow=/);
+  assert.match(output, />Play a note<\/span>/);
+  assert.match(output, /-- cents/);
+});
+
+test("positions the meter pointer across its full accuracy range", () => {
+  const output = renderTunerOutput({ reading: { note: "A4", frequency: 440, cents: 50, status: "Tune down" } });
+
+  assert.match(output, /--meter-position: 50%/);
+});

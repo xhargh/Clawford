@@ -53,6 +53,11 @@ test("validates and persists tuner settings", () => {
   assert.equal(params.get("tunerA4"), "442");
 });
 
+test("rejects tuner A4 values outside the calibration range", () => {
+  assert.equal(stateFromSources({ tunerA4: 399 }, new URLSearchParams(), validValues).tunerA4, DEFAULT_STATE.tunerA4);
+  assert.equal(stateFromSources({ tunerA4: 481 }, new URLSearchParams(), validValues).tunerA4, DEFAULT_STATE.tunerA4);
+});
+
 test("persists chord root and quality independently from key/scale", () => {
   const withChordValidValues = { ...validValues, chordRoots: ["G", "C"], chordQualities: ["major", "dom7"] };
   const state = stateFromSources(null, new URLSearchParams("chordRoot=C&chordQuality=dom7"), withChordValidValues);

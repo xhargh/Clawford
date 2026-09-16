@@ -41,3 +41,13 @@ test("positions the meter pointer across its full accuracy range", () => {
 
   assert.match(output, /--meter-position: 50%/);
 });
+
+test("renders higher-numbered strings to the left", () => {
+  const output = renderTunerOutput({
+    mode: "tuning",
+    targets: [{ string: 1, pitch: "E4" }, { string: 6, pitch: "E2" }, { string: 3, pitch: "D3" }]
+  });
+
+  assert.ok(output.indexOf('data-string="6"') < output.indexOf('data-string="3"'));
+  assert.ok(output.indexOf('data-string="3"') < output.indexOf('data-string="1"'));
+});

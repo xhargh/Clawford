@@ -7,7 +7,7 @@ export function renderTunerOutput({ mode = "chromatic", running = false, reading
   const frequency = reading?.frequency == null ? "--" : `${Number(reading.frequency).toFixed(1)} Hz`;
   const centsLabel = reading?.cents == null ? "-- cents" : `${reading.cents > 0 ? "+" : ""}${Math.round(reading.cents)} cents`;
   const targetMarkup = mode === "tuning"
-    ? targets.map((target) => `<span class="tuner-target" data-string="${escapeAttribute(target.string)}"><b>${escapeHtml(target.pitch)}</b><small>String ${escapeHtml(target.string)}</small></span>`).join("")
+    ? [...targets].sort((left, right) => right.string - left.string).map((target) => `<span class="tuner-target" data-string="${escapeAttribute(target.string)}"><b>${escapeHtml(target.pitch)}</b><small>String ${escapeHtml(target.string)}</small></span>`).join("")
     : "";
 
   return `<div class="tuner-card" data-running="${running}">

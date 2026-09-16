@@ -78,7 +78,7 @@ fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 .tuner-frequency, .tuner-cents { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
 .tuner-status { min-height: 1.5em; color: var(--warm); font-weight: 800; }
 .tuner-meter { display: grid; gap: 10px; }
-.tuner-meter-scale { position: relative; display: block; height: 24px; border-radius: 20px; background: linear-gradient(90deg, #d88a68 0 45%, var(--accent) 48% 52%, #d88a68 55% 100%); }
+.tuner-meter-scale { position: relative; display: block; height: 24px; border-radius: 20px; background: linear-gradient(90deg, var(--warm) 0 45%, var(--accent) 48% 52%, var(--warm) 55% 100%); }
 .tuner-meter-scale::before, .tuner-meter-scale::after { position: absolute; top: 30px; color: var(--muted); font-size: .72rem; }
 .tuner-meter-scale::before { content: "-50"; left: 0; }
 .tuner-meter-scale::after { content: "+50"; right: 0; }

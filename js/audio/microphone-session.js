@@ -6,6 +6,7 @@ export class MicrophoneSession {
   #source = null;
   #analyser = null;
   #state = "idle";
+  #startToken = 0;
 
   constructor({ getUserMedia = defaultGetUserMedia, createAudioContext = defaultAudioContextFactory } = {}) {
     this.#getUserMedia = getUserMedia;
@@ -34,8 +35,14 @@ export class MicrophoneSession {
   async start() {
     if (this.#state === "disposed") throw new Error("MicrophoneSession has been disposed");
     if (this.#state === "running") return this;
+    const startToken = ++this.#startToken;
     try {
-      this.#stream = await this.#getUserMedia({ audio: true });
+      const stream = await this.#getUserMedia({ audio: true });
+      if (startToken !== this.#startToken) {
+        for (const track of stream.getTracks()) track.stop();
+        return this;
+      }
+      this.#stream = stream;
       this.#context = this.#createAudioContext();
       if (!this.#context) throw new Error("Web Audio is not available");
       this.#analyser = this.#context.createAnalyser();
@@ -44,6 +51,7 @@ export class MicrophoneSession {
       this.#state = "running";
       return this;
     } catch (error) {
+      if (startToken !== this.#startToken) return this;
       this.#releaseStream();
       this.#state = "error";
       throw error;
@@ -52,6 +60,7 @@ export class MicrophoneSession {
 
   async stop() {
     if (this.#state === "disposed") return;
+    ++this.#startToken;
     if (this.#source) {
       try { this.#source.disconnect(); } catch {}
     }

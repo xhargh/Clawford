@@ -15,6 +15,8 @@ import { MicrophoneSession } from "./audio/microphone-session.js";
 import { estimatePitch, PitchStabilizer } from "./audio/pitch-detector.js";
 import { selectTunerTarget, selectTunerTargets } from "./tuner.js";
 import { renderTunerOutput } from "./tuner-renderer.js";
+import { viewControlVisibility } from "./view-controls.js";
+import { TunerLifecycle } from "./tuner-lifecycle.js";
 
 const form = document.querySelector("#settings-form");
 const instrumentSelect = document.querySelector("#instrument");
@@ -58,11 +60,21 @@ let selectedTonesByString = new Map();
 let fretboardSelectionKey = "";
 let strumGesture = null;
 let suppressClicksUntil = 0;
-let microphoneSession = null;
 let tunerAnimationFrame = null;
 let tunerStabilizer = new PitchStabilizer();
 let tunerReading = null;
 let tunerError = "";
+const tunerLifecycle = new TunerLifecycle({
+  createSession: createMicrophoneSession,
+  onStarted: () => {
+    render();
+    readTunerFrame();
+  },
+  onError: (error) => {
+    tunerError = error.message || "Unable to start microphone";
+    render();
+  }
+});
 if (!tuningsFor(state.instrument).some((tuning) => tuning.id === state.tuning)) {
   state = { ...state, tuning: tuningsFor(state.instrument)[0].id };
 }
@@ -71,7 +83,10 @@ writeForm(state);
 
 let fitScheduled = false;
 render();
-if (state.view === "tuner") void loadInputDevices();
+if (state.view === "tuner") {
+  void loadInputDevices();
+  void tunerLifecycle.enter();
+}
 
 form.addEventListener("input", updateFromForm);
 tunerStart.addEventListener("click", startTuner);
@@ -255,7 +270,10 @@ function updateFromForm() {
     writeForm(state);
   }
   if (previousView === "tuner" && state.view !== "tuner") void stopTuner();
-  if (state.view === "tuner") void loadInputDevices();
+  if (previousView !== "tuner" && state.view === "tuner") {
+    void loadInputDevices();
+    void tunerLifecycle.enter();
+  }
   render();
 }
 
@@ -309,8 +327,9 @@ function render() {
   tunerControls.hidden = state.view !== "tuner";
   document.querySelector("#chord-root-control").hidden = state.view !== "fretboard";
   document.querySelector("#chord-quality-control").hidden = state.view !== "fretboard";
-  document.querySelector("#key-control").hidden = state.view === "fretboard";
-  document.querySelector("#scale-control").hidden = state.view === "fretboard";
+  const hiddenControls = viewControlVisibility(state.view);
+  document.querySelector("#key-control").hidden = hiddenControls.key;
+  document.querySelector("#scale-control").hidden = hiddenControls.scale;
   document.title = `${key.value} ${scale.name} — Clawford`;
   renderTuner(tuning);
   saveStoredState(state);
@@ -323,13 +342,13 @@ function renderTuner(tuning) {
   const targets = selectTunerTargets({ mode: state.tunerMode, tuning });
   tunerOutput.innerHTML = renderTunerOutput({
     mode: state.tunerMode,
-    running: microphoneSession?.state === "running",
+    running: tunerLifecycle.session?.state === "running",
     reading: tunerReading,
     targets,
     error: tunerError
   });
-  tunerStart.disabled = microphoneSession?.state === "running";
-  tunerStop.disabled = microphoneSession?.state !== "running";
+  tunerStart.disabled = tunerLifecycle.session?.state === "running";
+  tunerStop.disabled = tunerLifecycle.session?.state !== "running";
 }
 
 async function loadInputDevices() {
@@ -342,31 +361,25 @@ async function loadInputDevices() {
   tunerInputDevice.value = [...tunerInputDevice.options].some((option) => option.value === current) ? current : "";
 }
 
-async function startTuner() {
-  if (microphoneSession?.state === "running") return;
-  tunerError = "";
-  tunerReading = null;
-  tunerStabilizer = new PitchStabilizer();
+function createMicrophoneSession() {
   const selectedDevice = tunerInputDevice.value;
   const getUserMedia = (constraints) => navigator.mediaDevices.getUserMedia(selectedDevice
     ? { ...constraints, audio: { deviceId: { exact: selectedDevice } } }
     : constraints);
-  microphoneSession = new MicrophoneSession({ getUserMedia });
-  try {
-    await microphoneSession.start();
-    render();
-    readTunerFrame();
-  } catch (error) {
-    tunerError = error.message || "Unable to start microphone";
-    render();
-  }
+  return new MicrophoneSession({ getUserMedia });
+}
+
+async function startTuner() {
+  tunerError = "";
+  tunerReading = null;
+  tunerStabilizer = new PitchStabilizer();
+  await tunerLifecycle.start();
 }
 
 async function stopTuner() {
   if (tunerAnimationFrame !== null) cancelAnimationFrame(tunerAnimationFrame);
   tunerAnimationFrame = null;
-  if (microphoneSession) await microphoneSession.stop();
-  microphoneSession = null;
+  await tunerLifecycle.stop();
   tunerReading = null;
   render();
 }
@@ -375,17 +388,17 @@ async function handleVisibilityChange() {
   if (document.hidden) {
     if (tunerAnimationFrame !== null) cancelAnimationFrame(tunerAnimationFrame);
     tunerAnimationFrame = null;
-    await microphoneSession?.suspend();
+    await tunerLifecycle.session?.suspend();
     return;
   }
-  if (microphoneSession?.state !== "running") return;
-  await microphoneSession.resume();
+  if (tunerLifecycle.session?.state !== "running") return;
+  await tunerLifecycle.session.resume();
   readTunerFrame();
 }
 
 function readTunerFrame() {
-  if (microphoneSession?.state !== "running") return;
-  const estimate = tunerStabilizer.update(estimatePitch(microphoneSession.readFrame(), { sampleRate: microphoneSession.sampleRate }));
+  if (tunerLifecycle.session?.state !== "running") return;
+  const estimate = tunerStabilizer.update(estimatePitch(tunerLifecycle.session.readFrame(), { sampleRate: tunerLifecycle.session.sampleRate }));
   if (!estimate.isSilent && estimate.frequency && estimate.stable) tunerReading = tunerReadingFromFrequency(estimate.frequency);
   render();
   tunerAnimationFrame = requestAnimationFrame(readTunerFrame);

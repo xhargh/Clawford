@@ -71,6 +71,27 @@ test("propagates microphone permission errors", async () => {
   assert.equal(contextCreated, false);
 });
 
+test("stops a stream that resolves after a pending start was stopped", async () => {
+  let resolveStream;
+  const streamPromise = new Promise((resolve) => { resolveStream = resolve; });
+  let trackStopped = false;
+  const stream = { getTracks: () => [{ stop: () => { trackStopped = true; } }] };
+  let contextCreated = false;
+  const session = new MicrophoneSession({
+    getUserMedia: () => streamPromise,
+    createAudioContext: () => { contextCreated = true; return {}; }
+  });
+
+  const startPromise = session.start();
+  await session.stop();
+  resolveStream(stream);
+  await startPromise;
+
+  assert.equal(session.state, "stopped");
+  assert.equal(trackStopped, true);
+  assert.equal(contextCreated, false);
+});
+
 test("reads one time-domain frame from the analyser", async () => {
   const analyser = {
     fftSize: 4,

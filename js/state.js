@@ -29,11 +29,12 @@ export const DEFAULT_STATE = {
   staffSize: "normal",
   notationOctave: 0,
   chordRoot: "G",
-  chordQuality: "major"
+  chordQuality: "major",
+  harmonySevenths: false
 };
 
-const ENUMS = { view: ["notation", "fretboard", "tuner", "metronome"], tunerMode: ["chromatic", "tuning"], metronomeDenominator: [2, 4, 8, 16] };
-const USER_SETTINGS = new Set(["instrument", "tuning", "key", "scale", "view", "tunerMode", "tunerA4", "metronomeBpm", "metronomeNumerator", "metronomeDenominator", "metronomeFirstAccent", "metronomeOddAccent", "chordRoot", "chordQuality"]);
+const ENUMS = { view: ["notation", "fretboard", "tuner", "metronome", "harmony"], tunerMode: ["chromatic", "tuning"], metronomeDenominator: [2, 4, 8, 16] };
+const USER_SETTINGS = new Set(["instrument", "tuning", "key", "scale", "view", "tunerMode", "tunerA4", "metronomeBpm", "metronomeNumerator", "metronomeDenominator", "metronomeFirstAccent", "metronomeOddAccent", "chordRoot", "chordQuality", "harmonySevenths"]);
 
 export function stateFromSources(stored, searchParams, validValues) {
   const state = { ...DEFAULT_STATE };
@@ -49,7 +50,7 @@ function applyObject(state, source, validValues) {
     if (!USER_SETTINGS.has(key)) continue;
     if (!(key in source)) continue;
     const raw = source[key];
-    if (["metronomeFirstAccent", "metronomeOddAccent"].includes(key)) state[key] = raw === true || raw === "true";
+    if (["metronomeFirstAccent", "metronomeOddAccent", "harmonySevenths"].includes(key)) state[key] = raw === true || raw === "true";
     else if (key === "metronomeBpm" && Number.isInteger(Number(raw)) && Number(raw) >= 30 && Number(raw) <= 300) state[key] = Number(raw);
     else if (key === "metronomeNumerator" && Number.isInteger(Number(raw)) && Number(raw) >= 1 && Number(raw) <= 12) state[key] = Number(raw);
     else if (key === "metronomeDenominator" && ENUMS[key].includes(Number(raw))) state[key] = Number(raw);

@@ -43,6 +43,14 @@ test("accepts the tuner view", () => {
   assert.equal(state.view, "tuner");
 });
 
+test("accepts and serializes the harmony view and seventh-chord preference", () => {
+  const state = stateFromSources(null, new URLSearchParams("view=harmony&harmonySevenths=true"), validValues);
+  assert.equal(state.view, "harmony");
+  assert.equal(state.harmonySevenths, true);
+  assert.equal(stateToSearchParams(state).get("view"), "harmony");
+  assert.equal(stateToSearchParams(state).get("harmonySevenths"), "true");
+});
+
 test("validates and persists tuner settings", () => {
   const state = stateFromSources({ tunerMode: "tuning", tunerA4: 442 }, new URLSearchParams(), validValues);
   assert.equal(state.tunerMode, "tuning");

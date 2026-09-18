@@ -36,6 +36,8 @@ const APP_SHELL = [
   "js/tuner-lifecycle.js",
   "js/metronome.js",
   "js/metronome-renderer.js",
+  "js/harmony.js",
+  "js/harmony-renderer.js",
   "js/tuner-renderer.js",
   "js/view-controls.js",
   "js/fun-facts.js",

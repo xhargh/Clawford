@@ -42,6 +42,7 @@
             <label><input type="radio" name="view" value="fretboard"> Fretboard</label>
             <label><input type="radio" name="view" value="tuner"> Tuner</label>
             <label><input type="radio" name="view" value="metronome"> Metronome</label>
+            <label><input type="radio" name="view" value="harmony"> Harmony</label>
           </fieldset>
           <div id="general-controls" class="general-controls">
             <label id="instrument-control">Instrument<select id="instrument" name="instrument"></select></label>
@@ -70,6 +71,11 @@
             <label><input type="checkbox" name="metronomeFirstAccent"> Accent first beat</label>
             <label><input type="checkbox" name="metronomeOddAccent"> Accent odd beats</label>
           </fieldset>
+          <fieldset id="harmony-controls" class="harmony-controls full-control" hidden>
+            <legend>Harmony explorer</legend>
+            <label><input id="harmony-sevenths" name="harmonySevenths" type="checkbox"> Include seventh chords</label>
+            <p>Choose a major or natural-minor key above, then follow the arrows to learn why chords move.</p>
+          </fieldset>
         </div>
       </form>
     </aside>
@@ -80,6 +86,7 @@
       <div id="fretboard-output" class="diagram-frame"></div>
       <div id="tuner-output" class="tuner-output" hidden></div>
       <div id="metronome-output" class="metronome-output" hidden></div>
+      <div id="harmony-output" class="harmony-output" hidden></div>
     </section>
   </main>
   <script type="module" src="js/app.js"></script>

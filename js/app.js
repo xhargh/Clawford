@@ -20,6 +20,8 @@ import { TunerLifecycle } from "./tuner-lifecycle.js";
 import { Metronome } from "./metronome.js";
 import { renderMetronomeOutput } from "./metronome-renderer.js";
 import { FUN_FACTS } from "./fun-facts.js";
+import { renderHarmonyOutput } from "./harmony-renderer.js";
+import { generateDiatonicChords } from "./harmony.js";
 
 const form = document.querySelector("#settings-form");
 const instrumentSelect = document.querySelector("#instrument");
@@ -32,17 +34,20 @@ const notationOutput = document.querySelector("#notation-output");
 const fretboardOutput = document.querySelector("#fretboard-output");
 const tunerOutput = document.querySelector("#tuner-output");
 const metronomeOutput = document.querySelector("#metronome-output");
+const harmonyOutput = document.querySelector("#harmony-output");
 const funFactImage = document.querySelector("#fun-fact-image");
 const funFactPreview = document.querySelector("#fun-fact-preview");
 const warningBanner = document.querySelector("#warning-banner");
 const tunerControls = document.querySelector("#tuner-controls");
 const metronomeControls = document.querySelector("#metronome-controls");
+const harmonyControls = document.querySelector("#harmony-controls");
 const generalControls = document.querySelector("#general-controls");
 const tunerInputDevice = document.querySelector("#tuner-input-device");
 const tunerStart = document.querySelector("#tuner-start");
 const tunerStop = document.querySelector("#tuner-stop");
 const tunings = [...BUILT_IN_TUNINGS];
 const FRETBOARD_SCALES = [...SCALES, CHROMATIC_SCALE];
+const HARMONY_SCALES = SCALES.filter((scale) => ["major", "natural-minor"].includes(scale.id));
 const scaleOptionValue = (scale) => `scale:${scale.id}`;
 
 function tuningsFor(instrumentId) {
@@ -75,6 +80,10 @@ let tunerReading = null;
 let tunerError = "";
 let metronomeBeat = 0;
 let metronomeError = "";
+let harmonyView = "map";
+let harmonySelectedNode = null;
+let harmonySelectedPair = null;
+let harmonyTrail = [];
 let currentFunFact = -1;
 let funFactsActive = false;
 let funFactHoverTimer = null;
@@ -116,6 +125,7 @@ metronomeOutput.addEventListener("click", (event) => {
   if (event.target.closest("#metronome-start")) void startMetronome();
   if (event.target.closest("#metronome-stop")) stopMetronome();
 });
+harmonyOutput.addEventListener("click", handleHarmonyClick);
 funFactImage.addEventListener("click", showRandomFunFact);
 funFactImage.addEventListener("pointerenter", startFunFactPreview);
 funFactImage.addEventListener("pointerleave", stopFunFactPreview);
@@ -174,6 +184,25 @@ function stopFunFactPreview() {
 
 function playNotes(notes) {
   void audioPlayer.playNotes(notes).catch((error) => console.warn("Unable to play audio", error));
+}
+
+function harmonyChordNotes(chord) {
+  return chord.pitchClasses.map((pitchClass, index) => ({
+    midi: 60 + pitchClass,
+    string: index + 1,
+    velocity: 0.8
+  }));
+}
+
+function playHarmonyChord(chord) {
+  if (chord) playNotes(harmonyChordNotes(chord));
+}
+
+function playHarmonyTrail() {
+  const chords = generateDiatonicChords(state.key, state.scale, state.harmonySevenths);
+  harmonyTrail.map((id) => chords.find((chord) => chord.id === id)).filter(Boolean).forEach((chord, index) => {
+    window.setTimeout(() => playHarmonyChord(chord), index * 700);
+  });
 }
 
 function noteFromElement(element) {
@@ -317,12 +346,13 @@ function updateFromForm() {
   const instrument = data.get("instrument");
   const instrumentChanged = instrument !== state.instrument;
   const tuning = instrumentChanged ? tuningsFor(instrument)[0].id : data.get("tuning");
+  const selectedScale = data.get("view") === "harmony" && !HARMONY_SCALES.some((scale) => scale.id === data.get("scale")) ? "major" : data.get("scale");
   state = {
     ...state,
     instrument,
     tuning,
     key: data.get("key"),
-    scale: data.get("scale"),
+    scale: selectedScale,
     view: data.get("view"),
     tunerMode: data.get("tunerMode"),
     tunerA4: validTunerA4 ? tunerA4 : state.tunerA4,
@@ -332,7 +362,8 @@ function updateFromForm() {
     metronomeFirstAccent: data.get("metronomeFirstAccent") === "on",
     metronomeOddAccent: data.get("metronomeOddAccent") === "on",
     chordRoot: data.get("chordRoot"),
-    chordQuality: data.get("chordQuality")
+    chordQuality: data.get("chordQuality"),
+    harmonySevenths: data.get("harmonySevenths") === "on"
   };
   if (instrumentChanged) {
     void audioPlayer.dispose();
@@ -371,6 +402,8 @@ function render() {
   const scaleId = state.chordQuality.startsWith("scale:") ? state.chordQuality.slice(6) : null;
   const fretboardScale = scaleId ? FRETBOARD_SCALES.find((item) => item.id === scaleId) : null;
   const chordQuality = scaleId ? null : CHORD_QUALITIES.find((quality) => quality.id === state.chordQuality);
+  if (state.view === "harmony" && !HARMONY_SCALES.some((item) => item.id === state.scale)) state = { ...state, scale: "major" };
+  syncHarmonyScaleOptions();
   const title = `${instrument.name} — ${tuning.name} — ${key.value} ${scale.name} — Frets 0–${state.maxFret}`;
   const fretboardTitle = `${instrument.name} — ${tuning.name}`;
   const notes = generateNotes({ ...state, tuning, key, scale });
@@ -398,23 +431,72 @@ function render() {
   fretboardOutput.hidden = state.view !== "fretboard";
   tunerOutput.hidden = state.view !== "tuner";
   metronomeOutput.hidden = state.view !== "metronome";
+  harmonyOutput.hidden = state.view !== "harmony";
   tunerControls.hidden = state.view !== "tuner";
   metronomeControls.hidden = state.view !== "metronome";
+  harmonyControls.hidden = state.view !== "harmony";
   document.querySelector("#chord-root-control").hidden = state.view !== "fretboard";
   document.querySelector("#chord-quality-control").hidden = state.view !== "fretboard";
   const hiddenControls = viewControlVisibility(state.view);
   generalControls.hidden = state.view === "metronome";
-  document.querySelector("#instrument-control").hidden = hiddenControls.instrument;
-  document.querySelector("#tuning-control").hidden = hiddenControls.tuning;
-  document.querySelector("#key-control").hidden = hiddenControls.key;
-  document.querySelector("#scale-control").hidden = hiddenControls.scale;
-  document.title = state.view === "metronome" ? "Metronome — Clawford" : `${key.value} ${scale.name} — Clawford`;
+  document.querySelector("#instrument-control").hidden = !hiddenControls.instrument;
+  document.querySelector("#tuning-control").hidden = !hiddenControls.tuning;
+  document.querySelector("#key-control").hidden = !hiddenControls.key;
+  document.querySelector("#scale-control").hidden = !hiddenControls.scale;
+  document.title = state.view === "metronome" ? "Metronome — Clawford" : state.view === "harmony" ? `Harmony — ${state.key} — Clawford` : `${key.value} ${scale.name} — Clawford`;
   renderTuner(tuning);
   renderMetronome();
+  renderHarmony();
   saveStoredState(state);
   const query = stateToSearchParams(state).toString();
   history.replaceState(null, "", `${location.pathname}${query ? `?${query}` : ""}`);
   scheduleDiagramFit();
+}
+
+function syncHarmonyScaleOptions() {
+  const options = state.view === "harmony" ? HARMONY_SCALES : SCALES;
+  const current = state.view === "harmony" && !options.some((scale) => scale.id === state.scale) ? "major" : state.scale;
+  if ([...scaleSelect.options].map((option) => option.value).join() !== options.map((scale) => scale.id).join()) populateSelect(scaleSelect, options.map((scale) => ({ value: scale.id, label: scale.name })));
+  scaleSelect.value = current;
+}
+
+function renderHarmony() {
+  if (state.view !== "harmony") return;
+  const chords = renderHarmonyOutput({ keyValue: state.key, mode: state.scale, includeSevenths: state.harmonySevenths, selectedNodeId: harmonySelectedNode, selectedPair: harmonySelectedPair, activeView: harmonyView, trail: harmonyTrail });
+  harmonyOutput.innerHTML = chords;
+}
+
+function handleHarmonyClick(event) {
+  const node = event.target.closest("[data-harmony-node]");
+  const transition = event.target.closest("[data-harmony-transition]");
+  const view = event.target.closest("[data-harmony-view]");
+  if (view) { harmonyView = view.dataset.harmonyView; renderHarmony(); return; }
+  if (event.target.closest("[data-harmony-play]")) { playHarmonyTrail(); return; }
+  if (event.target.closest("[data-harmony-undo]")) {
+    harmonyTrail = harmonyTrail.slice(0, -1);
+    harmonySelectedNode = harmonyTrail.at(-1) ?? null;
+    harmonySelectedPair = null;
+    renderHarmony();
+    return;
+  }
+  if (event.target.closest("[data-harmony-reset]")) { harmonyTrail = []; harmonySelectedPair = null; harmonySelectedNode = null; renderHarmony(); return; }
+  if (transition) {
+    const [source, destination] = transition.dataset.harmonyTransition.split("|");
+    harmonySelectedPair = { source, destination };
+    harmonySelectedNode = destination;
+    if (harmonyTrail.at(-1) !== source) harmonyTrail.push(source);
+    if (harmonyTrail.at(-1) !== destination) harmonyTrail.push(destination);
+    renderHarmony();
+    return;
+  }
+  if (node) {
+    harmonySelectedNode = node.dataset.harmonyNode;
+    harmonySelectedPair = null;
+    if (harmonyTrail.at(-1) !== harmonySelectedNode) harmonyTrail.push(harmonySelectedNode);
+    const chords = generateDiatonicChords(state.key, state.scale, state.harmonySevenths);
+    playHarmonyChord(chords.find((chord) => chord.id === harmonySelectedNode));
+    renderHarmony();
+  }
 }
 
 function renderMetronome() {

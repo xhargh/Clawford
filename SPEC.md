@@ -63,7 +63,7 @@ The first version is **not** intended to be:
 - an audio pitch detector,
 - an automatic transcription tool,
 - a MIDI sequencer,
-- a complete music-theory application,
+- a complete music-theory application beyond the included toolbox modes,
 - a chord-diagram generator,
 - a banjo lesson application.
 
@@ -997,3 +997,7 @@ The most important architectural rule is:
 The generated diagram should be a view of a musical data model, not the source of musical truth.
 
 A change from Open G to Double C, or from G major to G Mixolydian, should cause the same generic mapping engine to regenerate the diagram without any tuning-specific rendering logic.
+
+## 34. Harmony explorer
+
+Clawford includes a Harmony toolbox mode for exploring major and natural-minor keys. It generates diatonic triads or seventh chords from the selected scale and presents directional harmonic relationships, shared chord tones, shortest pitch-class voice leading, progression trails, and a mobile-scrollable relationship matrix. Explanations distinguish set similarity from functional movement; neither is presented as a universal measure of musical quality.

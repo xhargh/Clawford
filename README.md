@@ -33,6 +33,7 @@ Double-check every note before relying on it.
 - Key/scale selection, or chord root/quality selection.
 - Notation view and fretboard view, with vertical or horizontal orientation.
 - Metronome with BPM, meter, first-beat accent, odd-beat accents, and visual beat indication.
+- Harmony explorer for major and natural-minor keys, with diatonic triads/sevenths, directed progression relationships, voice-leading explanations, and a relationship matrix.
 - Print-friendly output (separate print stylesheet).
 - Runs entirely in the browser — no server or build step required.
 - Installable as a PWA with offline support (see [PWA support](#pwa-support)).

@@ -31,10 +31,18 @@ button, select, input[type="checkbox"], input[type="radio"], summary { cursor: p
 
 .site-logo {
   flex-shrink: 0;
-  width: 56px;
-  height: 56px;
+  width: 112px;
+  height: 112px;
+  position: relative;
+  top: -28px;
   border-radius: 12px;
 }
+.site-logo-button { flex-shrink: 0; width: 112px; height: 56px; padding: 0; overflow: visible; border: 0; border-radius: 12px; background: transparent; line-height: 0; }
+.site-logo-button:not(:disabled) { cursor: pointer; }
+.site-logo-button:not(:disabled):hover .site-logo { transform: rotate(-3deg) scale(1.04); }
+.site-logo-button:focus-visible { outline: 3px solid #ee9a74; outline-offset: 4px; }
+.fun-fact-preview { position: fixed; z-index: 10; top: 88px; left: 18px; width: min(512px, calc(100vw - 36px)); padding: 8px; border: 1px solid var(--warm); border-radius: 14px; background: var(--paper); box-shadow: 0 14px 36px rgb(0 0 0 / 35%); pointer-events: none; }
+.fun-fact-preview img { display: block; width: 100%; height: auto; border-radius: 9px; }
 
 h1, h2, p { margin-top: 0; }
 h1 { margin-bottom: 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(1.8rem, 5vw, 2.8rem); font-weight: 500; letter-spacing: -.03em; }

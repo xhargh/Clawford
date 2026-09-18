@@ -19,11 +19,16 @@
 </head>
 <body>
   <header class="site-header">
-    <img class="site-logo" src="img/clawford-112.png" alt="Clawford, a banjo-playing ferret" width="56" height="56">
+    <button id="fun-fact-image" class="site-logo-button" type="button" aria-label="Show a random Clawford fact" disabled>
+      <img class="site-logo" src="img/clawford-112.png" alt="Clawford, a banjo-playing ferret" width="112" height="112">
+    </button>
+    <div id="fun-fact-preview" class="fun-fact-preview" hidden aria-hidden="true">
+      <img alt="">
+    </div>
     <div>
       <p class="eyebrow">Fretted-instrument toolbox</p>
       <h1>Clawford</h1>
-      <p class="warning-banner" role="alert">⚠ Built entirely by AI. Trust it like you'd trust a ferret walking on your keyboard.</p>
+      <p id="warning-banner" class="warning-banner" role="alert">⚠ Built entirely by AI. Trust it like you'd trust a ferret walking on your keyboard.</p>
     </div>
   </header>
 

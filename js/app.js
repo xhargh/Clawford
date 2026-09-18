@@ -19,6 +19,7 @@ import { viewControlVisibility } from "./view-controls.js";
 import { TunerLifecycle } from "./tuner-lifecycle.js";
 import { Metronome } from "./metronome.js";
 import { renderMetronomeOutput } from "./metronome-renderer.js";
+import { FUN_FACTS } from "./fun-facts.js";
 
 const form = document.querySelector("#settings-form");
 const instrumentSelect = document.querySelector("#instrument");
@@ -31,6 +32,9 @@ const notationOutput = document.querySelector("#notation-output");
 const fretboardOutput = document.querySelector("#fretboard-output");
 const tunerOutput = document.querySelector("#tuner-output");
 const metronomeOutput = document.querySelector("#metronome-output");
+const funFactImage = document.querySelector("#fun-fact-image");
+const funFactPreview = document.querySelector("#fun-fact-preview");
+const warningBanner = document.querySelector("#warning-banner");
 const tunerControls = document.querySelector("#tuner-controls");
 const metronomeControls = document.querySelector("#metronome-controls");
 const generalControls = document.querySelector("#general-controls");
@@ -71,6 +75,9 @@ let tunerReading = null;
 let tunerError = "";
 let metronomeBeat = 0;
 let metronomeError = "";
+let currentFunFact = -1;
+let funFactsActive = false;
+let funFactHoverTimer = null;
 const metronome = new Metronome({ onBeat: (beat) => { metronomeBeat = beat; renderMetronome(); } });
 const tunerLifecycle = new TunerLifecycle({
   createSession: createMicrophoneSession,
@@ -91,6 +98,11 @@ writeForm(state);
 
 let fitScheduled = false;
 render();
+window.setTimeout(() => {
+  funFactsActive = true;
+  showRandomFunFact(false);
+  window.setInterval(showRandomFunFact, 60_000);
+}, 60_000);
 if (state.view === "tuner") {
   void loadInputDevices();
   void tunerLifecycle.enter();
@@ -104,6 +116,9 @@ metronomeOutput.addEventListener("click", (event) => {
   if (event.target.closest("#metronome-start")) void startMetronome();
   if (event.target.closest("#metronome-stop")) stopMetronome();
 });
+funFactImage.addEventListener("click", showRandomFunFact);
+funFactImage.addEventListener("pointerenter", startFunFactPreview);
+funFactImage.addEventListener("pointerleave", stopFunFactPreview);
 notationOutput.addEventListener("click", handleNotationClick);
 notationOutput.addEventListener("keydown", handleNotationKeydown);
 fretboardOutput.addEventListener("click", handleFretboardClick);
@@ -119,6 +134,42 @@ document.addEventListener("visibilitychange", handleVisibilityChange);
 
 function createAudioPlayer(instrumentId) {
   return new AudioPlayer({ profile: instrumentId.startsWith("banjo") ? BANJO_PROFILE : GUITAR_PROFILE });
+}
+
+function showRandomFunFact(updateBanner = true) {
+  if (!funFactsActive) return;
+  let next = Math.floor(Math.random() * FUN_FACTS.length);
+  if (FUN_FACTS.length > 1) {
+    while (next === currentFunFact) next = Math.floor(Math.random() * FUN_FACTS.length);
+  }
+  currentFunFact = next;
+  const number = String(next + 1).padStart(3, "0");
+  funFactImage.querySelector("img").src = `img/fun/${number}.webp`;
+  funFactImage.querySelector("img").alt = `Clawford fact ${next + 1}`;
+  if (updateBanner) warningBanner.textContent = FUN_FACTS[next];
+  funFactImage.disabled = false;
+}
+
+function startFunFactPreview() {
+  if (!funFactsActive || funFactHoverTimer !== null) return;
+  funFactHoverTimer = window.setTimeout(() => {
+    funFactHoverTimer = null;
+    const image = funFactImage.querySelector("img");
+    const previewImage = funFactPreview.querySelector("img");
+    previewImage.src = image.src;
+    previewImage.alt = image.alt;
+    funFactPreview.hidden = false;
+    funFactPreview.setAttribute("aria-hidden", "false");
+  }, 1_000);
+}
+
+function stopFunFactPreview() {
+  if (funFactHoverTimer !== null) {
+    window.clearTimeout(funFactHoverTimer);
+    funFactHoverTimer = null;
+  }
+  funFactPreview.hidden = true;
+  funFactPreview.setAttribute("aria-hidden", "true");
 }
 
 function playNotes(notes) {

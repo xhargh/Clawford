@@ -38,6 +38,7 @@ const APP_SHELL = [
   "js/metronome-renderer.js",
   "js/tuner-renderer.js",
   "js/view-controls.js",
+  "js/fun-facts.js",
   "img/clawford-16.png",
   "img/clawford-32.png",
   "img/clawford-112.png",
@@ -45,6 +46,7 @@ const APP_SHELL = [
   "img/clawford-192.png",
   "img/clawford-512.png",
   "img/clawford-512-maskable.png",
+  ...Array.from({ length: 100 }, (_, index) => `img/fun/${String(index + 1).padStart(3, "0")}.webp`),
   "favicon.ico",
 ];
 

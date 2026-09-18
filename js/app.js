@@ -486,6 +486,8 @@ function handleHarmonyClick(event) {
     harmonySelectedNode = destination;
     if (harmonyTrail.at(-1) !== source) harmonyTrail.push(source);
     if (harmonyTrail.at(-1) !== destination) harmonyTrail.push(destination);
+    const chords = generateDiatonicChords(state.key, state.scale, state.harmonySevenths);
+    playHarmonyChord(chords.find((chord) => chord.id === destination));
     renderHarmony();
     return;
   }

@@ -51,6 +51,17 @@ test("renders accessible map, progression, and matrix views", () => {
   assert.match(renderHarmonyOutput({ keyValue: "A", mode: "natural-minor", includeSevenths: false, activeView: "progression" }), /Where next\?/);
 });
 
+test("makes progression view source-focused instead of rendering the full map", () => {
+  const chords = generateDiatonicChords("G", "major");
+  const map = renderHarmonyOutput({ keyValue: "G", mode: "major", selectedNodeId: chords[4].id, activeView: "map" });
+  const progression = renderHarmonyOutput({ keyValue: "G", mode: "major", selectedNodeId: chords[4].id, activeView: "progression" });
+  assert.match(map, /data-harmony-transition="G-major-0-3\|G-major-4-3"/);
+  assert.doesNotMatch(progression, /data-harmony-transition="G-major-0-3\|G-major-4-3"/);
+  assert.match(progression, /data-harmony-transition="G-major-4-3\|G-major-0-3"/);
+  assert.match(progression, /progression-destination/);
+  assert.match(progression, /progression-other/);
+});
+
 test("renders trail playback and undo controls", () => {
   const empty = renderHarmonyOutput({ keyValue: "G", mode: "major", trail: [] });
   assert.match(empty, /data-harmony-play disabled/);

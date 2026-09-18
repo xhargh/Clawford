@@ -13,6 +13,7 @@ export class AudioPlayer {
   #cache = new Map();
   #active = new Map();
   #voices = new Set();
+  #playbackGeneration = 0;
   #disposed = false;
 
   constructor({
@@ -34,8 +35,10 @@ export class AudioPlayer {
   /** Accepts either playNote({ midi, string, when?, velocity? }) or playNote(midi, string, options?). */
   async playNote(note, physicalString, options = {}) {
     if (this.#disposed) throw new Error("AudioPlayer has been disposed");
+    const generation = this.#playbackGeneration;
     const request = typeof note === "object" ? note : { ...options, midi: note, string: physicalString };
     const context = await this.#readyContext();
+    if (generation !== this.#playbackGeneration) return null;
     const prepared = this.#prepareNote(context, request);
     return this.#startVoice(context, prepared, request.when ?? context.currentTime);
   }
@@ -43,7 +46,9 @@ export class AudioPlayer {
   async playNotes(notes, { spread = 0.025 } = {}) {
     if (this.#disposed) throw new Error("AudioPlayer has been disposed");
     if (!notes.length) return [];
+    const generation = this.#playbackGeneration;
     const context = await this.#readyContext();
+    if (generation !== this.#playbackGeneration) return [];
     const prepared = notes.map((note) => this.#prepareNote(context, note));
     const start = context.currentTime + 0.005;
     return prepared.map((note, index) => this.#startVoice(context, note, start + index * spread));
@@ -86,6 +91,7 @@ export class AudioPlayer {
   }
 
   stopAll() {
+    this.#playbackGeneration += 1;
     if (!this.#context) return;
     const when = this.#context.currentTime;
     for (const voice of this.#voices) this.#fadeVoice(voice, when);

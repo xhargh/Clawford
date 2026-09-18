@@ -84,6 +84,7 @@ let harmonyView = "map";
 let harmonySelectedNode = null;
 let harmonySelectedPair = null;
 let harmonyTrail = [];
+let harmonyTrailPlayback = null;
 let currentFunFact = -1;
 let funFactsActive = false;
 let funFactHoverTimer = null;
@@ -198,10 +199,23 @@ function playHarmonyChord(chord) {
   if (chord) playNotes(harmonyChordNotes(chord));
 }
 
+function stopHarmonyTrailPlayback() {
+  if (harmonyTrailPlayback) {
+    harmonyTrailPlayback.timers.forEach((timer) => window.clearTimeout(timer));
+    harmonyTrailPlayback = null;
+  }
+  audioPlayer.stopAll();
+}
+
 function playHarmonyTrail() {
   const chords = generateDiatonicChords(state.key, state.scale, state.harmonySevenths);
+  const playback = { timers: [] };
+  stopHarmonyTrailPlayback();
+  harmonyTrailPlayback = playback;
   harmonyTrail.map((id) => chords.find((chord) => chord.id === id)).filter(Boolean).forEach((chord, index) => {
-    window.setTimeout(() => playHarmonyChord(chord), index * 700);
+    playback.timers.push(window.setTimeout(() => {
+      if (harmonyTrailPlayback === playback) playHarmonyChord(chord);
+    }, index * 700));
   });
 }
 
@@ -479,7 +493,7 @@ function handleHarmonyClick(event) {
     renderHarmony();
     return;
   }
-  if (event.target.closest("[data-harmony-reset]")) { harmonyTrail = []; harmonySelectedPair = null; harmonySelectedNode = null; renderHarmony(); return; }
+  if (event.target.closest("[data-harmony-reset]")) { stopHarmonyTrailPlayback(); harmonyTrail = []; harmonySelectedPair = null; harmonySelectedNode = null; renderHarmony(); return; }
   if (transition) {
     const [source, destination] = transition.dataset.harmonyTransition.split("|");
     harmonySelectedPair = { source, destination };

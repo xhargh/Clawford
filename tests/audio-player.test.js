@@ -58,6 +58,21 @@ test("grouped notes are prepared before being scheduled as an ordered strum", as
   await player.dispose();
 });
 
+test("stopAll cancels a play request waiting for the audio context", async () => {
+  const context = new FakeAudioContext();
+  let releaseResume;
+  context.resume = () => new Promise((resolve) => { releaseResume = resolve; });
+  const player = new AudioPlayer({ createAudioContext: () => context, duration: 0.05 });
+  const playback = player.playNotes([{ midi: 60, string: 1 }]);
+
+  player.stopAll();
+  releaseResume();
+
+  assert.deepEqual(await playback, []);
+  assert.equal(context.sources.length, 0);
+  await player.dispose();
+});
+
 class FakeAudioParam {
   value = 1;
   ramps = [];

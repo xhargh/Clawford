@@ -78,7 +78,7 @@ js/
   state.js                  Application state management
   storage.js                Persisted user settings
 tests/                      Unit tests (node:test)
-deploy.sh                   Deploys the static site over SSH/SCP
+deploy.sh                   Deploys the static site over SSH/rsync
 SPEC.md                     Full project specification
 ```
 
@@ -92,8 +92,8 @@ npm test
 
 ## Deployment
 
-`deploy.sh` copies `index.html`, `css/`, and `js/` to a remote host via
-`scp`:
+`deploy.sh` synchronizes `index.html`, `css/`, and `js/` to a remote host via
+`rsync`, transferring only changed files:
 
 ```bash
 ./deploy.sh [remote-host] [remote-path]

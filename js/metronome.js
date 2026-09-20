@@ -19,6 +19,8 @@ export class Metronome {
   #nextTime = 0;
   #nextBeat = 0;
   #settings = null;
+  #pendingBpm = null;
+  #scheduled = [];
   #onBeat;
   #generation = 0;
 
@@ -33,6 +35,8 @@ export class Metronome {
     this.stop();
     const generation = this.#generation;
     this.#settings = normalizeSettings(settings);
+    this.#pendingBpm = null;
+    this.#scheduled = [];
     this.#context = this.#contextFactory();
     if (!this.#context) throw new Error("Web Audio is not available");
     if (this.#context.state !== "running") await this.#context.resume();
@@ -49,6 +53,26 @@ export class Metronome {
     if (this.#context && this.#context.state !== "closed") void this.#context.close();
     this.#context = null;
     this.#settings = null;
+    this.#pendingBpm = null;
+    this.#scheduled = [];
+  }
+
+  updateBpm(bpm) {
+    if (!this.running) return;
+    const nextBpm = normalizeSettings({ ...this.#settings, bpm }).bpm;
+    if (nextBpm === this.#settings.bpm) {
+      this.#pendingBpm = null;
+      return;
+    }
+    this.#pendingBpm = nextBpm;
+    const upcoming = this.#scheduled
+      .filter(({ time }) => time >= this.#context.currentTime)
+      .sort((a, b) => a.time - b.time);
+    if (upcoming.length > 0) {
+      const nextTick = upcoming[0];
+      for (const event of upcoming.slice(1)) this.#cancelScheduled(event);
+      this.#nextTime = nextTick.time;
+    }
   }
 
   async suspend() {
@@ -66,23 +90,51 @@ export class Metronome {
     if (generation !== this.#generation) return;
     if (!this.#context || !this.#settings) return;
     const horizon = this.#context.currentTime + 0.1;
-    const interval = beatDurationSeconds(this.#settings.bpm, this.#settings.denominator);
+    const pendingBpm = this.#pendingBpm;
+    const upcoming = this.#scheduled
+      .filter(({ time }) => time >= this.#context.currentTime)
+      .sort((a, b) => a.time - b.time);
+    if (pendingBpm !== null && upcoming.length > 0) {
+      const nextTick = upcoming[0];
+      if (nextTick.time >= horizon) return;
+      this.#settings.bpm = pendingBpm;
+      this.#pendingBpm = null;
+      this.#nextTime = nextTick.time + beatDurationSeconds(this.#settings.bpm, this.#settings.denominator);
+    }
+    let applyPendingAfterFirstTick = pendingBpm !== null && upcoming.length === 0;
+    let interval = beatDurationSeconds(this.#settings.bpm, this.#settings.denominator);
     while (this.#nextTime < horizon) {
       const beat = this.#nextBeat % this.#settings.numerator;
       const accent = (beat === 0 && this.#settings.firstBeatAccent) ||
         (beat % 2 === 0 && this.#settings.oddBeatAccent);
-      scheduleClick(this.#context, this.#nextTime, { accent });
-      this.#notifyBeat(beat + 1, this.#nextTime, generation);
+      const event = { time: this.#nextTime, ...scheduleClick(this.#context, this.#nextTime, { accent }) };
+      this.#scheduled.push(event);
+      this.#notifyBeat(beat + 1, event, generation);
       this.#nextBeat += 1;
       this.#nextTime += interval;
+      if (applyPendingAfterFirstTick) {
+        this.#settings.bpm = pendingBpm;
+        this.#pendingBpm = null;
+        interval = beatDurationSeconds(this.#settings.bpm, this.#settings.denominator);
+        this.#nextTime = event.time + interval;
+        applyPendingAfterFirstTick = false;
+      }
     }
   }
 
-  #notifyBeat(beat, time, generation) {
-    const delay = Math.max(0, (time - this.#context.currentTime) * 1000);
-    setTimeout(() => {
+  #notifyBeat(beat, event, generation) {
+    const delay = Math.max(0, (event.time - this.#context.currentTime) * 1000);
+    event.notification = setTimeout(() => {
+      this.#scheduled = this.#scheduled.filter((scheduled) => scheduled !== event);
       if (this.#timer !== null && generation === this.#generation) this.#onBeat(beat);
     }, delay);
+  }
+
+  #cancelScheduled(event) {
+    clearTimeout(event.notification);
+    event.gain.gain.cancelScheduledValues(this.#context.currentTime);
+    event.gain.gain.setValueAtTime(0, this.#context.currentTime);
+    this.#scheduled = this.#scheduled.filter((scheduled) => scheduled !== event);
   }
 }
 
@@ -107,6 +159,7 @@ function scheduleClick(context, time, { accent }) {
   oscillator.connect(gain);
   oscillator.start(time);
   oscillator.stop(time + 0.08);
+  return { gain };
 }
 
 function defaultAudioContextFactory() {

@@ -383,7 +383,12 @@ function updateFromForm() {
     void tunerLifecycle.enter();
   }
   render();
-  if (state.view === "metronome" && metronome.running && ["metronomeBpm", "metronomeNumerator", "metronomeDenominator", "metronomeFirstAccent", "metronomeOddAccent"].some((key) => state[key] !== previousMetronome[key])) void startMetronome();
+  if (state.view === "metronome" && metronome.running) {
+    const metronomeChanged = ["metronomeBpm", "metronomeNumerator", "metronomeDenominator", "metronomeFirstAccent", "metronomeOddAccent"]
+      .filter((key) => state[key] !== previousMetronome[key]);
+    if (metronomeChanged.length === 1 && metronomeChanged[0] === "metronomeBpm") metronome.updateBpm(state.metronomeBpm);
+    else if (metronomeChanged.length > 0) void startMetronome();
+  }
 }
 
 function updateChordOptionAvailability(tuning) {

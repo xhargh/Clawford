@@ -19,6 +19,5 @@ sed "s/clawford-dev/clawford-${HASH}/" sw.js > "${TMP_DIR}/sw.js"
 
 echo "Deploying to ${REMOTE_HOST}:${REMOTE_PATH} (cache version clawford-${HASH}) ..."
 ssh "$REMOTE_HOST" "mkdir -p ${REMOTE_PATH}"
-scp -r index.html manifest.webmanifest favicon.ico img css js "${REMOTE_HOST}:${REMOTE_PATH}/"
-scp "${TMP_DIR}/sw.js" "${REMOTE_HOST}:${REMOTE_PATH}/sw.js"
+rsync -azc index.html manifest.webmanifest favicon.ico img css js "${TMP_DIR}/sw.js" "${REMOTE_HOST}:${REMOTE_PATH}/"
 echo "Done."

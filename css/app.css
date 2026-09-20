@@ -99,13 +99,16 @@ fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 .metronome-controls { display: grid; gap: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
 .general-controls { display: contents; }
 .metronome-controls label:has(input[type="checkbox"]) { display: flex; min-height: 42px; align-items: center; gap: 7px; padding: 8px; border: 1px solid #aeb6ab; border-radius: 3px; background: white; }
-.metronome-actions { display: flex; justify-content: center; gap: 8px; }
+.metronome-tempo { display: flex; align-items: center; justify-content: center; gap: 14px; }
+.metronome-tempo button { display: grid; width: 40px; height: 40px; place-items: center; color: var(--ink); border: 1px solid var(--line); border-radius: 50%; background: white; font-size: 1.35rem; line-height: 1; }
+.metronome-tempo button:disabled { cursor: not-allowed; opacity: .45; }
+.metronome-bpm { min-width: 110px; font-size: 1.8rem; font-weight: 800; }
+.metronome-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
 .metronome-actions button { min-height: 42px; padding: 8px 12px; color: white; border: 1px solid var(--accent); border-radius: 3px; background: var(--accent); }
-.metronome-actions button:last-child { color: var(--ink); background: white; }
+.metronome-actions button:nth-child(2) { color: var(--ink); background: white; }
 .metronome-actions button:disabled { cursor: not-allowed; opacity: .45; }
-.tap-tempo { display: grid; gap: 10px; justify-items: center; padding-top: 20px; border-top: 1px solid var(--line); }
-.tap-tempo h2 { margin: 0; font-size: 1.1rem; }
-.tap-tempo-button { width: min(100%, 260px); min-height: 70px; padding: 12px; color: white; border: 2px solid var(--accent); border-radius: 6px; background: var(--accent); font-size: 1.25rem; font-weight: 800; touch-action: manipulation; }
+.tap-tempo { display: grid; gap: 10px; justify-items: center; }
+.tap-tempo-button { touch-action: manipulation; }
 .tap-tempo-button:active { transform: scale(.97); }
 .tap-tempo-result { min-height: 1.5em; margin: 0; color: var(--muted); font-weight: 800; }
 .tap-tempo-reset { padding: 5px 10px; color: var(--ink); border: 1px solid var(--line); border-radius: 3px; background: white; }

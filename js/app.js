@@ -82,7 +82,7 @@ let tapBpm = null;
 let currentFunFact = -1;
 let funFactsActive = false;
 let funFactHoverTimer = null;
-const metronome = new Metronome({ onBeat: (beat) => { metronomeBeat = beat; renderMetronome(); } });
+const metronome = new Metronome({ onBeat: (beat) => { metronomeBeat = beat; renderMetronomeBeat(); } });
 const tapTempo = new TapTempo();
 const tunerLifecycle = new TunerLifecycle({
   createSession: createMicrophoneSession,
@@ -121,6 +121,8 @@ tunerOutput.addEventListener("pointerdown", handleTunerTargetPointerdown);
 tunerOutput.addEventListener("click", handleTunerTargetClick);
 tunerOutput.addEventListener("keydown", handleTunerTargetKeydown);
 metronomeOutput.addEventListener("click", (event) => {
+  if (event.target.closest("#metronome-decrease")) adjustMetronomeBpm(-1);
+  if (event.target.closest("#metronome-increase")) adjustMetronomeBpm(1);
   if (event.target.closest("#metronome-start")) void startMetronome();
   if (event.target.closest("#metronome-stop")) stopMetronome();
   if (event.target.closest("#tap-tempo-button")) tapMetronome();
@@ -464,7 +466,25 @@ function render() {
 }
 
 function renderMetronome() {
-  metronomeOutput.innerHTML = renderMetronomeOutput({ beat: metronomeBeat, numerator: state.metronomeNumerator, running: metronome.running, tapBpm, error: metronomeError });
+  metronomeOutput.innerHTML = renderMetronomeOutput({ beat: metronomeBeat, numerator: state.metronomeNumerator, bpm: state.metronomeBpm, running: metronome.running, tapBpm, error: metronomeError });
+}
+
+function renderMetronomeBeat() {
+  metronomeOutput.querySelectorAll(".metronome-beat").forEach((element, index) => {
+    element.classList.toggle("active", metronomeBeat === index + 1);
+  });
+}
+
+function adjustMetronomeBpm(delta) {
+  const bpm = Math.max(BPM_MIN, Math.min(BPM_MAX, state.metronomeBpm + delta));
+  if (bpm === state.metronomeBpm) return;
+  state = { ...state, metronomeBpm: bpm };
+  writeForm(state);
+  if (metronome.running) metronome.updateBpm(bpm);
+  saveStoredState(state);
+  const query = stateToSearchParams(state).toString();
+  history.replaceState(null, "", `${location.pathname}${query ? `?${query}` : ""}`);
+  renderMetronome();
 }
 
 function tapMetronome() {

@@ -117,3 +117,14 @@ test("renders a scale with selectable tones and a scale-specific label", () => {
   assert.equal(tones.filter((node) => node.attributes.class.includes("selected")).length, 4);
   assert.ok(tones.every((node) => node.attributes.class.includes("fretboard-tone")));
 });
+
+test("renders every fretboard tone as a visible keyboard and pointer control", () => {
+  const board = generateScaleBoardNotes(openG, root, getScale("major"));
+  const svg = renderScaleBoard(board, "Open G", openG, root, getScale("major"));
+  const tones = descendants(svg).filter((node) => node.attributes.class?.includes("fretboard-tone"));
+
+  assert.ok(tones.length > 0);
+  assert.ok(tones.every((node) => node.attributes.role === "button"));
+  assert.ok(tones.every((node) => node.attributes.tabindex === "0"));
+  assert.ok(tones.every((node) => node.attributes["aria-label"]));
+});

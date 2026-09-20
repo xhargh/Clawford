@@ -100,3 +100,10 @@ export const FUN_FACTS = [
   "Clawford plays every tune like he has just uncovered it.",
   "Clawford is still searching for the legendary perfect chord."
 ];
+
+export function funFactPresentation(index) {
+  return {
+    text: FUN_FACTS[index],
+    image: `img/fun/${String(index + 1).padStart(3, "0")}.webp`
+  };
+}

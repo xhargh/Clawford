@@ -15,11 +15,11 @@ import { MicrophoneSession } from "./audio/microphone-session.js";
 import { estimatePitch, PitchStabilizer } from "./audio/pitch-detector.js";
 import { selectTunerTarget, selectTunerTargets } from "./tuner.js";
 import { renderTunerOutput } from "./tuner-renderer.js";
-import { viewControlVisibility } from "./view-controls.js";
+import { viewControlHidden, viewControlVisibility } from "./view-controls.js";
 import { TunerLifecycle } from "./tuner-lifecycle.js";
 import { Metronome } from "./metronome.js";
 import { renderMetronomeOutput } from "./metronome-renderer.js";
-import { FUN_FACTS } from "./fun-facts.js";
+import { FUN_FACTS, funFactPresentation } from "./fun-facts.js";
 
 const form = document.querySelector("#settings-form");
 const instrumentSelect = document.querySelector("#instrument");
@@ -100,7 +100,7 @@ let fitScheduled = false;
 render();
 window.setTimeout(() => {
   funFactsActive = true;
-  showRandomFunFact(false);
+  showRandomFunFact();
   window.setInterval(showRandomFunFact, 60_000);
 }, 60_000);
 if (state.view === "tuner") {
@@ -136,17 +136,17 @@ function createAudioPlayer(instrumentId) {
   return new AudioPlayer({ profile: instrumentId.startsWith("banjo") ? BANJO_PROFILE : GUITAR_PROFILE });
 }
 
-function showRandomFunFact(updateBanner = true) {
+function showRandomFunFact() {
   if (!funFactsActive) return;
   let next = Math.floor(Math.random() * FUN_FACTS.length);
   if (FUN_FACTS.length > 1) {
     while (next === currentFunFact) next = Math.floor(Math.random() * FUN_FACTS.length);
   }
   currentFunFact = next;
-  const number = String(next + 1).padStart(3, "0");
-  funFactImage.querySelector("img").src = `img/fun/${number}.webp`;
+  const presentation = funFactPresentation(next);
+  funFactImage.querySelector("img").src = presentation.image;
   funFactImage.querySelector("img").alt = `Clawford fact ${next + 1}`;
-  if (updateBanner) warningBanner.textContent = FUN_FACTS[next];
+  warningBanner.textContent = presentation.text;
   funFactImage.disabled = false;
 }
 
@@ -394,16 +394,16 @@ function render() {
   fretboardOutput.replaceChildren(fretboardScale
     ? renderScaleBoard(fretboardBoard, fretboardTitle, tuning, chordRoot, fretboardScale)
     : renderChordBoard(fretboardBoard, fretboardTitle, tuning, chordRoot, chordQuality));
-  notationOutput.hidden = state.view !== "notation";
-  fretboardOutput.hidden = state.view !== "fretboard";
-  tunerOutput.hidden = state.view !== "tuner";
-  metronomeOutput.hidden = state.view !== "metronome";
-  tunerControls.hidden = state.view !== "tuner";
-  metronomeControls.hidden = state.view !== "metronome";
-  document.querySelector("#chord-root-control").hidden = state.view !== "fretboard";
-  document.querySelector("#chord-quality-control").hidden = state.view !== "fretboard";
-  const hiddenControls = viewControlVisibility(state.view);
-  generalControls.hidden = state.view === "metronome";
+  const hiddenControls = viewControlHidden(state.view);
+  generalControls.hidden = !viewControlVisibility(state.view).instrument;
+  notationOutput.hidden = hiddenControls.notationOutput;
+  fretboardOutput.hidden = hiddenControls.fretboardOutput;
+  tunerOutput.hidden = hiddenControls.tunerOutput;
+  metronomeOutput.hidden = hiddenControls.metronomeOutput;
+  tunerControls.hidden = hiddenControls.tunerControls;
+  metronomeControls.hidden = hiddenControls.metronomeControls;
+  document.querySelector("#chord-root-control").hidden = hiddenControls.chordRoot;
+  document.querySelector("#chord-quality-control").hidden = hiddenControls.chordQuality;
   document.querySelector("#instrument-control").hidden = hiddenControls.instrument;
   document.querySelector("#tuning-control").hidden = hiddenControls.tuning;
   document.querySelector("#key-control").hidden = hiddenControls.key;

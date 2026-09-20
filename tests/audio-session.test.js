@@ -135,6 +135,26 @@ test("suspends and resumes audio processing without losing the session", async (
   assert.equal(session.state, "running");
 });
 
+test("resumes a suspended context when microphone capture starts", async () => {
+  const calls = [];
+  const context = {
+    state: "suspended",
+    createAnalyser: () => ({}),
+    createMediaStreamSource: () => ({ connect() {}, disconnect() {} }),
+    resume: async () => { calls.push("resume"); context.state = "running"; },
+    close: async () => {}
+  };
+  const session = new MicrophoneSession({
+    getUserMedia: async () => ({ getTracks: () => [] }),
+    createAudioContext: () => context
+  });
+
+  await session.start();
+
+  assert.deepEqual(calls, ["resume"]);
+  assert.equal(session.state, "running");
+});
+
 test("dispose permanently ends the session", async () => {
   const session = new MicrophoneSession({
     getUserMedia: async () => ({ getTracks: () => [] }),

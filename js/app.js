@@ -63,6 +63,7 @@ let state = stateFromSources(loadStoredState(), new URLSearchParams(location.sea
   chordRoots: KEYS.map((key) => key.value),
   chordQualities: [...CHORD_QUALITIES.map((quality) => quality.id), ...FRETBOARD_SCALES.map(scaleOptionValue)]
 });
+let sharedAudioContext = null;
 let audioPlayer = createAudioPlayer(state.instrument);
 let selectedFretsByString = new Map();
 let selectedTonesByString = new Map();
@@ -112,6 +113,9 @@ form.addEventListener("input", updateFromForm);
 tunerInputDevice.addEventListener("change", handleTunerInputDeviceChange);
 tunerStart.addEventListener("click", startTuner);
 tunerStop.addEventListener("click", () => { void stopTuner(); });
+tunerOutput.addEventListener("pointerdown", handleTunerTargetPointerdown);
+tunerOutput.addEventListener("click", handleTunerTargetClick);
+tunerOutput.addEventListener("keydown", handleTunerTargetKeydown);
 metronomeOutput.addEventListener("click", (event) => {
   if (event.target.closest("#metronome-start")) void startMetronome();
   if (event.target.closest("#metronome-stop")) stopMetronome();
@@ -133,7 +137,18 @@ window.addEventListener("pagehide", () => { void stopTuner(); stopMetronome(); }
 document.addEventListener("visibilitychange", handleVisibilityChange);
 
 function createAudioPlayer(instrumentId) {
-  return new AudioPlayer({ profile: instrumentId.startsWith("banjo") ? BANJO_PROFILE : GUITAR_PROFILE });
+  return new AudioPlayer({
+    profile: instrumentId.startsWith("banjo") ? BANJO_PROFILE : GUITAR_PROFILE,
+    createAudioContext: createSharedAudioContext,
+    closeAudioContext: false
+  });
+}
+
+function createSharedAudioContext() {
+  if (sharedAudioContext) return sharedAudioContext;
+  const Context = globalThis.AudioContext ?? globalThis.webkitAudioContext;
+  sharedAudioContext = Context ? new Context() : null;
+  return sharedAudioContext;
 }
 
 function showRandomFunFact() {
@@ -191,6 +206,26 @@ function handleNotationKeydown(event) {
   if (!note) return;
   event.preventDefault();
   playNotes([noteFromElement(note)]);
+}
+
+function handleTunerTargetClick(event) {
+  if (event.detail > 0) return;
+  const target = event.target.closest(".string-button");
+  if (target) playNotes([noteFromElement(target)]);
+}
+
+function handleTunerTargetPointerdown(event) {
+  if (!event.isPrimary || event.button !== 0) return;
+  const target = event.target.closest(".string-button");
+  if (target) playNotes([noteFromElement(target)]);
+}
+
+function handleTunerTargetKeydown(event) {
+  if (event.key !== "Enter" && event.key !== " ") return;
+  const target = event.target.closest(".string-button");
+  if (!target) return;
+  event.preventDefault();
+  playNotes([noteFromElement(target)]);
 }
 
 function selectAndPlayFretboardTone(element) {
@@ -476,7 +511,7 @@ function createMicrophoneSession() {
   const getUserMedia = (constraints) => navigator.mediaDevices.getUserMedia(selectedDevice
     ? { ...constraints, audio: { deviceId: { exact: selectedDevice } } }
     : constraints);
-  return new MicrophoneSession({ getUserMedia });
+  return new MicrophoneSession({ getUserMedia, createAudioContext: createSharedAudioContext, closeAudioContext: false });
 }
 
 async function startTuner() {

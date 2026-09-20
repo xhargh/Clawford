@@ -7,14 +7,16 @@ test("renders tuner reading, status, and tuning targets through its public rende
     mode: "tuning",
     running: true,
     reading: { note: "G4", frequency: 392, cents: -3, status: "In tune" },
-    targets: [{ string: 5, pitch: "G4" }, { string: 4, pitch: "D4" }]
+    targets: [{ string: 5, pitch: "G4", midi: 67 }, { string: 4, pitch: "D4", midi: 62 }]
   });
 
   assert.match(output, /G4/);
   assert.match(output, /392\.0 Hz/);
   assert.match(output, /-3 cents/);
   assert.match(output, /In tune/);
+  assert.match(output, /class="tuner-target string-button"/);
   assert.match(output, /data-string="5"/);
+  assert.match(output, /data-midi="67"/);
   assert.match(output, /D4/);
 });
 

@@ -10,6 +10,7 @@ export class AudioPlayer {
   #seed;
   #duration;
   #cacheLimit;
+  #closeAudioContext;
   #cache = new Map();
   #active = new Map();
   #voices = new Set();
@@ -20,7 +21,8 @@ export class AudioPlayer {
     seed = 0,
     duration = 1.5,
     cacheSize = 32,
-    createAudioContext = defaultAudioContextFactory
+    createAudioContext = defaultAudioContextFactory,
+    closeAudioContext = true
   } = {}) {
     if (!Number.isSafeInteger(cacheSize) || cacheSize < 1) throw new RangeError("cacheSize must be positive");
     if (!Number.isFinite(duration) || duration <= 0) throw new RangeError("duration must be positive");
@@ -29,6 +31,7 @@ export class AudioPlayer {
     this.#duration = duration;
     this.#cacheLimit = cacheSize;
     this.#contextFactory = createAudioContext;
+    this.#closeAudioContext = closeAudioContext;
   }
 
   /** Accepts either playNote({ midi, string, when?, velocity? }) or playNote(midi, string, options?). */
@@ -99,7 +102,7 @@ export class AudioPlayer {
     this.#cache.clear();
     const context = this.#context;
     this.#context = null;
-    if (context && context.state !== "closed") await context.close();
+    if (this.#closeAudioContext && context && context.state !== "closed") await context.close();
     this.#voices.clear();
   }
 

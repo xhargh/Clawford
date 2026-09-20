@@ -1,6 +1,7 @@
 export class MicrophoneSession {
   #getUserMedia;
   #createAudioContext;
+  #closeAudioContext;
   #stream = null;
   #context = null;
   #source = null;
@@ -8,9 +9,10 @@ export class MicrophoneSession {
   #state = "idle";
   #startToken = 0;
 
-  constructor({ getUserMedia = defaultGetUserMedia, createAudioContext = defaultAudioContextFactory } = {}) {
+  constructor({ getUserMedia = defaultGetUserMedia, createAudioContext = defaultAudioContextFactory, closeAudioContext = true } = {}) {
     this.#getUserMedia = getUserMedia;
     this.#createAudioContext = createAudioContext;
+    this.#closeAudioContext = closeAudioContext;
   }
 
   get state() {
@@ -48,6 +50,7 @@ export class MicrophoneSession {
       this.#analyser = this.#context.createAnalyser();
       this.#source = this.#context.createMediaStreamSource(this.#stream);
       this.#source.connect(this.#analyser);
+      if (this.#context.state !== "running" && this.#context.resume) await this.#context.resume();
       this.#state = "running";
       return this;
     } catch (error) {
@@ -65,7 +68,7 @@ export class MicrophoneSession {
       try { this.#source.disconnect(); } catch {}
     }
     this.#releaseStream();
-    if (this.#context && this.#context.state !== "closed") await this.#context.close();
+    if (this.#closeAudioContext && this.#context && this.#context.state !== "closed") await this.#context.close();
     this.#source = null;
     this.#analyser = null;
     this.#context = null;

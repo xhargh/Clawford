@@ -73,6 +73,7 @@ let suppressClicksUntil = 0;
 let tunerAnimationFrame = null;
 let tunerStabilizer = new PitchStabilizer();
 let tunerReading = null;
+let tunerAudioRms = 0;
 let tunerError = "";
 let metronomeBeat = 0;
 let metronomeError = "";
@@ -489,6 +490,7 @@ function renderTuner(tuning) {
     mode: state.tunerMode,
     running: tunerLifecycle.session?.state === "running",
     reading: tunerReading,
+    audioRms: tunerAudioRms,
     targets,
     error: tunerError
   });
@@ -531,6 +533,7 @@ function resetTunerState() {
   tunerAnimationFrame = null;
   tunerError = "";
   tunerReading = null;
+  tunerAudioRms = 0;
   tunerStabilizer = new PitchStabilizer();
 }
 
@@ -558,18 +561,22 @@ async function handleVisibilityChange() {
 function readTunerFrame(session = tunerLifecycle.session) {
   if (tunerLifecycle.session !== session || session?.state !== "running") return;
   const estimate = tunerStabilizer.update(estimatePitch(session.readFrame(), { sampleRate: session.sampleRate }));
-  if (!estimate.isSilent && estimate.frequency && estimate.stable) tunerReading = tunerReadingFromFrequency(estimate.frequency);
+  const rms = estimate.isSilent ? 0 : estimate.rms;
+  tunerAudioRms = rms;
+  if (tunerReading) tunerReading = { ...tunerReading, rms };
+  if (!estimate.isSilent && estimate.frequency && estimate.stable) tunerReading = tunerReadingFromFrequency(estimate.frequency, rms);
   render();
   tunerAnimationFrame = requestAnimationFrame(() => readTunerFrame(session));
 }
 
-function tunerReadingFromFrequency(frequency) {
+function tunerReadingFromFrequency(frequency, rms) {
   const tuning = tunings.find((item) => item.id === state.tuning) || tunings[0];
   const target = selectTunerTarget({ frequency, mode: state.tunerMode, tuning, a4: state.tunerA4 });
   const cents = target.cents;
   return {
     note: target.note || target.pitch,
     frequency,
+    rms,
     cents,
     status: Math.abs(cents) <= 5 ? "In tune" : cents < 0 ? "Tune up" : "Tune down"
   };

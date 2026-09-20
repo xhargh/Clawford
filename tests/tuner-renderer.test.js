@@ -44,6 +44,20 @@ test("positions the meter pointer across its full accuracy range", () => {
   assert.match(output, /--meter-position: 50%/);
 });
 
+test("keeps tuner colors at the base palette when audio is quiet", () => {
+  const output = renderTunerOutput({ audioRms: 0.01 });
+
+  assert.match(output, /--tuner-warm: rgb\(152, 67, 37\)/);
+  assert.match(output, /--tuner-accent: rgb\(40, 90, 69\)/);
+});
+
+test("moves tuner colors toward bright orange and green as audio rises", () => {
+  const output = renderTunerOutput({ audioRms: 0.35 });
+
+  assert.match(output, /--tuner-warm: rgb\(255, 122, 47\)/);
+  assert.match(output, /--tuner-accent: rgb\(54, 201, 121\)/);
+});
+
 test("renders higher-numbered strings to the left", () => {
   const output = renderTunerOutput({
     mode: "tuning",

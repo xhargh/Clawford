@@ -82,11 +82,11 @@ fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 .tuner-output { min-height: 340px; border: 1px solid var(--line); background: #f7f8f2; }
 .tuner-card { display: grid; gap: 28px; max-width: 760px; margin: 0 auto; padding: clamp(28px, 7vw, 72px) clamp(18px, 6vw, 64px); text-align: center; }
 .tuner-reading { display: grid; gap: 4px; }
-.tuner-note { color: var(--accent); font-family: Georgia, serif; font-size: clamp(4rem, 16vw, 8rem); line-height: .9; }
+.tuner-note { color: var(--tuner-accent, var(--accent)); font-family: Georgia, serif; font-size: clamp(4rem, 16vw, 8rem); line-height: .9; }
 .tuner-frequency, .tuner-cents { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
-.tuner-status { min-height: 1.5em; color: var(--warm); font-weight: 800; }
+.tuner-status { min-height: 1.5em; color: var(--tuner-warm, var(--warm)); font-weight: 800; }
 .tuner-meter { display: grid; gap: 10px; }
-.tuner-meter-scale { position: relative; display: block; height: 24px; border-radius: 20px; background: linear-gradient(90deg, var(--warm) 0 45%, var(--accent) 48% 52%, var(--warm) 55% 100%); }
+.tuner-meter-scale { position: relative; display: block; height: 24px; border-radius: 20px; background: linear-gradient(90deg, var(--tuner-warm, var(--warm)) 0 45%, var(--tuner-accent, var(--accent)) 48% 52%, var(--tuner-warm, var(--warm)) 55% 100%); }
 .tuner-meter-scale::before, .tuner-meter-scale::after { position: absolute; top: 30px; color: var(--muted); font-size: .72rem; }
 .tuner-meter-scale::before { content: "-50"; left: 0; }
 .tuner-meter-scale::after { content: "+50"; right: 0; }

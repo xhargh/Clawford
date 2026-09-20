@@ -50,7 +50,7 @@ function applyObject(state, source, validValues) {
     if (!(key in source)) continue;
     const raw = source[key];
     if (["metronomeFirstAccent", "metronomeOddAccent"].includes(key)) state[key] = raw === true || raw === "true";
-    else if (key === "metronomeBpm" && Number.isInteger(Number(raw)) && Number(raw) >= 30 && Number(raw) <= 300) state[key] = Number(raw);
+    else if (key === "metronomeBpm" && Number.isInteger(Number(raw)) && Number(raw) >= 30 && Number(raw) <= 360) state[key] = Number(raw);
     else if (key === "metronomeNumerator" && Number.isInteger(Number(raw)) && Number(raw) >= 1 && Number(raw) <= 12) state[key] = Number(raw);
     else if (key === "metronomeDenominator" && ENUMS[key].includes(Number(raw))) state[key] = Number(raw);
     else if (ENUMS[key]?.includes(raw)) state[key] = raw;

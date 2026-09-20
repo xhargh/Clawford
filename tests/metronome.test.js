@@ -1,10 +1,31 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { beatDurationSeconds, beatPattern, Metronome } from "../js/metronome.js";
+import { TapTempo } from "../js/tap-tempo.js";
 
 test("uses denominator note value for beat duration", () => {
   assert.equal(beatDurationSeconds(120, 4), 0.5);
   assert.equal(beatDurationSeconds(120, 8), 0.25);
+});
+
+test("identifies BPM from recent taps", () => {
+  const tapTempo = new TapTempo();
+  assert.equal(tapTempo.tap(0), null);
+  assert.equal(tapTempo.tap(500), 120);
+  assert.equal(tapTempo.tap(1000), 120);
+});
+
+test("reports tap tempo above the metronome maximum", () => {
+  const tapTempo = new TapTempo();
+  tapTempo.tap(0);
+  assert.equal(tapTempo.tap(100), 600);
+});
+
+test("resets tap sequence after a long pause", () => {
+  const tapTempo = new TapTempo();
+  tapTempo.tap(0);
+  tapTempo.tap(500);
+  assert.equal(tapTempo.tap(3000), null);
 });
 
 test("6/8 produces six beats", () => {

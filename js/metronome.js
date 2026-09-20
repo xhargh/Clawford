@@ -1,5 +1,5 @@
 export const BPM_MIN = 30;
-export const BPM_MAX = 300;
+export const BPM_MAX = 360;
 
 export function beatDurationSeconds(bpm, denominator = 4) {
   return 60 / bpm * (4 / denominator);

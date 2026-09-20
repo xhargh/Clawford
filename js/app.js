@@ -17,8 +17,9 @@ import { selectTunerTarget, selectTunerTargets } from "./tuner.js";
 import { renderTunerOutput } from "./tuner-renderer.js";
 import { viewControlHidden, viewControlVisibility } from "./view-controls.js";
 import { TunerLifecycle } from "./tuner-lifecycle.js";
-import { Metronome } from "./metronome.js";
+import { BPM_MAX, BPM_MIN, Metronome } from "./metronome.js";
 import { renderMetronomeOutput } from "./metronome-renderer.js";
+import { TapTempo } from "./tap-tempo.js";
 import { FUN_FACTS, funFactPresentation } from "./fun-facts.js";
 
 const form = document.querySelector("#settings-form");
@@ -77,10 +78,12 @@ let tunerAudioRms = 0;
 let tunerError = "";
 let metronomeBeat = 0;
 let metronomeError = "";
+let tapBpm = null;
 let currentFunFact = -1;
 let funFactsActive = false;
 let funFactHoverTimer = null;
 const metronome = new Metronome({ onBeat: (beat) => { metronomeBeat = beat; renderMetronome(); } });
+const tapTempo = new TapTempo();
 const tunerLifecycle = new TunerLifecycle({
   createSession: createMicrophoneSession,
   onStarted: (session) => {
@@ -120,6 +123,8 @@ tunerOutput.addEventListener("keydown", handleTunerTargetKeydown);
 metronomeOutput.addEventListener("click", (event) => {
   if (event.target.closest("#metronome-start")) void startMetronome();
   if (event.target.closest("#metronome-stop")) stopMetronome();
+  if (event.target.closest("#tap-tempo-button")) tapMetronome();
+  if (event.target.closest("#tap-tempo-reset")) resetTapTempo();
 });
 funFactImage.addEventListener("click", showRandomFunFact);
 funFactImage.addEventListener("pointerenter", startFunFactPreview);
@@ -459,7 +464,32 @@ function render() {
 }
 
 function renderMetronome() {
-  metronomeOutput.innerHTML = renderMetronomeOutput({ beat: metronomeBeat, numerator: state.metronomeNumerator, running: metronome.running, error: metronomeError });
+  metronomeOutput.innerHTML = renderMetronomeOutput({ beat: metronomeBeat, numerator: state.metronomeNumerator, running: metronome.running, tapBpm, error: metronomeError });
+}
+
+function tapMetronome() {
+  const detectedBpm = tapTempo.tap();
+  if (!detectedBpm) {
+    renderMetronome();
+    return;
+  }
+  tapBpm = detectedBpm;
+  const settingBpm = Math.min(BPM_MAX, detectedBpm);
+  if (settingBpm >= BPM_MIN) {
+    state = { ...state, metronomeBpm: settingBpm };
+    writeForm(state);
+    if (metronome.running) metronome.updateBpm(settingBpm);
+    saveStoredState(state);
+    const query = stateToSearchParams(state).toString();
+    history.replaceState(null, "", `${location.pathname}${query ? `?${query}` : ""}`);
+  }
+  renderMetronome();
+}
+
+function resetTapTempo() {
+  tapTempo.reset();
+  tapBpm = null;
+  renderMetronome();
 }
 
 async function startMetronome() {
@@ -481,7 +511,7 @@ function stopMetronome() {
 
 function validMetronomeBpm(value) {
   const number = Number(value);
-  return Number.isInteger(number) && number >= 30 && number <= 300;
+  return Number.isInteger(number) && number >= BPM_MIN && number <= BPM_MAX;
 }
 
 function validMetronomeNumerator(value) {

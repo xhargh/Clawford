@@ -74,6 +74,13 @@ try {
       await chooseView(view);
       assert.equal(await page.locator("#workspace-title").innerText(), { notation: "Notation", fretboard: "Fretboard", tuner: "Tuner", metronome: "Metronome", "ear-training": "Ear training" }[view]);
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${view} fits ${width}px`);
+      if (view === "fretboard" || view === "ear-training") {
+        const output = view === "fretboard" ? "#fretboard-output" : "#ear-training-fretboard-output";
+        assert.ok(await page.locator(`${output} .diagram-title`).evaluate((title) => {
+          const box = title.getBBox();
+          return box.x >= 0 && box.x + box.width <= title.ownerSVGElement.viewBox.baseVal.width;
+        }), `${view} heading stays inside diagram`);
+      }
       if (process.env.SCREENSHOT_DIR) {
         await page.screenshot({ path: resolve(process.env.SCREENSHOT_DIR, `clawford-${width}-${view}.png`), fullPage: true });
       }
@@ -92,14 +99,27 @@ try {
   }
   for (const width of [320, 1440]) {
     await page.setViewportSize({ width, height: 900 });
-    await page.evaluate(() => scrollTo(0, 0));
+    await page.evaluate(() => scrollTo({ top: 0, behavior: "instant" }));
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `story fits ${width}px`);
     if (process.env.SCREENSHOT_DIR) await page.screenshot({ path: resolve(process.env.SCREENSHOT_DIR, `story-${width}.png`) });
   }
   await page.getByRole("link", { name: "Explore the atlas" }).click();
   await page.locator("#ear-training-output:not([hidden])").waitFor();
+  await page.evaluate(async () => { await navigator.serviceWorker.ready; });
+  await page.waitForFunction(() => navigator.serviceWorker.controller);
+  await context.setOffline(true);
+  await page.goto(`${url}/index.html`);
+  await page.locator("#ear-training-output:not([hidden])").waitFor();
+  await chooseView("notation");
+  await page.emulateMedia({ media: "print" });
+  assert.equal(await page.locator("#tool-navigation").isVisible(), false);
+  assert.equal(await page.locator("#notation-output svg").isVisible(), true);
+  await page.emulateMedia({ media: "screen" });
+  await page.getByRole("link", { name: "Meet Clawford" }).click();
+  await page.waitForURL("**/backstory.html");
+  await page.locator(".illustration img").first().evaluate((image) => image.decode());
   assert.deepEqual(errors, []);
-  console.log("Browser checks passed: instruments, playback, five views, live tuner isolation, metronome persistence, ear training, reload.");
+  console.log("Browser checks passed: instruments, playback, five views at four viewport widths, live tuner isolation, metronome persistence, ear training, reload, story images, print, and offline navigation.");
 } finally {
   await browser?.close();
   await new Promise((done) => server.close(done));

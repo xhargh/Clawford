@@ -57,10 +57,25 @@ function renderVertical(strings, displayMaxFret, tones, title, tuning, label, pr
   const width = rightX + 70;
   const height = bottomY + 40;
   const svg = element("svg", { class: "fretboard-svg fretboard-board chord-board vertical", viewBox: `0 0 ${width} ${height}`, role: "group", "aria-label": ariaLabel || `${label} ${type} on ${title}. Select one tone per string, then swipe across the strings to strum.`, xmlns: NS });
-  svg.append(element("text", { x: 20, y: 29, class: "diagram-title" }, `${title} — ${label}`));
+  const heading = element("text", { x: width / 2, y: 20, "text-anchor": "middle", class: "diagram-title" });
+  const lines = [];
+  const maxCharacters = Math.floor((width - 40) / 7);
+  for (const section of [title, label]) {
+    let line = "";
+    for (const word of section.split(" ")) {
+      if (line && `${line} ${word}`.length > maxCharacters) {
+        lines.push(line);
+        line = "";
+      }
+      line = line ? `${line} ${word}` : word;
+    }
+    lines.push(line);
+  }
+  lines.forEach((line, index) => heading.append(element("tspan", { x: width / 2, dy: index ? 16 : 0 }, line)));
+  svg.append(heading);
 
   if (!voicing) {
-    svg.append(element("text", { x: 20, y: 55, class: "no-shape-message" }, `No complete ${label} shape found within 12 frets for this tuning.`));
+    svg.append(element("text", { x: 20, y: 90, class: "no-shape-message" }, `No complete ${label} shape found within 12 frets for this tuning.`));
     return svg;
   }
 

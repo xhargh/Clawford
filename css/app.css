@@ -150,6 +150,14 @@ fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 .ear-training-actions button:last-child { color: var(--ink); background: white; }
 .ear-training-actions button:disabled { cursor: not-allowed; opacity: .45; }
 .ear-training-error { margin: 0; color: var(--warm); font-weight: 700; }
+.ear-training-fretboard-output { overflow: auto; margin-bottom: 16px; border: 1px solid var(--line); background: white; }
+.ear-training-fretboard-output:empty { display: none; }
+.ear-training-fretboard-output svg { display: block; width: auto; height: auto; max-width: 100%; max-height: var(--diagram-fit-height, none); margin: 0 auto; }
+.ear-training-tone circle { fill: white; stroke: #8b9188; stroke-width: 1; }
+.ear-training-tone.target-note circle { fill: #dce9df; stroke: var(--accent); stroke-width: 3; }
+.ear-training-tone.detected-note circle { fill: #fff0e9; stroke: var(--warm); stroke-width: 3; }
+.ear-training-tone.target-note.detected-note circle { fill: #eadcf0; stroke: #68427a; }
+.ear-training-tone text { fill: var(--ink); font-size: 11px; font-weight: 800; }
 
 .notation-svg, .fretboard-svg { font-family: Inter, Arial, sans-serif; color: var(--ink); }
 .diagram-title { fill: var(--ink); font-family: Georgia, serif; font-size: 18px; }

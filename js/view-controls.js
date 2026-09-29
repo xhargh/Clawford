@@ -13,7 +13,8 @@ export function viewControlVisibility(view) {
     fretboardOutput: view === "fretboard",
     tunerOutput: view === "tuner",
     metronomeOutput: view === "metronome",
-    earTrainingOutput: view === "ear-training"
+    earTrainingOutput: view === "ear-training",
+    earTrainingFretboardOutput: view === "ear-training"
   };
 }
 

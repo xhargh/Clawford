@@ -1,4 +1,4 @@
-import { parsePitch } from "./pitch.js";
+import { parsePitch, pitchToMidi } from "./pitch.js";
 import { chromaticName } from "./scales.js";
 
 const NS = "http://www.w3.org/2000/svg";
@@ -24,8 +24,27 @@ export function renderScaleBoard(board, title, tuning, root, scale) {
   return renderVertical(strings, board.displayMaxFret, board.tones, title, tuning, scaleLabel, root.preference, { type: "scale", rootPitchClass: root.pitchClass });
 }
 
+export function renderEarTrainingBoard({ tuning, maxFret = 5, targetMidi = null, detectedMidi = null, preference = "sharp", title = "Ear training" }) {
+  const strings = tuning.strings.filter((string) => string.kind !== "drone").map((string) => string.number);
+  const tones = [];
+  for (const string of tuning.strings.filter((item) => item.kind !== "drone")) {
+    const openMidi = pitchToMidi(string.pitch);
+    for (let fret = 0; fret <= maxFret; fret += 1) {
+      const midi = openMidi + fret;
+      tones.push({ string: string.number, fret, midi, pitchClass: midi % 12, noteName: chromaticName(midi % 12, preference), isOpen: fret === 0 });
+    }
+  }
+  return renderVertical(strings, maxFret, tones, title, tuning, "Find the pitch", preference, {
+    type: "ear-training",
+    rootPitchClass: 0,
+    targetMidi,
+    detectedMidi,
+    ariaLabel: "Ear-training fretboard. Select a note to answer."
+  });
+}
+
 function renderVertical(strings, displayMaxFret, tones, title, tuning, label, preference, options = {}) {
-  const { type = "chord", voicing = true, rootPitchClass } = options;
+  const { type = "chord", voicing = true, rootPitchClass, targetMidi = null, detectedMidi = null, ariaLabel } = options;
   const leftX = 65;
   const stringGap = 52;
   const rightX = leftX + Math.max(1, strings.length - 1) * stringGap;
@@ -37,7 +56,7 @@ function renderVertical(strings, displayMaxFret, tones, title, tuning, label, pr
   const fretHeight = boardHeight / displayMaxFret;
   const width = rightX + 70;
   const height = bottomY + 40;
-  const svg = element("svg", { class: "fretboard-svg fretboard-board chord-board vertical", viewBox: `0 0 ${width} ${height}`, role: "group", "aria-label": `${label} ${type} on ${title}. Select one tone per string, then swipe across the strings to strum.`, xmlns: NS });
+  const svg = element("svg", { class: "fretboard-svg fretboard-board chord-board vertical", viewBox: `0 0 ${width} ${height}`, role: "group", "aria-label": ariaLabel || `${label} ${type} on ${title}. Select one tone per string, then swipe across the strings to strum.`, xmlns: NS });
   svg.append(element("text", { x: 20, y: 29, class: "diagram-title" }, `${title} — ${label}`));
 
   if (!voicing) {
@@ -73,12 +92,13 @@ function renderVertical(strings, displayMaxFret, tones, title, tuning, label, pr
   for (const tone of tones) {
     const x = xForString.get(tone.string);
     const y = tone.isOpen ? openY : topY + (tone.fret - 0.5) * fretHeight;
-    appendTone(svg, tone, x, y, preference, rootPitchClass, type);
+    appendTone(svg, tone, x, y, preference, rootPitchClass, type, { targetMidi, detectedMidi });
   }
   return svg;
 }
 
-function appendTone(svg, tone, x, y, preference, rootPitchClass, type) {
+function appendTone(svg, tone, x, y, preference, rootPitchClass, type, options = {}) {
+  const { targetMidi = null, detectedMidi = null } = options;
   const noteName = tone.noteName || chromaticName(tone.pitchClass, preference);
   const interval = (tone.pitchClass - rootPitchClass + 12) % 12;
   const toneStrength = Math.round(100 - interval * 7.5);
@@ -86,6 +106,8 @@ function appendTone(svg, tone, x, y, preference, rootPitchClass, type) {
   if (tone.isSelected) classes.push("selected");
   if (tone.isRoot) classes.push("root");
   if (tone.isOpen) classes.push("open");
+  if (type === "ear-training" && tone.midi === targetMidi) classes.push("target-note");
+  if (type === "ear-training" && tone.midi === detectedMidi) classes.push("detected-note");
   const position = tone.isOpen ? "open" : `fret ${tone.fret}`;
   const group = element("g", {
     class: `${classes.join(" ")} playable-note`,
@@ -97,10 +119,10 @@ function appendTone(svg, tone, x, y, preference, rootPitchClass, type) {
     role: "button",
     tabindex: "0",
     "aria-pressed": String(tone.isSelected),
-    "aria-label": `${tone.isSelected ? "Selected" : "Select"} ${noteName}, string ${tone.string}, ${position}`
+    "aria-label": `${type === "ear-training" ? "Play" : tone.isSelected ? "Selected" : "Select"} ${noteName}, string ${tone.string}, ${position}`
   });
   group.append(element("title", {}, `${noteName}, string ${tone.string}, ${position}`));
-  group.append(element("circle", { cx: x, cy: y, r: tone.isSelected ? 16 : 9 }));
+  group.append(element("circle", { cx: x, cy: y, r: tone.isSelected ? 16 : type === "ear-training" && (tone.midi === targetMidi || tone.midi === detectedMidi) ? 13 : 9 }));
   const noteLabelAttributes = { x, y: y + (tone.isSelected ? 5 : 3), "text-anchor": "middle" };
   if (!tone.isSelected) noteLabelAttributes.class = "note-label-small";
   group.append(element("text", noteLabelAttributes, noteName));

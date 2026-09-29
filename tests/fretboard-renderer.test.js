@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { renderChordBoard, renderScaleBoard } from "../js/fretboard-renderer.js";
+import { renderChordBoard, renderScaleBoard, renderEarTrainingBoard } from "../js/fretboard-renderer.js";
 import { generateChordBoardNotes } from "../js/chords.js";
 import { generateScaleBoardNotes } from "../js/scale-board.js";
 import { getKey, getScale, chromaticName } from "../js/scales.js";
@@ -127,4 +127,15 @@ test("renders every fretboard tone as a visible keyboard and pointer control", (
   assert.ok(tones.every((node) => node.attributes.role === "button"));
   assert.ok(tones.every((node) => node.attributes.tabindex === "0"));
   assert.ok(tones.every((node) => node.attributes["aria-label"]));
+});
+
+test("renders an ear-training board with target and detected pitch highlights", () => {
+  const svg = renderEarTrainingBoard({ tuning: openG, maxFret: 5, targetMidi: 62, detectedMidi: 60, preference: "sharp" });
+  const tones = descendants(svg).filter((node) => node.attributes.class?.includes("ear-training-tone"));
+
+  assert.ok(tones.length > 0);
+  assert.ok(tones.some((node) => node.attributes.class.includes("target-note")));
+  assert.ok(tones.some((node) => node.attributes.class.includes("detected-note")));
+  assert.ok(tones.every((node) => node.attributes.role === "button"));
+  assert.ok(tones.every((node) => node.attributes["data-midi"]));
 });

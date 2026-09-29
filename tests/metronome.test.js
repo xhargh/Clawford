@@ -1,11 +1,18 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { tickDurationSeconds, tickPattern, Metronome } from "../js/metronome.js";
+import { isTapTempoShortcut, tickDurationSeconds, tickPattern, Metronome } from "../js/metronome.js";
 import { TapTempo } from "../js/tap-tempo.js";
 
 test("uses ticks per minute for tick duration", () => {
   assert.equal(tickDurationSeconds(120), 0.5);
   assert.equal(tickDurationSeconds(240), 0.25);
+});
+
+test("accepts the desktop Space shortcut only in metronome mode", () => {
+  assert.equal(isTapTempoShortcut({ code: "Space", repeat: false, target: { tagName: "BODY" } }, "metronome"), true);
+  assert.equal(isTapTempoShortcut({ code: "Space", repeat: true, target: { tagName: "BODY" } }, "metronome"), false);
+  assert.equal(isTapTempoShortcut({ code: "Space", repeat: false, target: { tagName: "INPUT" } }, "metronome"), false);
+  assert.equal(isTapTempoShortcut({ code: "Space", repeat: false, target: { tagName: "BODY" } }, "notation"), false);
 });
 
 test("identifies ticks per minute from recent taps", () => {

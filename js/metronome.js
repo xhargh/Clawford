@@ -5,6 +5,14 @@ export function tickDurationSeconds(tpm) {
   return 60 / tpm;
 }
 
+export function isTapTempoShortcut(event, view) {
+  const tagName = event.target?.tagName;
+  return view === "metronome"
+    && event.code === "Space"
+    && !event.repeat
+    && !["INPUT", "SELECT", "TEXTAREA", "BUTTON", "A"].includes(tagName);
+}
+
 export function tickPattern(pattern = "", length = pattern.length || 1) {
   return Array.from({ length }, (_, index) => ({ A: "accent", S: "silent", N: "normal" }[pattern[index]] || (index === 0 ? "accent" : "normal")));
 }

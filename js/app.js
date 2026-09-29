@@ -17,7 +17,7 @@ import { selectTunerTarget, selectTunerTargets } from "./tuner.js";
 import { renderTunerOutput } from "./tuner-renderer.js";
 import { viewControlHidden, viewControlVisibility } from "./view-controls.js";
 import { TunerLifecycle } from "./tuner-lifecycle.js";
-import { TPM_MAX, TPM_MIN, Metronome } from "./metronome.js";
+import { isTapTempoShortcut, TPM_MAX, TPM_MIN, Metronome } from "./metronome.js";
 import { renderMetronomeOutput } from "./metronome-renderer.js";
 import { TapTempo } from "./tap-tempo.js";
 import { FUN_FACTS, funFactPresentation } from "./fun-facts.js";
@@ -116,6 +116,11 @@ if (state.view === "tuner") {
 }
 
 form.addEventListener("input", updateFromForm);
+document.addEventListener("keydown", (event) => {
+  if (!isTapTempoShortcut(event, state.view)) return;
+  event.preventDefault();
+  tapMetronome();
+});
 tunerInputDevice.addEventListener("change", handleTunerInputDeviceChange);
 tunerStart.addEventListener("click", startTuner);
 tunerStop.addEventListener("click", () => { void stopTuner(); });

@@ -47,6 +47,12 @@ test("generates a board that grows to the shape's highest fret and marks the sel
   assert.ok(board.tones.every((tone) => Number.isInteger(tone.midi)));
 });
 
+test("supports an instrument-specific minimum fretboard range", () => {
+  const board = generateChordBoardNotes(tuning("open-g"), 7, "major", { minDisplayFret: 7 });
+  assert.equal(board.displayMaxFret, 7);
+  assert.ok(board.tones.some((tone) => tone.fret === 7));
+});
+
 test("applies one valid selected-fret override per string and ignores invalid overrides", () => {
   const selected = new Map([[1, 5], [2, 1]]);
   const board = generateChordBoardNotes(tuning("open-g"), 7, "major", { selectedFretsByString: selected });

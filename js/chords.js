@@ -90,10 +90,10 @@ export function findChordVoicing(tuning, rootPitchClass, qualityId, options = {}
 }
 
 export function generateChordBoardNotes(tuning, rootPitchClass, qualityId, options = {}) {
-  const { maxSearchFret = 12, selectedFretsByString } = options;
+  const { maxSearchFret = 12, minDisplayFret = MIN_DISPLAY_FRET, selectedFretsByString } = options;
   const quality = getChordQuality(qualityId);
   const voicing = findChordVoicing(tuning, rootPitchClass, qualityId, { maxSearchFret });
-  const displayMaxFret = Math.max(MIN_DISPLAY_FRET, voicing ? voicing.highestFret : MIN_DISPLAY_FRET);
+  const displayMaxFret = Math.max(minDisplayFret, voicing ? voicing.highestFret : MIN_DISPLAY_FRET);
   if (!voicing) return { voicing: null, displayMaxFret, tones: [] };
   const pcs = pitchClassesFor(rootPitchClass, quality);
   const strings = chordStringsFor(tuning);

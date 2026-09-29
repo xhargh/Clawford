@@ -14,10 +14,12 @@
   <link rel="icon" type="image/png" sizes="32x32" href="img/clawford-32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="img/clawford-16.png">
   <link rel="apple-touch-icon" sizes="180x180" href="img/clawford-180.png">
+  <link rel="stylesheet" href="css/theme.css">
   <link rel="stylesheet" href="css/app.css">
   <link rel="stylesheet" href="css/print.css" media="print">
 </head>
 <body>
+  <a class="skip-link" href="#workspace">Skip to workspace</a>
   <header class="site-header">
     <button id="fun-fact-image" class="site-logo-button" type="button" aria-label="Show a random Clawford fact" disabled>
       <img class="site-logo" src="img/clawford-112.png" alt="Clawford, a banjo-playing ferret" width="112" height="112">
@@ -25,25 +27,31 @@
     <div id="fun-fact-preview" class="fun-fact-preview" hidden aria-hidden="true">
       <img alt="">
     </div>
-    <div>
-      <p class="eyebrow">Fretted-instrument toolbox</p>
+    <div class="brand-copy">
+      <p class="eyebrow">Your musical atlas</p>
       <h1>Clawford</h1>
-      <p id="warning-banner" class="warning-banner" role="alert">⚠ Built entirely by AI. Trust it like you'd trust a ferret walking on your keyboard.</p>
+      <p class="brand-tagline">A little curiosity. A world of music.</p>
     </div>
+    <a class="story-link" href="backstory.html">Meet Clawford <span aria-hidden="true">↗</span></a>
   </header>
 
   <main class="app-shell">
+    <div class="workspace-intro">
+      <p class="eyebrow">Explore · Listen · Practice</p>
+      <p>Every note is a place to begin.</p>
+    </div>
+    <fieldset id="tool-navigation" class="segmented tool-navigation">
+      <legend class="visually-hidden">Choose a tool</legend>
+      <label><input type="radio" name="view" value="notation" form="settings-form"><span aria-hidden="true" class="tool-number">01</span> Notation</label>
+      <label><input type="radio" name="view" value="fretboard" form="settings-form"><span aria-hidden="true" class="tool-number">02</span> Fretboard</label>
+      <label><input type="radio" name="view" value="tuner" form="settings-form"><span aria-hidden="true" class="tool-number">03</span> Tuner</label>
+      <label><input type="radio" name="view" value="metronome" form="settings-form"><span aria-hidden="true" class="tool-number">04</span> Metronome</label>
+      <label><input type="radio" name="view" value="ear-training" form="settings-form"><span aria-hidden="true" class="tool-number">05</span> Ear training</label>
+    </fieldset>
     <aside class="settings-panel" aria-label="Settings">
+      <div class="panel-heading"><p class="eyebrow">Make it yours</p><h2>Your setup</h2></div>
       <form id="settings-form">
         <div class="control-grid">
-          <fieldset class="segmented full-control">
-            <legend>View</legend>
-            <label><input type="radio" name="view" value="notation"> Notation</label>
-            <label><input type="radio" name="view" value="fretboard"> Fretboard</label>
-            <label><input type="radio" name="view" value="tuner"> Tuner</label>
-            <label><input type="radio" name="view" value="metronome"> Metronome</label>
-            <label><input type="radio" name="view" value="ear-training"> Ear training</label>
-          </fieldset>
           <div id="general-controls" class="general-controls">
             <label id="instrument-control">Instrument<select id="instrument" name="instrument"></select></label>
             <label id="tuning-control">Tuning<select id="tuning" name="tuning"></select></label>
@@ -85,10 +93,13 @@
           </fieldset>
         </div>
       </form>
+      <div class="setup-note"><span aria-hidden="true">✦</span> Follow a note. Find a new path.<br>Your setup is saved as you explore.</div>
     </aside>
 
 
-    <section class="output-panel" aria-label="Generated fretted-instrument diagram">
+    <section id="workspace" class="output-panel" aria-labelledby="workspace-title" tabindex="-1">
+      <div class="workspace-heading"><div><p class="eyebrow">The practice room</p><h2 id="workspace-title">Notation</h2></div><span class="workspace-mark" aria-hidden="true">♮</span></div>
+      <p id="workspace-hint" class="workspace-hint">Select a note to hear it. Explore where it lives on each string.</p>
       <div id="notation-output" class="diagram-frame"></div>
       <div id="fretboard-output" class="diagram-frame"></div>
       <div id="tuner-output" class="tuner-output" hidden></div>
@@ -97,6 +108,10 @@
       <div id="ear-training-fretboard-output" class="ear-training-fretboard-output" hidden></div>
     </section>
   </main>
+  <footer class="site-footer">
+    <div><p class="footer-title">Music takes the scenic route.</p><a href="backstory.html">Read the story behind the atlas <span aria-hidden="true">→</span></a></div>
+    <p id="warning-banner" class="warning-banner" role="status">⚠ Built entirely by AI. Trust it like you'd trust a ferret walking on your keyboard.</p>
+  </footer>
   <script type="module" src="js/app.js"></script>
   <script>
     if ("serviceWorker" in navigator) {

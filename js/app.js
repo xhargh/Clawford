@@ -133,6 +133,7 @@ if (state.view === "tuner") {
 }
 
 form.addEventListener("input", updateFromForm);
+document.querySelector("#tool-navigation").addEventListener("input", updateFromForm);
 document.addEventListener("keydown", (event) => {
   if (!isTapTempoShortcut(event, state.view)) return;
   event.preventDefault();
@@ -429,6 +430,15 @@ function updateChordOptionAvailability(tuning) {
 
 function render() {
   strumGesture = null;
+  const view = {
+    notation: ["Notation", "Select a note to hear it. Explore where it lives on each string."],
+    fretboard: ["Fretboard", "Select tones to build a shape, or swipe across the strings to strum."],
+    tuner: ["Tuner", "Listen to your instrument. In Strings mode, select an open string to hear its reference pitch."],
+    metronome: ["Metronome", "Find your pulse. Tap a beat to change its accent, or tap along to set the tempo."],
+    "ear-training": ["Ear training", "Listen, then find the note on your instrument or the fretboard below."]
+  }[state.view];
+  document.querySelector("#workspace-title").textContent = view[0];
+  document.querySelector("#workspace-hint").textContent = view[1];
   const tuning = tunings.find((item) => item.id === state.tuning) || tunings[0];
   const instrument = getInstrument(tuning.instrument) || getInstrument(state.instrument);
   const fretboardFrets = getFretboardFrets(instrument.id);
@@ -483,7 +493,7 @@ function render() {
   document.querySelector("#key-control").hidden = hiddenControls.key;
   document.querySelector("#scale-control").hidden = hiddenControls.scale;
   document.querySelector("#ear-sequence-limit-control").hidden = state.earVariant !== "rolling";
-  document.title = state.view === "metronome" ? "Metronome — Clawford" : `${key.value} ${scale.name} — Clawford`;
+  document.title = `${view[0]} — Clawford`;
   renderTuner(tuning);
   renderMetronome();
   renderEarTraining(tuning);

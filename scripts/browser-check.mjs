@@ -68,6 +68,36 @@ try {
   await page.reload();
   assert.equal(await page.inputValue("#ear-sequence-limit"), "7");
   assert.equal(await page.inputValue("#ear-exercise"), "simon");
+  for (const width of [320, 390, 768, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const view of ["notation", "fretboard", "tuner", "metronome", "ear-training"]) {
+      await chooseView(view);
+      assert.equal(await page.locator("#workspace-title").innerText(), { notation: "Notation", fretboard: "Fretboard", tuner: "Tuner", metronome: "Metronome", "ear-training": "Ear training" }[view]);
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${view} fits ${width}px`);
+      if (process.env.SCREENSHOT_DIR) {
+        await page.screenshot({ path: resolve(process.env.SCREENSHOT_DIR, `clawford-${width}-${view}.png`), fullPage: true });
+      }
+    }
+  }
+  await page.getByRole("link", { name: "Meet Clawford" }).click();
+  await page.waitForURL("**/backstory.html");
+  const images = page.locator(".illustration img");
+  assert.equal(await images.count(), 14);
+  for (const image of await images.all()) {
+    assert.match(await image.getAttribute("src"), /\.webp$/);
+    assert.equal(await image.getAttribute("loading"), "lazy");
+    assert.equal(await image.getAttribute("width"), "1536");
+    await image.scrollIntoViewIfNeeded();
+    await image.evaluate((element) => element.decode());
+  }
+  for (const width of [320, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.evaluate(() => scrollTo(0, 0));
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `story fits ${width}px`);
+    if (process.env.SCREENSHOT_DIR) await page.screenshot({ path: resolve(process.env.SCREENSHOT_DIR, `story-${width}.png`) });
+  }
+  await page.getByRole("link", { name: "Explore the atlas" }).click();
+  await page.locator("#ear-training-output:not([hidden])").waitFor();
   assert.deepEqual(errors, []);
   console.log("Browser checks passed: instruments, playback, five views, live tuner isolation, metronome persistence, ear training, reload.");
 } finally {

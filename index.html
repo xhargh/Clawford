@@ -42,6 +42,7 @@
             <label><input type="radio" name="view" value="fretboard"> Fretboard</label>
             <label><input type="radio" name="view" value="tuner"> Tuner</label>
             <label><input type="radio" name="view" value="metronome"> Metronome</label>
+            <label><input type="radio" name="view" value="ear-training"> Ear training</label>
           </fieldset>
           <div id="general-controls" class="general-controls">
             <label id="instrument-control">Instrument<select id="instrument" name="instrument"></select></label>
@@ -67,6 +68,21 @@
             <label for="metronome-tpm">Ticks per minute <output id="metronome-tpm-value" for="metronome-tpm">96</output><input id="metronome-tpm" name="metronomeTpm" type="range" min="30" max="360" step="1" required></label>
             <label for="metronome-ticks">Ticks per cycle <output id="metronome-ticks-value" for="metronome-ticks">4</output><input id="metronome-ticks" name="metronomeTicks" type="range" min="1" max="16" step="1" required></label>
           </fieldset>
+          <fieldset id="ear-training-controls" class="ear-training-controls full-control" hidden>
+            <legend>Ear training</legend>
+            <label>Exercise<select id="ear-exercise" name="earExercise">
+              <option value="find">Find: one note at a time</option>
+              <option value="follow">Follow: nearby same-string movement</option>
+              <option value="simon">Simon: remember the sequence</option>
+            </select></label>
+            <label>Note generation<select id="ear-variant" name="earVariant">
+              <option value="free">Free low-position range</option>
+              <option value="same-string">Same string / low position</option>
+              <option value="scale">Current key and scale</option>
+              <option value="rolling">Rolling Simon</option>
+            </select></label>
+            <label id="ear-sequence-limit-control">Rolling memory length<input id="ear-sequence-limit" name="earSequenceLimit" type="number" min="1" max="32" step="1" inputmode="numeric"></label>
+          </fieldset>
         </div>
       </form>
     </aside>
@@ -77,6 +93,7 @@
       <div id="fretboard-output" class="diagram-frame"></div>
       <div id="tuner-output" class="tuner-output" hidden></div>
       <div id="metronome-output" class="metronome-output" hidden></div>
+      <div id="ear-training-output" class="ear-training-output" hidden></div>
     </section>
   </main>
   <script type="module" src="js/app.js"></script>

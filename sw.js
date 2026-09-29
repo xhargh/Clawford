@@ -20,6 +20,8 @@ const APP_SHELL = [
   "js/audio/synth.js",
   "js/audio/microphone-session.js",
   "js/audio/pitch-detector.js",
+  "js/ear-training.js",
+  "js/ear-training-renderer.js",
   "js/chords.js",
   "js/fretboard-renderer.js",
   "js/instruments.js",

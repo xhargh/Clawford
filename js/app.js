@@ -2,7 +2,7 @@ import { renderChordBoard, renderScaleBoard } from "./fretboard-renderer.js";
 import { generateNotes } from "./mapping.js";
 import { renderNotation } from "./notation-renderer.js";
 import { CHORD_QUALITIES, generateChordBoardNotes, hasChordVoicing } from "./chords.js";
-import { INSTRUMENTS, getInstrument } from "./instruments.js";
+import { INSTRUMENTS, getFretboardFrets, getInstrument } from "./instruments.js";
 import { CHROMATIC_SCALE, KEYS, SCALES, getKey, getScale, keySignatureFor } from "./scales.js";
 import { stateFromSources, stateToSearchParams } from "./state.js";
 import { loadStoredState, saveStoredState } from "./storage.js";
@@ -21,6 +21,9 @@ import { isTapTempoShortcut, TPM_MAX, TPM_MIN, Metronome } from "./metronome.js"
 import { renderMetronomeOutput } from "./metronome-renderer.js";
 import { TapTempo } from "./tap-tempo.js";
 import { FUN_FACTS, funFactPresentation } from "./fun-facts.js";
+import { createEarTrainingSession, PitchAnswerGate } from "./ear-training.js";
+import { renderEarTrainingOutput } from "./ear-training-renderer.js";
+import { midiToPitch } from "./pitch.js";
 
 const form = document.querySelector("#settings-form");
 const instrumentSelect = document.querySelector("#instrument");
@@ -33,11 +36,13 @@ const notationOutput = document.querySelector("#notation-output");
 const fretboardOutput = document.querySelector("#fretboard-output");
 const tunerOutput = document.querySelector("#tuner-output");
 const metronomeOutput = document.querySelector("#metronome-output");
+const earTrainingOutput = document.querySelector("#ear-training-output");
 const funFactImage = document.querySelector("#fun-fact-image");
 const funFactPreview = document.querySelector("#fun-fact-preview");
 const warningBanner = document.querySelector("#warning-banner");
 const tunerControls = document.querySelector("#tuner-controls");
 const metronomeControls = document.querySelector("#metronome-controls");
+const earTrainingControls = document.querySelector("#ear-training-controls");
 const generalControls = document.querySelector("#general-controls");
 const metronomeTpmValue = document.querySelector("#metronome-tpm-value");
 const metronomeTicksValue = document.querySelector("#metronome-ticks-value");
@@ -80,6 +85,14 @@ let tunerAudioRms = 0;
 let tunerError = "";
 let metronomeBeat = 0;
 let metronomeError = "";
+let earTrainingEngine = null;
+let earTrainingSession = null;
+let earTrainingGate = null;
+let earTrainingAnimationFrame = null;
+let earTrainingPlaybackUntil = 0;
+let earTrainingStatus = "Ready";
+let earTrainingError = "";
+let earTrainingRunToken = 0;
 let tapBpm = null;
 let currentFunFact = -1;
 let funFactsActive = false;
@@ -124,6 +137,10 @@ document.addEventListener("keydown", (event) => {
 tunerInputDevice.addEventListener("change", handleTunerInputDeviceChange);
 tunerStart.addEventListener("click", startTuner);
 tunerStop.addEventListener("click", () => { void stopTuner(); });
+earTrainingOutput.addEventListener("click", (event) => {
+  if (event.target.closest("#ear-training-start")) void startEarTraining();
+  if (event.target.closest("#ear-training-stop")) void stopEarTraining();
+});
 tunerOutput.addEventListener("pointerdown", handleTunerTargetPointerdown);
 tunerOutput.addEventListener("click", handleTunerTargetClick);
 tunerOutput.addEventListener("keydown", handleTunerTargetKeydown);
@@ -147,7 +164,7 @@ fretboardOutput.addEventListener("pointerup", handleStrumEnd);
 fretboardOutput.addEventListener("pointercancel", handleStrumEnd);
 window.addEventListener("resize", scheduleDiagramFit);
 window.addEventListener("orientationchange", scheduleDiagramFit);
-window.addEventListener("pagehide", () => { void stopTuner(); stopMetronome(); });
+window.addEventListener("pagehide", () => { void stopTuner(); stopMetronome(); void stopEarTraining(); });
 document.addEventListener("visibilitychange", handleVisibilityChange);
 
 function createAudioPlayer(instrumentId) {
@@ -365,6 +382,8 @@ function updateFromForm() {
   tunerA4Input.setCustomValidity(validTunerA4 ? "" : "A4 must be between 400 and 480 Hz.");
   const instrument = data.get("instrument");
   const instrumentChanged = instrument !== state.instrument;
+  const earSettingsChanged = ["instrument", "tuning", "key", "scale", "earExercise", "earVariant", "earSequenceLimit"]
+    .some((key) => ({ instrument, tuning: instrumentChanged ? tuningsFor(instrument)[0].id : data.get("tuning"), key: data.get("key"), scale: data.get("scale"), earExercise: data.get("earExercise"), earVariant: data.get("earVariant"), earSequenceLimit: validEarSequenceLimit(data.get("earSequenceLimit")) ? Number(data.get("earSequenceLimit")) : state.earSequenceLimit }[key]) !== state[key]);
   const tuning = instrumentChanged ? tuningsFor(instrument)[0].id : data.get("tuning");
   state = {
     ...state,
@@ -379,7 +398,10 @@ function updateFromForm() {
     metronomeTicks: validMetronomeTicks(data.get("metronomeTicks")) ? Number(data.get("metronomeTicks")) : state.metronomeTicks,
     metronomePattern: normalizeMetronomePattern(state.metronomePattern, validMetronomeTicks(data.get("metronomeTicks")) ? Number(data.get("metronomeTicks")) : state.metronomeTicks),
     chordRoot: data.get("chordRoot"),
-    chordQuality: data.get("chordQuality")
+    chordQuality: data.get("chordQuality"),
+    earExercise: data.get("earExercise"),
+    earVariant: data.get("earVariant"),
+    earSequenceLimit: validEarSequenceLimit(data.get("earSequenceLimit")) ? Number(data.get("earSequenceLimit")) : state.earSequenceLimit
   };
   if (instrumentChanged) {
     void audioPlayer.dispose();
@@ -389,6 +411,8 @@ function updateFromForm() {
   }
   if (previousView === "tuner" && state.view !== "tuner") void stopTuner();
   if (previousView === "metronome" && state.view !== "metronome") stopMetronome();
+  if (previousView === "ear-training" && state.view !== "ear-training") void stopEarTraining();
+  if (state.view === "ear-training" && earSettingsChanged && earTrainingSession) void stopEarTraining();
   if (previousView !== "tuner" && state.view === "tuner") {
     void loadInputDevices();
     void tunerLifecycle.enter();
@@ -417,6 +441,7 @@ function render() {
   strumGesture = null;
   const tuning = tunings.find((item) => item.id === state.tuning) || tunings[0];
   const instrument = getInstrument(tuning.instrument) || getInstrument(state.instrument);
+  const fretboardFrets = getFretboardFrets(instrument.id);
   const key = getKey(state.key);
   const scale = getScale(state.scale);
   const chordRoot = getKey(state.chordRoot);
@@ -438,8 +463,8 @@ function render() {
     fretboardSelectionKey = nextSelectionKey;
   }
   const fretboardBoard = fretboardScale
-    ? generateScaleBoardNotes(tuning, chordRoot, fretboardScale, { selectedFretsByString })
-    : generateChordBoardNotes(tuning, chordRoot.pitchClass, chordQuality.id, { selectedFretsByString });
+    ? generateScaleBoardNotes(tuning, chordRoot, fretboardScale, { displayMaxFret: fretboardFrets, selectedFretsByString })
+    : generateChordBoardNotes(tuning, chordRoot.pitchClass, chordQuality.id, { minDisplayFret: fretboardFrets, selectedFretsByString });
   selectedTonesByString = new Map(fretboardBoard.tones.filter((tone) => tone.isSelected).map((tone) => [tone.string, tone]));
 
   notationOutput.replaceChildren(renderNotation(notes, title, { ...state, tuning, keySignature: keySignatureFor(key, scale), clef: instrument.clef }));
@@ -452,8 +477,10 @@ function render() {
   fretboardOutput.hidden = hiddenControls.fretboardOutput;
   tunerOutput.hidden = hiddenControls.tunerOutput;
   metronomeOutput.hidden = hiddenControls.metronomeOutput;
+  earTrainingOutput.hidden = hiddenControls.earTrainingOutput;
   tunerControls.hidden = hiddenControls.tunerControls;
   metronomeControls.hidden = hiddenControls.metronomeControls;
+  earTrainingControls.hidden = hiddenControls.earTrainingControls;
   metronomeTpmValue.value = state.metronomeTpm;
   metronomeTpmValue.textContent = state.metronomeTpm;
   metronomeTicksValue.value = state.metronomeTicks;
@@ -464,9 +491,11 @@ function render() {
   document.querySelector("#tuning-control").hidden = hiddenControls.tuning;
   document.querySelector("#key-control").hidden = hiddenControls.key;
   document.querySelector("#scale-control").hidden = hiddenControls.scale;
+  document.querySelector("#ear-sequence-limit-control").hidden = state.earVariant !== "rolling";
   document.title = state.view === "metronome" ? "Metronome — Clawford" : `${key.value} ${scale.name} — Clawford`;
   renderTuner(tuning);
   renderMetronome();
+  renderEarTraining(tuning);
   saveStoredState(state);
   const query = stateToSearchParams(state).toString();
   history.replaceState(null, "", `${location.pathname}${query ? `?${query}` : ""}`);
@@ -475,6 +504,27 @@ function render() {
 
 function renderMetronome() {
   metronomeOutput.innerHTML = renderMetronomeOutput({ beat: metronomeBeat, tpm: state.metronomeTpm, pattern: state.metronomePattern, running: metronome.running, tapBpm, error: metronomeError });
+}
+
+function renderEarTraining(tuning) {
+  const engineState = earTrainingEngine?.state;
+  const target = engineState?.target ? { ...engineState.target, note: midiToDisplayName(engineState.target.midi) } : null;
+  earTrainingOutput.innerHTML = renderEarTrainingOutput({
+    exercise: state.earExercise,
+    variant: state.earVariant,
+    running: Boolean(earTrainingSession?.state === "running"),
+    status: earTrainingStatus,
+    streak: engineState?.streak ?? 0,
+    attempts: engineState?.attempts ?? 0,
+    sequenceLength: engineState?.sequence.length ?? 0,
+    sequenceIndex: engineState?.sequenceIndex ?? 0,
+    target,
+    error: earTrainingError
+  });
+}
+
+function midiToDisplayName(midi) {
+  return midiToPitch(midi, state.key === "F" || state.key === "Bb" || state.key === "Eb" ? "flat" : "sharp");
 }
 
 function renderMetronomeBeat() {
@@ -535,6 +585,11 @@ function validMetronomeTicks(value) {
   return Number.isInteger(number) && number >= 1 && number <= 16;
 }
 
+function validEarSequenceLimit(value) {
+  const number = Number(value);
+  return Number.isInteger(number) && number >= 1 && number <= 32;
+}
+
 function normalizeMetronomePattern(pattern, ticks) {
   return Array.from({ length: ticks }, (_, index) => /^[ANS]$/.test(pattern?.[index] || "") ? pattern[index] : index === 0 ? "A" : "N").join("");
 }
@@ -581,6 +636,119 @@ function createMicrophoneSession() {
   return new MicrophoneSession({ getUserMedia, createAudioContext: createSharedAudioContext, closeAudioContext: false });
 }
 
+async function startEarTraining() {
+  if (earTrainingSession?.state === "running") return;
+  const runToken = ++earTrainingRunToken;
+  earTrainingError = "";
+  earTrainingStatus = "Starting microphone";
+  render();
+  const tuning = tunings.find((item) => item.id === state.tuning) || tunings[0];
+  try {
+    earTrainingSession = createMicrophoneSession();
+    await earTrainingSession.start();
+    if (runToken !== earTrainingRunToken || state.view !== "ear-training") {
+      await earTrainingSession.stop();
+      earTrainingSession = null;
+      return;
+    }
+    const key = getKey(state.key);
+    const scale = getScale(state.scale);
+    const variant = state.earExercise === "follow" ? "same-string" : state.earVariant;
+    earTrainingEngine = createEarTrainingSession({
+      exercise: state.earExercise,
+      variant,
+      tuning,
+      key,
+      scale,
+      maxFret: 5,
+      sequenceLimit: state.earSequenceLimit
+    });
+    earTrainingGate = new PitchAnswerGate({ windowSize: 3, toleranceCents: 35, a4: state.tunerA4 });
+    const event = earTrainingEngine.start();
+    earTrainingStatus = "Listen";
+    earTrainingPlayback(event);
+    readEarTrainingFrame(earTrainingSession);
+    render();
+  } catch (error) {
+    await earTrainingSession?.stop();
+    earTrainingSession = null;
+    earTrainingEngine = null;
+    earTrainingGate = null;
+    earTrainingError = error.message || "Unable to start microphone";
+    earTrainingStatus = "Ready";
+    render();
+  }
+}
+
+async function stopEarTraining() {
+  ++earTrainingRunToken;
+  if (earTrainingAnimationFrame !== null) cancelAnimationFrame(earTrainingAnimationFrame);
+  earTrainingAnimationFrame = null;
+  await earTrainingSession?.stop();
+  earTrainingSession = null;
+  earTrainingEngine?.stop();
+  earTrainingEngine = null;
+  earTrainingGate = null;
+  earTrainingPlaybackUntil = 0;
+  earTrainingStatus = "Ready";
+  render();
+}
+
+function earTrainingPlayback(event) {
+  if (!event || event.type === "ignored" || event.type === "awaiting-next") return;
+  const notes = event.sequence || event.notes || (event.target ? [event.target] : []);
+  if (!notes.length) return;
+  const spread = event.sequence ? 0.28 : 0.18;
+  const duration = event.sequence ? 1.1 : 1.25;
+  const playable = notes.map((note) => ({ midi: note.midi, string: note.sourceString ?? note.string, duration }));
+  earTrainingPlaybackUntil = performance.now() + (notes.length - 1) * spread * 1000 + duration * 1000;
+  void audioPlayer.playNotes(playable, { spread }).catch((error) => {
+    earTrainingError = error.message || "Unable to play target note";
+    render();
+  });
+  const target = event.target || event.sequence?.[event.sequenceIndex ?? 0] || event.sequence?.[0];
+  if (target) earTrainingGate?.setTarget(target.midi);
+  if (event.type === "repeat-sequence") earTrainingStatus = "Listen again";
+  else if (event.type === "repeat-target") earTrainingStatus = "Listen again";
+  else earTrainingStatus = "Listen";
+  render();
+}
+
+function readEarTrainingFrame(session) {
+  if (earTrainingSession !== session || session?.state !== "running") return;
+  if (performance.now() >= earTrainingPlaybackUntil && earTrainingGate) {
+    const estimate = estimatePitch(session.readFrame(), { sampleRate: session.sampleRate });
+    const answer = earTrainingGate.update(estimate);
+    if (answer.accepted) handleEarTrainingAnswer(answer.midi);
+  }
+  earTrainingAnimationFrame = requestAnimationFrame(() => readEarTrainingFrame(session));
+}
+
+function handleEarTrainingAnswer(midi) {
+  const event = state.earExercise === "simon"
+    ? earTrainingEngine.submitSimonPitch(midi)
+    : earTrainingEngine.submitPitch(midi);
+  if (event.type === "awaiting-next") {
+    earTrainingStatus = "Listening";
+    const next = event.sequence[event.sequenceIndex];
+    earTrainingGate.setTarget(next.midi);
+    render();
+    return;
+  }
+  if (event.type === "repeat-sequence") {
+    earTrainingStatus = "Try again";
+    render();
+    const runToken = earTrainingRunToken;
+    window.setTimeout(() => {
+      if (runToken === earTrainingRunToken && earTrainingEngine) earTrainingPlayback(event);
+    }, 450);
+    return;
+  }
+  earTrainingStatus = event.type === "repeat-target" ? "Try again" : "Correct";
+  render();
+  earTrainingPlayback(event);
+}
+
 async function startTuner() {
   resetTunerState();
   await tunerLifecycle.start();
@@ -614,6 +782,7 @@ async function handleVisibilityChange() {
     tunerAnimationFrame = null;
     await tunerLifecycle.session?.suspend();
     await metronome.suspend();
+    if (earTrainingSession) await stopEarTraining();
     return;
   }
   if (tunerLifecycle.session?.state === "running") {

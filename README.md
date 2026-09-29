@@ -33,6 +33,7 @@ Double-check every note before relying on it.
 - Key/scale selection, or chord root/quality selection.
 - Notation view and fretboard view, with vertical or horizontal orientation.
 - Metronome with ticks-per-minute tempo, editable additive patterns, normal/accent/silent ticks, tap tempo, and visual beat indication.
+- Ear training with Find, Follow, Classic Simon, and Rolling Simon exercises driven by synthesized notes and microphone pitch detection.
 - Print-friendly output (separate print stylesheet).
 - Runs entirely in the browser — no server or build step required.
 - Installable as a PWA with offline support (see [PWA support](#pwa-support)).
@@ -75,6 +76,8 @@ js/
   scales.js                 Scale definitions and logic
   metronome.js              Metronome timing and audio
   metronome-renderer.js     Metronome beat display
+  ear-training.js           Ear-training state machine and pitch gate
+  ear-training-renderer.js  Ear-training status display
   state.js                  Application state management
   storage.js                Persisted user settings
 tests/                      Unit tests (node:test)

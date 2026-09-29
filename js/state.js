@@ -27,11 +27,19 @@ export const DEFAULT_STATE = {
   staffSize: "normal",
   notationOctave: 0,
   chordRoot: "G",
-  chordQuality: "major"
+  chordQuality: "major",
+  earExercise: "find",
+  earVariant: "free",
+  earSequenceLimit: 5
 };
 
-const ENUMS = { view: ["notation", "fretboard", "tuner", "metronome"], tunerMode: ["chromatic", "tuning"] };
-const USER_SETTINGS = new Set(["instrument", "tuning", "key", "scale", "view", "tunerMode", "tunerA4", "metronomeTpm", "metronomeTicks", "metronomePattern", "chordRoot", "chordQuality"]);
+const ENUMS = {
+  view: ["notation", "fretboard", "tuner", "metronome", "ear-training"],
+  tunerMode: ["chromatic", "tuning"],
+  earExercise: ["find", "follow", "simon"],
+  earVariant: ["free", "same-string", "scale", "rolling"]
+};
+const USER_SETTINGS = new Set(["instrument", "tuning", "key", "scale", "view", "tunerMode", "tunerA4", "metronomeTpm", "metronomeTicks", "metronomePattern", "chordRoot", "chordQuality", "earExercise", "earVariant", "earSequenceLimit"]);
 
 export function stateFromSources(stored, searchParams, validValues) {
   const state = { ...DEFAULT_STATE };
@@ -49,6 +57,7 @@ function applyObject(state, source, validValues) {
     const raw = source[key];
     if (key === "metronomeTpm" && Number.isInteger(Number(raw)) && Number(raw) >= 30 && Number(raw) <= 360) state[key] = Number(raw);
     else if (key === "metronomeTicks" && Number.isInteger(Number(raw)) && Number(raw) >= 1 && Number(raw) <= 16) state[key] = Number(raw);
+    else if (key === "earSequenceLimit" && Number.isInteger(Number(raw)) && Number(raw) >= 1 && Number(raw) <= 32) state[key] = Number(raw);
     else if (key === "metronomePattern" && typeof raw === "string" && /^[ANS]{1,16}$/.test(raw)) state[key] = raw;
     else if (ENUMS[key]?.includes(raw)) state[key] = raw;
     else if (key === "tunerA4" && Number.isFinite(Number(raw)) && Number(raw) >= 400 && Number(raw) <= 480) state[key] = Number(raw);

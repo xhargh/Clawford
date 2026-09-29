@@ -6,29 +6,37 @@ test("shows the controls required by each view", () => {
   assert.deepEqual(viewControlVisibility("notation"), {
     instrument: true, tuning: true, key: true, scale: true,
     chordRoot: false, chordQuality: false, tunerControls: false, metronomeControls: false,
-    notationOutput: true, fretboardOutput: false, tunerOutput: false, metronomeOutput: false
+     notationOutput: true, fretboardOutput: false, tunerOutput: false, metronomeOutput: false, earTrainingOutput: false, earTrainingControls: false
   });
   assert.deepEqual(viewControlVisibility("fretboard"), {
     instrument: true, tuning: true, key: false, scale: false,
     chordRoot: true, chordQuality: true, tunerControls: false, metronomeControls: false,
-    notationOutput: false, fretboardOutput: true, tunerOutput: false, metronomeOutput: false
+     notationOutput: false, fretboardOutput: true, tunerOutput: false, metronomeOutput: false, earTrainingOutput: false, earTrainingControls: false
   });
   assert.deepEqual(viewControlVisibility("tuner"), {
     instrument: true, tuning: true, key: false, scale: false,
     chordRoot: false, chordQuality: false, tunerControls: true, metronomeControls: false,
-    notationOutput: false, fretboardOutput: false, tunerOutput: true, metronomeOutput: false
+     notationOutput: false, fretboardOutput: false, tunerOutput: true, metronomeOutput: false, earTrainingOutput: false, earTrainingControls: false
   });
   assert.deepEqual(viewControlVisibility("metronome"), {
     instrument: false, tuning: false, key: false, scale: false,
     chordRoot: false, chordQuality: false, tunerControls: false, metronomeControls: true,
-    notationOutput: false, fretboardOutput: false, tunerOutput: false, metronomeOutput: true
+     notationOutput: false, fretboardOutput: false, tunerOutput: false, metronomeOutput: true, earTrainingOutput: false, earTrainingControls: false
   });
+});
+
+test("keeps the shared key and scale controls available for ear training", () => {
+  const visibility = viewControlVisibility("ear-training");
+  assert.equal(visibility.key, true);
+  assert.equal(visibility.scale, true);
+  assert.equal(visibility.earTrainingControls, true);
+  assert.equal(visibility.earTrainingOutput, true);
 });
 
 test("hides only controls that are not available in each mode", () => {
   assert.deepEqual(viewControlHidden("fretboard"), {
     instrument: false, tuning: false, key: true, scale: true,
     chordRoot: false, chordQuality: false, tunerControls: true, metronomeControls: true,
-    notationOutput: true, fretboardOutput: false, tunerOutput: true, metronomeOutput: true
+     notationOutput: true, fretboardOutput: false, tunerOutput: true, metronomeOutput: true, earTrainingOutput: true, earTrainingControls: true
   });
 });

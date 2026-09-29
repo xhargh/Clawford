@@ -131,6 +131,25 @@ fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 .metronome-tick.active small { color: white; }
 .metronome-pattern-help { margin: -16px 0 0; color: var(--muted); font-size: .8rem; }
 .metronome-error { margin: 0; color: var(--warm); font-weight: 700; }
+.ear-training-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+.ear-training-controls legend, .ear-training-controls label:last-child { grid-column: 1 / -1; }
+.ear-training-output { min-height: 340px; border: 1px solid var(--line); background: #f7f8f2; }
+.ear-training-card { display: grid; gap: 24px; max-width: 760px; margin: 0 auto; padding: clamp(28px, 7vw, 72px) clamp(18px, 6vw, 64px); text-align: center; }
+.ear-training-heading { display: grid; gap: 4px; }
+.ear-training-heading .eyebrow { margin-bottom: 0; }
+.ear-training-mode, .ear-training-status span { color: var(--muted); }
+.ear-training-status { display: grid; gap: 8px; min-height: 130px; place-content: center; }
+.ear-training-status-label { font-weight: 800; }
+.ear-training-target { color: var(--accent); font-family: Georgia, serif; font-size: clamp(3.5rem, 15vw, 7rem); line-height: .9; }
+.ear-training-stats { display: flex; justify-content: center; gap: 28px; margin: 0; }
+.ear-training-stats div { display: grid; gap: 2px; }
+.ear-training-stats dt { color: var(--muted); font-size: .75rem; font-weight: 700; }
+.ear-training-stats dd { margin: 0; font-size: 1.5rem; font-weight: 800; }
+.ear-training-actions { display: flex; justify-content: center; gap: 8px; }
+.ear-training-actions button { min-height: 44px; padding: 8px 14px; color: white; border: 1px solid var(--accent); border-radius: 3px; background: var(--accent); }
+.ear-training-actions button:last-child { color: var(--ink); background: white; }
+.ear-training-actions button:disabled { cursor: not-allowed; opacity: .45; }
+.ear-training-error { margin: 0; color: var(--warm); font-weight: 700; }
 
 .notation-svg, .fretboard-svg { font-family: Inter, Arial, sans-serif; color: var(--ink); }
 .diagram-title { fill: var(--ink); font-family: Georgia, serif; font-size: 18px; }
@@ -190,6 +209,8 @@ fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
   .segmented { grid-template-columns: 1fr; }
   .tuner-controls { grid-template-columns: 1fr; }
   .metronome-controls { grid-template-columns: 1fr 1fr; }
+  .ear-training-controls { grid-template-columns: 1fr; }
+  .ear-training-controls legend, .ear-training-controls label:last-child { grid-column: auto; }
   .metronome-pattern { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
 }
 

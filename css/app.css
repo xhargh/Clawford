@@ -34,7 +34,7 @@ h2 { margin-bottom: 0; font-family: Georgia, "Times New Roman", serif; font-weig
 .brand-tagline { margin: 6px 0 0; color: var(--muted); font-size: .8rem; }
 .story-link { display: inline-flex; align-items: center; gap: 22px; min-height: 44px; padding: 10px 16px; border: 1px solid var(--line); border-radius: 30px; font-size: .8rem; font-weight: 650; text-decoration: none; }
 .story-link:hover { background: var(--accent-pale); }
-.warning-banner { max-width: 530px; margin: 0; color: var(--muted); font-size: .75rem; line-height: 1.7; }
+.warning-banner { max-width: 530px; margin: 8px 0 0; color: var(--muted); font-size: .75rem; line-height: 1.7; }
 
 .app-shell { display: grid; gap: 20px; width: min(1440px, 100%); margin: 0 auto; padding: 28px 20px 40px; }
 .workspace-intro { grid-column: 1 / -1; }
@@ -50,9 +50,6 @@ h2 { margin-bottom: 0; font-family: Georgia, "Times New Roman", serif; font-weig
 .workspace-hint { margin: 12px 0 24px; max-width: 65ch; color: var(--muted); font-size: .85rem; line-height: 1.6; }
 .setup-note { margin-top: 26px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: .75rem; line-height: 1.9; }
 .setup-note > span { color: var(--warm); margin-right: 4px; }
-.site-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 24px; max-width: 1384px; margin: 0 auto; padding: 26px 20px 36px; border-top: 1px solid var(--line); }
-.footer-title { margin-bottom: 8px; font: 1.2rem Georgia, serif; }
-.site-footer a { font-size: .8rem; }
 
 .control-grid { display: grid; gap: 14px; }
 label, legend { color: #40473f; font-size: .8rem; font-weight: 750; letter-spacing: .02em; }

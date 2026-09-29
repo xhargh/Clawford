@@ -30,6 +30,8 @@ try {
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto(url);
   await page.locator("#notation-output svg").waitFor();
+  assert.equal(await page.locator(".site-header #warning-banner").count(), 1);
+  assert.equal(await page.locator(".site-footer").count(), 0);
   const chooseView = async (view) => page.locator(`input[name=view][value="${view}"]`).check();
   for (const instrument of ["banjo5", "banjo4", "guitar", "bass", "mandolin", "ukulele"]) {
     await page.selectOption("#instrument", instrument);

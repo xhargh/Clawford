@@ -32,7 +32,7 @@ Double-check every note before relying on it.
 - Multiple tunings per instrument.
 - Key/scale selection, or chord root/quality selection.
 - Notation view and fretboard view, with vertical or horizontal orientation.
-- Metronome with BPM, meter, first-beat accent, odd-beat accents, and visual beat indication.
+- Metronome with ticks-per-minute tempo, editable additive patterns, normal/accent/silent ticks, tap tempo, and visual beat indication.
 - Print-friendly output (separate print stylesheet).
 - Runs entirely in the browser — no server or build step required.
 - Installable as a PWA with offline support (see [PWA support](#pwa-support)).

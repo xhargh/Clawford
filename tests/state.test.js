@@ -76,14 +76,13 @@ test("defaults chord root and quality to G major", () => {
 });
 
 test("accepts and serializes metronome settings", () => {
-  const state = stateFromSources(null, new URLSearchParams("view=metronome&metronomeBpm=140&metronomeNumerator=6&metronomeDenominator=8&metronomeOddAccent=true"), validValues);
+  const state = stateFromSources(null, new URLSearchParams("view=metronome&metronomeTpm=140&metronomeTicks=5&metronomePattern=ANANN"), validValues);
   assert.equal(state.view, "metronome");
-  assert.equal(state.metronomeBpm, 140);
-  assert.equal(state.metronomeNumerator, 6);
-  assert.equal(state.metronomeDenominator, 8);
-  assert.equal(state.metronomeOddAccent, true);
+  assert.equal(state.metronomeTpm, 140);
+  assert.equal(state.metronomeTicks, 5);
+  assert.equal(state.metronomePattern, "ANANN");
 
   const params = stateToSearchParams(state);
-  assert.equal(params.get("metronomeBpm"), "140");
-  assert.equal(params.get("metronomeDenominator"), "8");
+  assert.equal(params.get("metronomeTpm"), "140");
+  assert.equal(params.get("metronomePattern"), "ANANN");
 });

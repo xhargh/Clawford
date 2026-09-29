@@ -18,11 +18,9 @@ export const DEFAULT_STATE = {
   view: "notation",
   tunerMode: "chromatic",
   tunerA4: 440,
-  metronomeBpm: 96,
-  metronomeNumerator: 4,
-  metronomeDenominator: 4,
-  metronomeFirstAccent: true,
-  metronomeOddAccent: false,
+  metronomeTpm: 96,
+  metronomeTicks: 4,
+  metronomePattern: "ANNN",
   pitchDisplay: "written",
   fifthNumbering: "physical",
   spelling: "key",
@@ -32,8 +30,8 @@ export const DEFAULT_STATE = {
   chordQuality: "major"
 };
 
-const ENUMS = { view: ["notation", "fretboard", "tuner", "metronome"], tunerMode: ["chromatic", "tuning"], metronomeDenominator: [2, 4, 8, 16] };
-const USER_SETTINGS = new Set(["instrument", "tuning", "key", "scale", "view", "tunerMode", "tunerA4", "metronomeBpm", "metronomeNumerator", "metronomeDenominator", "metronomeFirstAccent", "metronomeOddAccent", "chordRoot", "chordQuality"]);
+const ENUMS = { view: ["notation", "fretboard", "tuner", "metronome"], tunerMode: ["chromatic", "tuning"] };
+const USER_SETTINGS = new Set(["instrument", "tuning", "key", "scale", "view", "tunerMode", "tunerA4", "metronomeTpm", "metronomeTicks", "metronomePattern", "chordRoot", "chordQuality"]);
 
 export function stateFromSources(stored, searchParams, validValues) {
   const state = { ...DEFAULT_STATE };
@@ -49,10 +47,9 @@ function applyObject(state, source, validValues) {
     if (!USER_SETTINGS.has(key)) continue;
     if (!(key in source)) continue;
     const raw = source[key];
-    if (["metronomeFirstAccent", "metronomeOddAccent"].includes(key)) state[key] = raw === true || raw === "true";
-    else if (key === "metronomeBpm" && Number.isInteger(Number(raw)) && Number(raw) >= 30 && Number(raw) <= 360) state[key] = Number(raw);
-    else if (key === "metronomeNumerator" && Number.isInteger(Number(raw)) && Number(raw) >= 1 && Number(raw) <= 12) state[key] = Number(raw);
-    else if (key === "metronomeDenominator" && ENUMS[key].includes(Number(raw))) state[key] = Number(raw);
+    if (key === "metronomeTpm" && Number.isInteger(Number(raw)) && Number(raw) >= 30 && Number(raw) <= 360) state[key] = Number(raw);
+    else if (key === "metronomeTicks" && Number.isInteger(Number(raw)) && Number(raw) >= 1 && Number(raw) <= 16) state[key] = Number(raw);
+    else if (key === "metronomePattern" && typeof raw === "string" && /^[ANS]{1,16}$/.test(raw)) state[key] = raw;
     else if (ENUMS[key]?.includes(raw)) state[key] = raw;
     else if (key === "tunerA4" && Number.isFinite(Number(raw)) && Number(raw) >= 400 && Number(raw) <= 480) state[key] = Number(raw);
     else if (key === "instrument" && validValues.instruments.includes(raw)) state[key] = raw;

@@ -17,7 +17,7 @@ import { selectTunerTarget, selectTunerTargets } from "./tuner.js";
 import { renderTunerOutput } from "./tuner-renderer.js";
 import { viewControlHidden, viewControlVisibility } from "./view-controls.js";
 import { TunerLifecycle } from "./tuner-lifecycle.js";
-import { BPM_MAX, BPM_MIN, Metronome } from "./metronome.js";
+import { TPM_MAX, TPM_MIN, Metronome } from "./metronome.js";
 import { renderMetronomeOutput } from "./metronome-renderer.js";
 import { TapTempo } from "./tap-tempo.js";
 import { FUN_FACTS, funFactPresentation } from "./fun-facts.js";
@@ -39,6 +39,8 @@ const warningBanner = document.querySelector("#warning-banner");
 const tunerControls = document.querySelector("#tuner-controls");
 const metronomeControls = document.querySelector("#metronome-controls");
 const generalControls = document.querySelector("#general-controls");
+const metronomeTpmValue = document.querySelector("#metronome-tpm-value");
+const metronomeTicksValue = document.querySelector("#metronome-ticks-value");
 const tunerInputDevice = document.querySelector("#tuner-input-device");
 const tunerStart = document.querySelector("#tuner-start");
 const tunerStop = document.querySelector("#tuner-stop");
@@ -121,8 +123,7 @@ tunerOutput.addEventListener("pointerdown", handleTunerTargetPointerdown);
 tunerOutput.addEventListener("click", handleTunerTargetClick);
 tunerOutput.addEventListener("keydown", handleTunerTargetKeydown);
 metronomeOutput.addEventListener("click", (event) => {
-  if (event.target.closest("#metronome-decrease")) adjustMetronomeBpm(-1);
-  if (event.target.closest("#metronome-increase")) adjustMetronomeBpm(1);
+  if (event.target.closest("[data-tick-index]")) cycleMetronomeTick(Number(event.target.closest("[data-tick-index]").dataset.tickIndex));
   if (event.target.closest("#metronome-start")) void startMetronome();
   if (event.target.closest("#metronome-stop")) stopMetronome();
   if (event.target.closest("#tap-tempo-button")) tapMetronome();
@@ -369,11 +370,9 @@ function updateFromForm() {
     view: data.get("view"),
     tunerMode: data.get("tunerMode"),
     tunerA4: validTunerA4 ? tunerA4 : state.tunerA4,
-    metronomeBpm: validMetronomeBpm(data.get("metronomeBpm")) ? Number(data.get("metronomeBpm")) : state.metronomeBpm,
-    metronomeNumerator: validMetronomeNumerator(data.get("metronomeNumerator")) ? Number(data.get("metronomeNumerator")) : state.metronomeNumerator,
-    metronomeDenominator: Number(data.get("metronomeDenominator")),
-    metronomeFirstAccent: data.get("metronomeFirstAccent") === "on",
-    metronomeOddAccent: data.get("metronomeOddAccent") === "on",
+    metronomeTpm: validMetronomeTpm(data.get("metronomeTpm")) ? Number(data.get("metronomeTpm")) : state.metronomeTpm,
+    metronomeTicks: validMetronomeTicks(data.get("metronomeTicks")) ? Number(data.get("metronomeTicks")) : state.metronomeTicks,
+    metronomePattern: normalizeMetronomePattern(state.metronomePattern, validMetronomeTicks(data.get("metronomeTicks")) ? Number(data.get("metronomeTicks")) : state.metronomeTicks),
     chordRoot: data.get("chordRoot"),
     chordQuality: data.get("chordQuality")
   };
@@ -391,9 +390,9 @@ function updateFromForm() {
   }
   render();
   if (state.view === "metronome" && metronome.running) {
-    const metronomeChanged = ["metronomeBpm", "metronomeNumerator", "metronomeDenominator", "metronomeFirstAccent", "metronomeOddAccent"]
+    const metronomeChanged = ["metronomeTpm", "metronomeTicks", "metronomePattern"]
       .filter((key) => state[key] !== previousMetronome[key]);
-    if (metronomeChanged.length === 1 && metronomeChanged[0] === "metronomeBpm") metronome.updateBpm(state.metronomeBpm);
+    if (metronomeChanged.length === 1 && metronomeChanged[0] === "metronomeTpm") metronome.updateTpm(state.metronomeTpm);
     else if (metronomeChanged.length > 0) void startMetronome();
   }
 }
@@ -450,6 +449,10 @@ function render() {
   metronomeOutput.hidden = hiddenControls.metronomeOutput;
   tunerControls.hidden = hiddenControls.tunerControls;
   metronomeControls.hidden = hiddenControls.metronomeControls;
+  metronomeTpmValue.value = state.metronomeTpm;
+  metronomeTpmValue.textContent = state.metronomeTpm;
+  metronomeTicksValue.value = state.metronomeTicks;
+  metronomeTicksValue.textContent = state.metronomeTicks;
   document.querySelector("#chord-root-control").hidden = hiddenControls.chordRoot;
   document.querySelector("#chord-quality-control").hidden = hiddenControls.chordQuality;
   document.querySelector("#instrument-control").hidden = hiddenControls.instrument;
@@ -466,25 +469,13 @@ function render() {
 }
 
 function renderMetronome() {
-  metronomeOutput.innerHTML = renderMetronomeOutput({ beat: metronomeBeat, numerator: state.metronomeNumerator, bpm: state.metronomeBpm, running: metronome.running, tapBpm, error: metronomeError });
+  metronomeOutput.innerHTML = renderMetronomeOutput({ beat: metronomeBeat, tpm: state.metronomeTpm, pattern: state.metronomePattern, running: metronome.running, tapBpm, error: metronomeError });
 }
 
 function renderMetronomeBeat() {
-  metronomeOutput.querySelectorAll(".metronome-beat").forEach((element, index) => {
+  metronomeOutput.querySelectorAll(".metronome-tick").forEach((element, index) => {
     element.classList.toggle("active", metronomeBeat === index + 1);
   });
-}
-
-function adjustMetronomeBpm(delta) {
-  const bpm = Math.max(BPM_MIN, Math.min(BPM_MAX, state.metronomeBpm + delta));
-  if (bpm === state.metronomeBpm) return;
-  state = { ...state, metronomeBpm: bpm };
-  writeForm(state);
-  if (metronome.running) metronome.updateBpm(bpm);
-  saveStoredState(state);
-  const query = stateToSearchParams(state).toString();
-  history.replaceState(null, "", `${location.pathname}${query ? `?${query}` : ""}`);
-  renderMetronome();
 }
 
 function tapMetronome() {
@@ -494,11 +485,11 @@ function tapMetronome() {
     return;
   }
   tapBpm = detectedBpm;
-  const settingBpm = Math.min(BPM_MAX, detectedBpm);
-  if (settingBpm >= BPM_MIN) {
-    state = { ...state, metronomeBpm: settingBpm };
+  const settingTpm = Math.min(TPM_MAX, detectedBpm);
+  if (settingTpm >= TPM_MIN) {
+    state = { ...state, metronomeTpm: settingTpm };
     writeForm(state);
-    if (metronome.running) metronome.updateBpm(settingBpm);
+    if (metronome.running) metronome.updateTpm(settingTpm);
     saveStoredState(state);
     const query = stateToSearchParams(state).toString();
     history.replaceState(null, "", `${location.pathname}${query ? `?${query}` : ""}`);
@@ -516,7 +507,7 @@ async function startMetronome() {
   metronomeError = "";
   metronomeBeat = 0;
   try {
-    await metronome.start({ bpm: state.metronomeBpm, numerator: state.metronomeNumerator, denominator: state.metronomeDenominator, firstBeatAccent: state.metronomeFirstAccent, oddBeatAccent: state.metronomeOddAccent });
+    await metronome.start({ tpm: state.metronomeTpm, pattern: state.metronomePattern });
   } catch (error) {
     metronomeError = error.message || "Unable to start metronome";
   }
@@ -529,14 +520,28 @@ function stopMetronome() {
   renderMetronome();
 }
 
-function validMetronomeBpm(value) {
+function validMetronomeTpm(value) {
   const number = Number(value);
-  return Number.isInteger(number) && number >= BPM_MIN && number <= BPM_MAX;
+  return Number.isInteger(number) && number >= TPM_MIN && number <= TPM_MAX;
 }
 
-function validMetronomeNumerator(value) {
+function validMetronomeTicks(value) {
   const number = Number(value);
-  return Number.isInteger(number) && number >= 1 && number <= 12;
+  return Number.isInteger(number) && number >= 1 && number <= 16;
+}
+
+function normalizeMetronomePattern(pattern, ticks) {
+  return Array.from({ length: ticks }, (_, index) => /^[ANS]$/.test(pattern?.[index] || "") ? pattern[index] : index === 0 ? "A" : "N").join("");
+}
+
+function cycleMetronomeTick(index) {
+  const current = state.metronomePattern[index];
+  const next = { N: "A", A: "S", S: "N" }[current] || "N";
+  const pattern = [...state.metronomePattern];
+  pattern[index] = next;
+  state = { ...state, metronomePattern: pattern.join("") };
+  if (metronome.running) void startMetronome();
+  else render();
 }
 
 function renderTuner(tuning) {

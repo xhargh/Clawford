@@ -1,7 +1,7 @@
 @page { margin: 12mm; }
 * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
 body { color: #000; background: #fff; }
-.site-header, .settings-panel, .no-print { display: none !important; }
+.site-header, .settings-panel, .no-print, .tool-navigation, .workspace-intro, .workspace-heading, .workspace-hint, .site-footer, .skip-link { display: none !important; }
 .tuner-output { display: none !important; }
 .app-shell { display: block; width: 100%; margin: 0; padding: 0; }
 .output-panel { padding: 0; border: 0; box-shadow: none; }

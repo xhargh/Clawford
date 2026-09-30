@@ -49,6 +49,20 @@ export function stateFromSources(stored, searchParams, validValues) {
   return state;
 }
 
+// A settings transition owns validation, instrument compatibility, and cycle sizing.
+// Runtime readings and audio lifecycle state do not belong in saved settings.
+export function updateSettings(previous, changes, validValues, tunings) {
+  const next = { ...previous };
+  applyObject(next, changes, validValues);
+  if (next.instrument !== previous.instrument) {
+    next.tuning = tunings.find((tuning) => tuning.instrument === next.instrument).id;
+  }
+  next.metronomePattern = Array.from({ length: next.metronomeTicks }, (_, index) =>
+    /^[ANS]$/.test(next.metronomePattern?.[index] || "") ? next.metronomePattern[index] : index === 0 ? "A" : "N"
+  ).join("");
+  return next;
+}
+
 function applyObject(state, source, validValues) {
   if (!source || typeof source !== "object") return;
   for (const key of Object.keys(DEFAULT_STATE)) {

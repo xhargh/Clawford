@@ -4,7 +4,7 @@ import { renderNotation } from "./notation-renderer.js";
 import { CHORD_QUALITIES, generateChordBoardNotes, hasChordVoicing } from "./chords.js";
 import { INSTRUMENTS, getFretboardFrets, getInstrument } from "./instruments.js";
 import { CHROMATIC_SCALE, KEYS, SCALES, getKey, getScale, keySignatureFor } from "./scales.js";
-import { stateFromSources, stateToSearchParams } from "./state.js";
+import { stateFromSources, stateToSearchParams, updateSettings } from "./state.js";
 import { loadStoredState, saveStoredState } from "./storage.js";
 import { BUILT_IN_TUNINGS } from "./tunings.js";
 import { AudioPlayer } from "./audio/player.js";
@@ -64,14 +64,15 @@ populateSelect(scaleSelect, SCALES.map((scale) => ({ value: scale.id, label: sca
 populateSelect(chordRootSelect, KEYS.map((key) => ({ value: key.value, label: key.label })));
 populateFretboardPatterns();
 
-let state = stateFromSources(loadStoredState(), new URLSearchParams(location.search), {
+const validSettings = {
   instruments: INSTRUMENTS.map((instrument) => instrument.id),
   tunings: tunings.map((tuning) => tuning.id),
   keys: KEYS.map((key) => key.value),
   scales: SCALES.map((scale) => scale.id),
   chordRoots: KEYS.map((key) => key.value),
   chordQualities: [...CHORD_QUALITIES.map((quality) => quality.id), ...FRETBOARD_SCALES.map(scaleOptionValue)]
-});
+};
+let state = stateFromSources(loadStoredState(), new URLSearchParams(location.search), validSettings);
 let sharedAudioContext = null;
 let audioPlayer = createAudioPlayer(state.instrument);
 let selectedFretsByString = new Map();
@@ -119,6 +120,7 @@ populateSelect(tuningSelect, tuningsFor(state.instrument).map((tuning) => ({ val
 writeForm(state);
 
 let fitScheduled = false;
+persistSettings();
 render();
 window.setTimeout(() => {
   funFactsActive = true;
@@ -131,6 +133,7 @@ if (state.view === "tuner") {
 }
 
 form.addEventListener("input", updateFromForm);
+document.querySelector("#tool-navigation").addEventListener("input", updateFromForm);
 document.addEventListener("keydown", (event) => {
   if (!isTapTempoShortcut(event, state.view)) return;
   event.preventDefault();
@@ -384,29 +387,13 @@ function updateFromForm() {
   const tunerA4Input = form.elements.namedItem("tunerA4");
   const validTunerA4 = Number.isFinite(tunerA4) && tunerA4 >= 400 && tunerA4 <= 480;
   tunerA4Input.setCustomValidity(validTunerA4 ? "" : "A4 must be between 400 and 480 Hz.");
-  const instrument = data.get("instrument");
+  const next = updateSettings(state, Object.fromEntries(data), validSettings, tunings);
+  const instrument = next.instrument;
   const instrumentChanged = instrument !== state.instrument;
   const earSettingsChanged = ["instrument", "tuning", "key", "scale", "earExercise", "earVariant", "earSequenceLimit"]
-    .some((key) => ({ instrument, tuning: instrumentChanged ? tuningsFor(instrument)[0].id : data.get("tuning"), key: data.get("key"), scale: data.get("scale"), earExercise: data.get("earExercise"), earVariant: data.get("earVariant"), earSequenceLimit: validEarSequenceLimit(data.get("earSequenceLimit")) ? Number(data.get("earSequenceLimit")) : state.earSequenceLimit }[key]) !== state[key]);
-  const tuning = instrumentChanged ? tuningsFor(instrument)[0].id : data.get("tuning");
-  state = {
-    ...state,
-    instrument,
-    tuning,
-    key: data.get("key"),
-    scale: data.get("scale"),
-    view: data.get("view"),
-    tunerMode: data.get("tunerMode"),
-    tunerA4: validTunerA4 ? tunerA4 : state.tunerA4,
-    metronomeTpm: validMetronomeTpm(data.get("metronomeTpm")) ? Number(data.get("metronomeTpm")) : state.metronomeTpm,
-    metronomeTicks: validMetronomeTicks(data.get("metronomeTicks")) ? Number(data.get("metronomeTicks")) : state.metronomeTicks,
-    metronomePattern: normalizeMetronomePattern(state.metronomePattern, validMetronomeTicks(data.get("metronomeTicks")) ? Number(data.get("metronomeTicks")) : state.metronomeTicks),
-    chordRoot: data.get("chordRoot"),
-    chordQuality: data.get("chordQuality"),
-    earExercise: data.get("earExercise"),
-    earVariant: data.get("earVariant"),
-    earSequenceLimit: validEarSequenceLimit(data.get("earSequenceLimit")) ? Number(data.get("earSequenceLimit")) : state.earSequenceLimit
-  };
+    .some((key) => next[key] !== state[key]);
+  state = next;
+  persistSettings();
   if (instrumentChanged) {
     void audioPlayer.dispose();
     audioPlayer = createAudioPlayer(instrument);
@@ -443,6 +430,15 @@ function updateChordOptionAvailability(tuning) {
 
 function render() {
   strumGesture = null;
+  const view = {
+    notation: ["Notation", "Select a note to hear it. Explore where it lives on each string."],
+    fretboard: ["Fretboard", "Select tones to build a shape, or swipe across the strings to strum."],
+    tuner: ["Tuner", "Listen to your instrument. In Strings mode, select an open string to hear its reference pitch."],
+    metronome: ["Metronome", "Find your pulse. Tap a beat to change its accent, or tap along to set the tempo."],
+    "ear-training": ["Ear training", "Listen, then find the note on your instrument or the fretboard below."]
+  }[state.view];
+  document.querySelector("#workspace-title").textContent = view[0];
+  document.querySelector("#workspace-hint").textContent = view[1];
   const tuning = tunings.find((item) => item.id === state.tuning) || tunings[0];
   const instrument = getInstrument(tuning.instrument) || getInstrument(state.instrument);
   const fretboardFrets = getFretboardFrets(instrument.id);
@@ -497,14 +493,17 @@ function render() {
   document.querySelector("#key-control").hidden = hiddenControls.key;
   document.querySelector("#scale-control").hidden = hiddenControls.scale;
   document.querySelector("#ear-sequence-limit-control").hidden = state.earVariant !== "rolling";
-  document.title = state.view === "metronome" ? "Metronome — Clawford" : `${key.value} ${scale.name} — Clawford`;
+  document.title = `${view[0]} — Clawford`;
   renderTuner(tuning);
   renderMetronome();
   renderEarTraining(tuning);
+  scheduleDiagramFit();
+}
+
+function persistSettings() {
   saveStoredState(state);
   const query = stateToSearchParams(state).toString();
-  history.replaceState(null, "", `${location.pathname}${query ? `?${query}` : ""}`);
-  scheduleDiagramFit();
+  history.replaceState(null, "", `${location.pathname}${query ? `?${query}` : ""}${location.hash}`);
 }
 
 function renderMetronome() {
@@ -567,9 +566,7 @@ function tapMetronome() {
     state = { ...state, metronomeTpm: settingTpm };
     writeForm(state);
     if (metronome.running) metronome.updateTpm(settingTpm);
-    saveStoredState(state);
-    const query = stateToSearchParams(state).toString();
-    history.replaceState(null, "", `${location.pathname}${query ? `?${query}` : ""}`);
+    persistSettings();
   }
   renderMetronome();
 }
@@ -597,31 +594,13 @@ function stopMetronome() {
   renderMetronome();
 }
 
-function validMetronomeTpm(value) {
-  const number = Number(value);
-  return Number.isInteger(number) && number >= TPM_MIN && number <= TPM_MAX;
-}
-
-function validMetronomeTicks(value) {
-  const number = Number(value);
-  return Number.isInteger(number) && number >= 1 && number <= 16;
-}
-
-function validEarSequenceLimit(value) {
-  const number = Number(value);
-  return Number.isInteger(number) && number >= 1 && number <= 32;
-}
-
-function normalizeMetronomePattern(pattern, ticks) {
-  return Array.from({ length: ticks }, (_, index) => /^[ANS]$/.test(pattern?.[index] || "") ? pattern[index] : index === 0 ? "A" : "N").join("");
-}
-
 function cycleMetronomeTick(index) {
   const current = state.metronomePattern[index];
   const next = { N: "A", A: "S", S: "N" }[current] || "N";
   const pattern = [...state.metronomePattern];
   pattern[index] = next;
   state = { ...state, metronomePattern: pattern.join("") };
+  persistSettings();
   if (metronome.running) void startMetronome();
   else render();
 }
@@ -830,7 +809,7 @@ function readTunerFrame(session = tunerLifecycle.session) {
   tunerAudioRms = rms;
   if (tunerReading) tunerReading = { ...tunerReading, rms };
   if (!estimate.isSilent && estimate.frequency && estimate.stable) tunerReading = tunerReadingFromFrequency(estimate.frequency, rms);
-  render();
+  renderTuner(tunings.find((item) => item.id === state.tuning) || tunings[0]);
   tunerAnimationFrame = requestAnimationFrame(() => readTunerFrame(session));
 }
 

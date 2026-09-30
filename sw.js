@@ -7,13 +7,16 @@
 // changes — no manual bump needed. The placeholder below is only used for
 // local/dev serving (npx serve, opening index.html directly, etc).
 
-const CACHE_VERSION = "clawford-dev-2";
+const CACHE_VERSION = "clawford-dev-3";
 
 const APP_SHELL = [
   "./",
   "index.html",
+  "backstory.html",
   "manifest.webmanifest",
   "css/app.css",
+  "css/theme.css",
+  "css/backstory.css",
   "css/print.css",
   "js/app.js",
   "js/audio/player.js",
@@ -37,6 +40,7 @@ const APP_SHELL = [
   "js/tuner.js",
   "js/tuner-lifecycle.js",
   "js/metronome.js",
+  "js/tap-tempo.js",
   "js/metronome-renderer.js",
   "js/tuner-renderer.js",
   "js/view-controls.js",

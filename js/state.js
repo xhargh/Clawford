@@ -37,7 +37,7 @@ const ENUMS = {
   view: ["notation", "fretboard", "tuner", "metronome", "ear-training"],
   tunerMode: ["chromatic", "tuning"],
   earExercise: ["find", "follow", "simon"],
-  earVariant: ["free", "same-string", "scale", "rolling"]
+  earVariant: ["free", "same-string", "scale", "rolling", "open-string"]
 };
 const USER_SETTINGS = new Set(["instrument", "tuning", "key", "scale", "view", "tunerMode", "tunerA4", "metronomeTpm", "metronomeTicks", "metronomePattern", "chordRoot", "chordQuality", "earExercise", "earVariant", "earSequenceLimit"]);
 
@@ -46,6 +46,7 @@ export function stateFromSources(stored, searchParams, validValues) {
   applyObject(state, stored, validValues);
   const query = Object.fromEntries(searchParams.entries());
   applyObject(state, query, validValues);
+  normalizeEarSettings(state);
   return state;
 }
 
@@ -60,7 +61,12 @@ export function updateSettings(previous, changes, validValues, tunings) {
   next.metronomePattern = Array.from({ length: next.metronomeTicks }, (_, index) =>
     /^[ANS]$/.test(next.metronomePattern?.[index] || "") ? next.metronomePattern[index] : index === 0 ? "A" : "N"
   ).join("");
+  normalizeEarSettings(next);
   return next;
+}
+
+function normalizeEarSettings(state) {
+  if (state.earExercise !== "simon" && state.earVariant === "rolling") state.earVariant = "free";
 }
 
 function applyObject(state, source, validValues) {

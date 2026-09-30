@@ -28,3 +28,8 @@ test("invalid settings retain previous values using the same rules as saved and 
   assert.equal(next.view, "notation");
   assert.equal(next.metronomePattern, "AN");
 });
+
+test("rolling sequence generation is only available for Simon", () => {
+  const next = updateSettings(DEFAULT_STATE, { earExercise: "find", earVariant: "rolling" }, valid, BUILT_IN_TUNINGS);
+  assert.equal(next.earVariant, "free");
+});

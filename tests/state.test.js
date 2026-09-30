@@ -54,6 +54,12 @@ test("accepts and serializes ear-training settings", () => {
   assert.equal(params.get("earVariant"), "rolling");
 });
 
+test("accepts and serializes open-string ear training", () => {
+  const state = stateFromSources(null, new URLSearchParams("earVariant=open-string"), validValues);
+  assert.equal(state.earVariant, "open-string");
+  assert.equal(stateToSearchParams(state).get("earVariant"), "open-string");
+});
+
 test("validates and persists tuner settings", () => {
   const state = stateFromSources({ tunerMode: "tuning", tunerA4: 442 }, new URLSearchParams(), validValues);
   assert.equal(state.tunerMode, "tuning");

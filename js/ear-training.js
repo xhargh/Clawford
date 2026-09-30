@@ -62,7 +62,7 @@ export function createEarTrainingSession({
 } = {}) {
   if (!tuning?.strings?.length) throw new Error("A tuning is required");
   if (!["find", "follow", "simon"].includes(exercise)) throw new Error(`Invalid exercise: ${exercise}`);
-  if (!["free", "same-string", "scale", "rolling"].includes(variant)) throw new Error(`Invalid variant: ${variant}`);
+  if (!["free", "same-string", "scale", "rolling", "open-string"].includes(variant)) throw new Error(`Invalid variant: ${variant}`);
   if (!Number.isSafeInteger(sequenceLimit) || sequenceLimit < 1) throw new RangeError("sequenceLimit must be positive");
 
   const candidates = createCandidates({ tuning, key, scale, maxFret, fifthMode, variant, exercise });
@@ -94,11 +94,13 @@ export function createEarTrainingSession({
     return { type: "stopped", state: state() };
   }
 
-  function submitPitch(midi) {
+  function submitPitch(midi, string = null) {
     if (!running) return { type: "ignored", state: state() };
     attempts += 1;
     if (exercise === "simon") return submitSimonPitch(midi);
-    if (midi !== target.midi) {
+    const correctPitch = midi === target.midi;
+    const correctString = variant !== "open-string" || string === target.string;
+    if (!correctPitch || !correctString) {
       streak = 0;
       return { type: "repeat-target", target, notes: [target], state: state() };
     }
@@ -136,6 +138,7 @@ function createCandidates({ tuning, key, scale, maxFret, fifthMode, variant, exe
     const positions = positionsForMidi(midi, tuning, { maxFret, fifthMode, stringMaxFrets: limits });
     for (const position of positions) {
       if (variant === "same-string" && position.string === 5) continue;
+      if (variant === "open-string" && position.fret !== 0) continue;
       candidates.push({ midi, string: position.string, fret: position.fret, sourceString: position.string, frequency: noteToFrequency(midi) });
     }
   }

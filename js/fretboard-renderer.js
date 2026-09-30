@@ -24,7 +24,7 @@ export function renderScaleBoard(board, title, tuning, root, scale) {
   return renderVertical(strings, board.displayMaxFret, board.tones, title, tuning, scaleLabel, root.preference, { type: "scale", rootPitchClass: root.pitchClass });
 }
 
-export function renderEarTrainingBoard({ tuning, maxFret = 5, targetMidi = null, detectedMidi = null, preference = "sharp", title = "Ear training" }) {
+export function renderEarTrainingBoard({ tuning, maxFret = 5, targetMidi = null, targetString = null, detectedMidi = null, preference = "sharp", title = "Ear training" }) {
   const strings = tuning.strings.filter((string) => string.kind !== "drone").map((string) => string.number);
   const tones = [];
   for (const string of tuning.strings.filter((item) => item.kind !== "drone")) {
@@ -38,13 +38,14 @@ export function renderEarTrainingBoard({ tuning, maxFret = 5, targetMidi = null,
     type: "ear-training",
     rootPitchClass: 0,
     targetMidi,
+    targetString,
     detectedMidi,
     ariaLabel: "Ear-training fretboard. Select a note to answer."
   });
 }
 
 function renderVertical(strings, displayMaxFret, tones, title, tuning, label, preference, options = {}) {
-  const { type = "chord", voicing = true, rootPitchClass, targetMidi = null, detectedMidi = null, ariaLabel } = options;
+  const { type = "chord", voicing = true, rootPitchClass, targetMidi = null, targetString = null, detectedMidi = null, ariaLabel } = options;
   const leftX = 65;
   const stringGap = 52;
   const rightX = leftX + Math.max(1, strings.length - 1) * stringGap;
@@ -107,13 +108,13 @@ function renderVertical(strings, displayMaxFret, tones, title, tuning, label, pr
   for (const tone of tones) {
     const x = xForString.get(tone.string);
     const y = tone.isOpen ? openY : topY + (tone.fret - 0.5) * fretHeight;
-    appendTone(svg, tone, x, y, preference, rootPitchClass, type, { targetMidi, detectedMidi });
+    appendTone(svg, tone, x, y, preference, rootPitchClass, type, { targetMidi, targetString, detectedMidi });
   }
   return svg;
 }
 
 function appendTone(svg, tone, x, y, preference, rootPitchClass, type, options = {}) {
-  const { targetMidi = null, detectedMidi = null } = options;
+  const { targetMidi = null, targetString = null, detectedMidi = null } = options;
   const noteName = tone.noteName || chromaticName(tone.pitchClass, preference);
   const interval = (tone.pitchClass - rootPitchClass + 12) % 12;
   const toneStrength = Math.round(100 - interval * 7.5);
@@ -121,7 +122,7 @@ function appendTone(svg, tone, x, y, preference, rootPitchClass, type, options =
   if (tone.isSelected) classes.push("selected");
   if (tone.isRoot) classes.push("root");
   if (tone.isOpen) classes.push("open");
-  if (type === "ear-training" && tone.midi === targetMidi) classes.push("target-note");
+  if (type === "ear-training" && tone.midi === targetMidi && (targetString === null || tone.string === targetString)) classes.push("target-note");
   if (type === "ear-training" && tone.midi === detectedMidi) classes.push("detected-note");
   const position = tone.isOpen ? "open" : `fret ${tone.fret}`;
   const group = element("g", {

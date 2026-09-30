@@ -492,7 +492,7 @@ function render() {
   document.querySelector("#tuning-control").hidden = hiddenControls.tuning;
   document.querySelector("#key-control").hidden = hiddenControls.key;
   document.querySelector("#scale-control").hidden = hiddenControls.scale;
-  document.querySelector("#ear-sequence-limit-control").hidden = state.earVariant !== "rolling";
+  document.querySelector("#ear-sequence-limit-control").hidden = state.earExercise !== "simon" || state.earVariant !== "rolling";
   document.title = `${view[0]} — Clawford`;
   renderTuner(tuning);
   renderMetronome();
@@ -513,6 +513,7 @@ function renderMetronome() {
 function renderEarTraining(tuning) {
   const engineState = earTrainingEngine?.state;
   const target = engineState?.target ? { ...engineState.target, note: midiToDisplayName(engineState.target.midi) } : null;
+  const sequenceTarget = engineState?.exercise === "simon" ? engineState.sequence[engineState.sequenceIndex] : null;
   earTrainingOutput.innerHTML = renderEarTrainingOutput({
     exercise: state.earExercise,
     variant: state.earVariant,
@@ -525,11 +526,13 @@ function renderEarTraining(tuning) {
     target,
     error: earTrainingError
   });
-  const targetMidi = target?.midi ?? (engineState?.exercise === "simon" ? engineState.sequence[engineState.sequenceIndex]?.midi : null);
+  const targetMidi = target?.midi ?? sequenceTarget?.midi ?? null;
+  const targetString = target?.string ?? sequenceTarget?.string ?? null;
   earTrainingFretboardOutput.replaceChildren(renderEarTrainingBoard({
     tuning,
     maxFret: 5,
     targetMidi,
+    targetString,
     detectedMidi: earTrainingDetectedMidi,
     preference: getKey(state.key).preference,
     title: `${tuning.name} — ${state.key} ${getScale(state.scale).name}`
@@ -545,7 +548,7 @@ function handleEarTrainingBoardInput(event) {
   const tone = event.target.closest(".ear-training-tone");
   if (!tone || !earTrainingEngine?.state.running || performance.now() < earTrainingPlaybackUntil) return;
   event.preventDefault();
-  handleEarTrainingAnswer(Number(tone.dataset.midi));
+  handleEarTrainingAnswer(Number(tone.dataset.midi), Number(tone.dataset.string));
 }
 
 function renderMetronomeBeat() {
@@ -648,14 +651,14 @@ async function startEarTraining() {
   try {
     const key = getKey(state.key);
     const scale = getScale(state.scale);
-    const variant = state.earExercise === "follow" ? "same-string" : state.earVariant;
+    const variant = state.earExercise === "follow" && state.earVariant !== "open-string" ? "same-string" : state.earVariant;
     earTrainingEngine = createEarTrainingSession({
       exercise: state.earExercise,
       variant,
       tuning,
       key,
       scale,
-      maxFret: 5,
+    maxFret: state.earVariant === "open-string" ? 0 : 5,
       sequenceLimit: state.earSequenceLimit
     });
     earTrainingGate = new PitchAnswerGate({ windowSize: 3, toleranceCents: 35, a4: state.tunerA4 });
@@ -733,11 +736,11 @@ function readEarTrainingFrame(session) {
   earTrainingAnimationFrame = requestAnimationFrame(() => readEarTrainingFrame(session));
 }
 
-function handleEarTrainingAnswer(midi) {
+function handleEarTrainingAnswer(midi, string = null) {
   earTrainingDetectedMidi = midi;
   const event = state.earExercise === "simon"
     ? earTrainingEngine.submitSimonPitch(midi)
-    : earTrainingEngine.submitPitch(midi);
+    : earTrainingEngine.submitPitch(midi, string);
   if (event.type === "awaiting-next") {
     earTrainingStatus = "Listening";
     const next = event.sequence[event.sequenceIndex];

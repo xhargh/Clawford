@@ -29,6 +29,23 @@ test("Find repeats a wrong target and advances after a correct answer", () => {
   assert.equal(session.state.streak, 1);
 });
 
+test("Open strings asks for the correct string, not just the pitch", () => {
+  const session = createEarTrainingSession({ ...settings, variant: "open-string", random: () => 0 });
+  const first = session.start();
+  assert.equal(first.target.fret, 0);
+  assert.equal(session.submitPitch(first.target.midi, first.target.string + 1).type, "repeat-target");
+  assert.equal(session.submitPitch(first.target.midi, first.target.string).type, "advance");
+});
+
+test("Open strings stays open when used with Follow", () => {
+  const session = createEarTrainingSession({ ...settings, exercise: "follow", variant: "open-string", random: () => 0 });
+  let event = session.start();
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    assert.equal(event.target.fret, 0);
+    event = session.submitPitch(event.target.midi, event.target.string);
+  }
+});
+
 test("Follow generates consecutive targets on one low-position string", () => {
   const session = createEarTrainingSession({ ...settings, exercise: "follow", random: () => 0.2 });
   const first = session.start();

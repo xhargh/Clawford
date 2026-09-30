@@ -32,7 +32,7 @@ export function renderEarTrainingOutput({
 }
 
 function labelFor(value) {
-  return { find: "Find", follow: "Follow", simon: "Simon", free: "Free range", "same-string": "Same string", scale: "Scale", rolling: "Rolling" }[value] || value;
+  return { find: "Find", follow: "Follow", simon: "Simon", free: "Low position", "same-string": "Same string", scale: "Key and scale", rolling: "Rolling", "open-string": "Open strings" }[value] || value;
 }
 
 function escapeHtml(value) {

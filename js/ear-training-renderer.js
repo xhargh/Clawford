@@ -14,7 +14,6 @@ export function renderEarTrainingOutput({
   const progress = sequenceLength ? `${sequenceIndex} / ${sequenceLength} notes` : "Single-note exercise";
   return `<div class="ear-training-card" data-running="${running}">
     <div class="ear-training-heading">
-      <p class="eyebrow">Audio-first practice</p>
       <h2>Ear training</h2>
       <p class="ear-training-mode">${escapeHtml(labelFor(exercise))} · ${escapeHtml(labelFor(variant))}</p>
     </div>

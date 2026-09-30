@@ -30,7 +30,7 @@ h1, h2, p { margin-top: 0; }
 h1 { margin-bottom: 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(2rem, 5vw, 2.8rem); font-weight: 500; letter-spacing: -.045em; line-height: 1.1; }
 h2 { margin-bottom: 0; font-family: Georgia, "Times New Roman", serif; font-weight: 500; }
 .eyebrow { margin-bottom: 4px; color: var(--warm); font-size: .72rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
-.brand-copy { flex: 1; }
+.brand-copy { min-width: 0; flex: 1; }
 .brand-tagline { margin: 6px 0 0; color: var(--muted); font-size: .8rem; }
 .story-link { display: inline-flex; align-items: center; gap: 22px; min-height: 44px; padding: 10px 16px; border: 1px solid var(--line); border-radius: 30px; font-size: .8rem; font-weight: 650; text-decoration: none; }
 .story-link:hover { background: var(--accent-pale); }
@@ -46,7 +46,6 @@ h2 { margin-bottom: 0; font-family: Georgia, "Times New Roman", serif; font-weig
 .panel-heading h2 { font-size: 1.6rem; }
 .workspace-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .workspace-heading h2 { font-size: clamp(1.8rem, 3vw, 2.3rem); letter-spacing: -.035em; }
-.workspace-mark { display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid var(--line); border-radius: 50%; color: var(--warm); font: 2rem Georgia, serif; }
 .workspace-hint { margin: 12px 0 24px; max-width: 65ch; color: var(--muted); font-size: .85rem; line-height: 1.6; }
 .setup-note { margin-top: 26px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: .75rem; line-height: 1.9; }
 .setup-note > span { color: var(--warm); margin-right: 4px; }
@@ -221,12 +220,14 @@ fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
   .control-grid { grid-template-columns: 1fr 1fr; }
   .full-control { grid-column: 1 / -1; }
   .tool-number { display: none; }
+  .segmented { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .segmented label:last-of-type { grid-column: 1 / -1; }
   .segmented label { font-size: .74rem; }
   .panel-heading { margin-bottom: 18px; }
   .panel-heading h2 { font-size: 1.35rem; }
   .setup-note { display: none; }
   .tuner-controls { grid-template-columns: 1fr; }
-  .metronome-controls { grid-template-columns: 1fr 1fr; }
+  .metronome-controls { grid-template-columns: 1fr; }
   .ear-training-controls { grid-template-columns: 1fr; }
   .ear-training-controls legend, .ear-training-controls label:last-child { grid-column: auto; }
   .metronome-pattern { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }

@@ -83,6 +83,13 @@ try {
           return box.x >= 0 && box.x + box.width <= title.ownerSVGElement.viewBox.baseVal.width;
         }), `${view} heading stays inside diagram`);
       }
+      if (width <= 390) {
+        const navigationLabels = page.locator("#tool-navigation > label");
+        assert.ok(await navigationLabels.evaluateAll((labels) => labels.every((label) => label.scrollWidth === label.clientWidth)), `${view} navigation labels fit at ${width}px`);
+        if (view === "metronome") {
+          assert.equal(await page.locator("#metronome-controls label").evaluateAll((labels) => new Set(labels.map((label) => Math.round(label.getBoundingClientRect().width))).size), 1, `metronome controls align at ${width}px`);
+        }
+      }
       if (process.env.SCREENSHOT_DIR) {
         await page.screenshot({ path: resolve(process.env.SCREENSHOT_DIR, `clawford-${width}-${view}.png`), fullPage: true });
       }

@@ -29,8 +29,9 @@ export function estimatePitch(samples, { sampleRate, silenceRms = 0.01 } = {}) {
       bestLag = lag;
     }
   }
+  const minimumPlausibleCorrelation = bestCorrelation * 0.9;
   for (let lag = minLag + 1; lag < maxLag; lag += 1) {
-    if (correlations[lag] >= 0.8 && correlations[lag] >= correlations[lag - 1] && correlations[lag] >= correlations[lag + 1]) {
+    if (correlations[lag] >= minimumPlausibleCorrelation && correlations[lag] >= correlations[lag - 1] && correlations[lag] >= correlations[lag + 1]) {
       bestLag = lag;
       bestCorrelation = correlations[lag];
       break;

@@ -8,6 +8,7 @@ export function renderEarTrainingOutput({
   sequenceLength = 0,
   sequenceIndex = 0,
   target = null,
+  heard = "--",
   error = ""
 } = {}) {
   const targetLabel = target?.note || (target?.midi == null ? "--" : `MIDI ${target.midi}`);
@@ -22,6 +23,7 @@ export function renderEarTrainingOutput({
       <strong class="ear-training-target">${escapeHtml(targetLabel)}</strong>
       <span>${escapeHtml(progress)}</span>
     </div>
+    <p class="ear-training-heard">Heard: <strong>${escapeHtml(heard)}</strong></p>
     <dl class="ear-training-stats"><div><dt>Streak</dt><dd>${streak}</dd></div><div><dt>Attempts</dt><dd>${attempts}</dd></div></dl>
     <div class="ear-training-actions">
       <button id="ear-training-start" type="button"${running ? " disabled" : ""}>Start exercise</button>

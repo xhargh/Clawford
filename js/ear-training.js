@@ -99,7 +99,7 @@ export function createEarTrainingSession({
     attempts += 1;
     if (exercise === "simon") return submitSimonPitch(midi);
     const correctPitch = midi === target.midi;
-    const correctString = variant !== "open-string" || string === target.string;
+    const correctString = variant !== "open-string" || string === null || string === target.string;
     if (!correctPitch || !correctString) {
       streak = 0;
       return { type: "repeat-target", target, notes: [target], state: state() };

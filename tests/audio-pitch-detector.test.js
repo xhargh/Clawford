@@ -26,6 +26,19 @@ test("estimates the frequency of a clear tone", () => {
   assert.equal(result.isSilent, false);
 });
 
+test("prefers the fundamental when a second harmonic is louder", () => {
+  const sampleRate = 48000;
+  const frequency = 110;
+  const samples = Float32Array.from({ length: 2048 }, (_, index) =>
+    Math.sin((2 * Math.PI * frequency * index) / sampleRate)
+      + 4 * Math.sin((4 * Math.PI * frequency * index) / sampleRate)
+  );
+
+  const result = estimatePitch(samples, { sampleRate });
+
+  assert.ok(Math.abs(result.frequency - frequency) < 3, `${result.frequency} Hz`);
+});
+
 test("stabilizes nearby estimates and ignores one frequency outlier", () => {
   const stabilizer = new PitchStabilizer({ windowSize: 3 });
   const estimate = (frequency) => ({ frequency, confidence: 0.95, rms: 0.5, isSilent: false });

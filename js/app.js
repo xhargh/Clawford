@@ -90,6 +90,7 @@ let metronomeError = "";
 let earTrainingEngine = null;
 let earTrainingSession = null;
 let earTrainingGate = null;
+let earTrainingStabilizer = null;
 let earTrainingAnimationFrame = null;
 let earTrainingPlaybackUntil = 0;
 let earTrainingStatus = "Ready";
@@ -524,6 +525,7 @@ function renderEarTraining(tuning) {
     sequenceLength: engineState?.sequence.length ?? 0,
     sequenceIndex: engineState?.sequenceIndex ?? 0,
     target,
+    heard: earTrainingDetectedMidi == null ? "--" : midiToDisplayName(earTrainingDetectedMidi),
     error: earTrainingError
   });
   const targetMidi = target?.midi ?? sequenceTarget?.midi ?? null;
@@ -658,10 +660,11 @@ async function startEarTraining() {
       tuning,
       key,
       scale,
-    maxFret: state.earVariant === "open-string" ? 0 : 5,
+      maxFret: state.earVariant === "open-string" ? 0 : 5,
       sequenceLimit: state.earSequenceLimit
     });
     earTrainingGate = new PitchAnswerGate({ windowSize: 3, toleranceCents: 35, a4: state.tunerA4 });
+    earTrainingStabilizer = new PitchStabilizer({ windowSize: 3 });
     const event = earTrainingEngine.start();
     earTrainingStatus = "Listen";
     earTrainingPlayback(event);
@@ -685,6 +688,7 @@ async function startEarTraining() {
     earTrainingSession = null;
     earTrainingEngine = null;
     earTrainingGate = null;
+    earTrainingStabilizer = null;
     earTrainingError = error.message || "Unable to start microphone";
     earTrainingStatus = "Ready";
     render();
@@ -700,6 +704,7 @@ async function stopEarTraining() {
   earTrainingEngine?.stop();
   earTrainingEngine = null;
   earTrainingGate = null;
+  earTrainingStabilizer = null;
   earTrainingDetectedMidi = null;
   earTrainingPlaybackUntil = 0;
   earTrainingStatus = "Ready";
@@ -729,7 +734,7 @@ function earTrainingPlayback(event) {
 function readEarTrainingFrame(session) {
   if (earTrainingSession !== session || session?.state !== "running") return;
   if (performance.now() >= earTrainingPlaybackUntil && earTrainingGate) {
-    const estimate = estimatePitch(session.readFrame(), { sampleRate: session.sampleRate });
+    const estimate = earTrainingStabilizer.update(estimatePitch(session.readFrame(), { sampleRate: session.sampleRate }));
     const answer = earTrainingGate.update(estimate);
     if (answer.accepted) handleEarTrainingAnswer(answer.midi);
   }

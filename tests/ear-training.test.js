@@ -37,6 +37,12 @@ test("Open strings asks for the correct string, not just the pitch", () => {
   assert.equal(session.submitPitch(first.target.midi, first.target.string).type, "advance");
 });
 
+test("Open strings accepts a correct pitch from the instrument microphone", () => {
+  const session = createEarTrainingSession({ ...settings, variant: "open-string", random: () => 0 });
+  const first = session.start();
+  assert.equal(session.submitPitch(first.target.midi).type, "advance");
+});
+
 test("Open strings stays open when used with Follow", () => {
   const session = createEarTrainingSession({ ...settings, exercise: "follow", variant: "open-string", random: () => 0 });
   let event = session.start();

@@ -21,6 +21,12 @@ test("renders a screenless-friendly ear-training status and controls", () => {
   assert.doesNotMatch(html, /undefined/);
 });
 
+test("shows the last heard pitch for recognition debugging", () => {
+  const html = renderEarTrainingOutput({ heard: "B3" });
+  assert.match(html, /Heard/);
+  assert.match(html, /B3/);
+});
+
 test("renders microphone errors and a start action", () => {
   const html = renderEarTrainingOutput({ error: "Permission denied" });
   assert.match(html, /Permission denied/);

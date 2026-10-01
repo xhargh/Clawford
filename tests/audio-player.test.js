@@ -44,6 +44,7 @@ test("retrigger fades only the previous voice on the same physical string", asyn
   assert.deepEqual(context.sources[0].stopCalls, [1.525]);
   assert.deepEqual(context.sources[1].stopCalls, []);
   assert.deepEqual(context.gains[0].gain.ramps, [{ value: 0, time: 1.515 }]);
+  assert.deepEqual(context.gains[0].gain.sets, [{ value: 0.16, time: 1 }, { value: 0.16, time: 1.5 }]);
 
   context.sources[0].finish();
   player.stopAll();
@@ -93,7 +94,7 @@ class FakeAudioParam {
   ramps = [];
   sets = [];
   cancellations = [];
-  setValueAtTime(value, time) { this.value = value; this.sets.push({ value, time }); }
+  setValueAtTime(value, time) { this.sets.push({ value, time }); }
   linearRampToValueAtTime(value, time) { this.ramps.push({ value, time }); }
   cancelScheduledValues(time) { this.cancellations.push(time); }
 }

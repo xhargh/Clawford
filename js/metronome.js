@@ -28,14 +28,19 @@ export class Metronome {
   #scheduled = [];
   #muted = false;
   #onBeat;
+  #onSchedule;
+  #closeAudioContext;
   #generation = 0;
 
-  constructor({ createAudioContext = defaultAudioContextFactory, onBeat = () => {} } = {}) {
+  constructor({ createAudioContext = defaultAudioContextFactory, onBeat = () => {}, onSchedule = () => {}, closeAudioContext = true } = {}) {
     this.#contextFactory = createAudioContext;
     this.#onBeat = onBeat;
+    this.#onSchedule = onSchedule;
+    this.#closeAudioContext = closeAudioContext;
   }
 
   get running() { return this.#timer !== null; }
+  get currentTime() { return this.#context?.currentTime ?? 0; }
 
   async start(settings) {
     this.stop();
@@ -57,7 +62,7 @@ export class Metronome {
     this.#generation += 1;
     if (this.#timer !== null) clearInterval(this.#timer);
     this.#timer = null;
-    if (this.#context && this.#context.state !== "closed") void this.#context.close();
+    if (this.#closeAudioContext && this.#context && this.#context.state !== "closed") void this.#context.close();
     this.#context = null;
     this.#settings = null;
     this.#pendingTpm = null;
@@ -122,6 +127,7 @@ export class Metronome {
       const tick = this.#nextBeat % this.#settings.pattern.length;
       const event = { time: this.#nextTime, ...scheduleClick(this.#context, this.#nextTime, { type: this.#muted ? "silent" : this.#settings.pattern[tick] }) };
       this.#scheduled.push(event);
+      this.#onSchedule({ index: tick + 1, time: event.time, currentTime: this.#context.currentTime });
       this.#notifyBeat(tick + 1, event, generation);
       this.#nextBeat += 1;
       this.#nextTime += interval;

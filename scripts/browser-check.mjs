@@ -101,6 +101,7 @@ try {
   assert.equal(await page.locator(".play-along-custom-step").first().innerText(), "R");
   await page.selectOption("#instrument", "guitar");
   await page.selectOption("#play-along-meter", "4/4");
+  await page.selectOption("#play-along-pattern", "guitar-eighths");
   await page.setViewportSize({ width: 390, height: 900 });
   assert.equal(await page.locator(".play-along-pattern").evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(" ").length), 4);
   await page.click("#play-along-start");
@@ -110,16 +111,39 @@ try {
   assert.match(await page.locator(".play-along-heading .eyebrow").innerText(), /PLAYING/);
   await page.evaluate(() => {
     window.playAlongStepChanges = [];
+    window.playAlongActiveLabels = [];
+    window.playAlongActiveIndexes = [];
     new MutationObserver(() => window.playAlongStepChanges.push(performance.now()))
       .observe(document.querySelector("#play-along-output"), { childList: true, subtree: true });
+    new MutationObserver(() => {
+      const active = document.querySelector(".play-along-step.active small");
+      if (active) {
+        window.playAlongActiveLabels.push(active.textContent);
+        window.playAlongActiveIndexes.push([...document.querySelectorAll(".play-along-step")].indexOf(active.closest(".play-along-step")));
+      }
+    }).observe(document.querySelector("#play-along-output"), { childList: true, subtree: true });
   });
   await page.waitForTimeout(2200);
   const normalTempoChanges = await page.evaluate(() => window.playAlongStepChanges.length);
+  const activeLabels = await page.evaluate(() => window.playAlongActiveLabels);
+  const activeIndexes = await page.evaluate(() => window.playAlongActiveIndexes);
+  assert.ok(activeLabels.includes("&"), "visual cursor must visit straight-eighth offbeats");
+  const transitions = activeIndexes.filter((index, position) => position === 0 || index !== activeIndexes[position - 1]);
+  assert.ok(transitions.every((index, position) => position === 0 || (index - transitions[position - 1] + 8) % 8 === 1), `visual cursor jumped: ${transitions}`);
   await page.evaluate(() => { window.playAlongStepChanges = []; });
   await page.locator("#play-along-bpm").fill("180");
   await page.waitForTimeout(2200);
   const fastTempoChanges = await page.evaluate(() => window.playAlongStepChanges.length);
   assert.ok(fastTempoChanges > normalTempoChanges, `BPM change should speed up playback (${normalTempoChanges} to ${fastTempoChanges} step changes)`);
+  await page.click("#play-along-stop");
+  await page.selectOption("#play-along-pattern", "custom");
+  await page.selectOption("#play-along-meter", "6/8");
+  await page.fill("#play-along-bpm", "90");
+  await page.evaluate(() => { window.playAlongActiveLabels = []; });
+  await page.click("#play-along-start");
+  await page.waitForTimeout(2500);
+  const compoundLabels = await page.evaluate(() => window.playAlongActiveLabels);
+  assert.ok(compoundLabels.includes("trip") && compoundLabels.includes("let"), "visual cursor must visit 6/8 subdivisions");
   await page.click("#play-along-stop");
   await page.reload();
   assert.equal(await page.inputValue("#ear-sequence-limit"), "7");

@@ -125,39 +125,46 @@ let playAlongGrouping = PATTERNS[2].grouping || [];
 let playAlongProgressionIndex = 0;
 let playAlongBpmSetting = 90;
 let playAlongTick = 0;
+let playAlongVisualTick = -1;
 let playAlongClockTick = 0;
+let playAlongScheduledBeat = 0;
 let playAlongVisualGeneration = 0;
 let playAlongVisualTimers = [];
 let playAlongPhase = "idle";
 let playAlongLoop = true;
 let playAlongError = "";
-const metronome = new Metronome({ onBeat: ({ index: beat, time }) => {
+const metronome = new Metronome({
+  createAudioContext: createSharedAudioContext,
+  closeAudioContext: false,
+  onSchedule: ({ time, currentTime }) => {
+    if (state.view !== "play-along") return;
+    const countInBeats = beatsPerMeasure(playAlongMeter);
+    const scheduledBeat = playAlongScheduledBeat++;
+    if (scheduledBeat < countInBeats) return;
+    const beatTick = scheduledBeat - countInBeats;
+    const stepCount = stepsPerBeat(playAlongMeter, playAlongSubdivision);
+    const subdivisionDuration = 60 / playAlongBpmSetting / stepCount;
+    for (const { tick, delay } of playAlongSubdivisionSchedule(beatTick, stepCount, subdivisionDuration)) {
+      const stepTime = time + delay;
+      playAlongAudioStep(stepTime, tick, subdivisionDuration);
+      const generation = playAlongVisualGeneration;
+      const visualDelay = Math.max(0, (stepTime - currentTime) * 1000);
+      playAlongVisualTimers.push(window.setTimeout(() => {
+        if (generation !== playAlongVisualGeneration || state.view !== "play-along" || tick <= playAlongVisualTick) return;
+        playAlongVisualTick = tick;
+        playAlongTick = tick;
+        renderPlayAlong();
+      }, visualDelay));
+    }
+  },
+  onBeat: ({ index: beat }) => {
   if (state.view === "play-along") {
     const wasCountIn = playAlongPhase === "count-in";
     playAlongClockTick += 1;
     const tickState = playAlongTickState(playAlongClockTick - 1, playAlongMeter);
     playAlongPhase = tickState.phase;
-    playAlongTick = tickState.tick;
+    if (playAlongPhase === "count-in") playAlongTick = tickState.tick;
     if (wasCountIn && playAlongPhase === "playing") metronome.setMuted(true);
-    if (playAlongPhase === "playing") {
-      const stepCount = stepsPerBeat(playAlongMeter, playAlongSubdivision);
-      const beatTick = tickState.tick;
-      const startTick = beatTick * stepCount;
-      if (!playAlongLoop && startTick >= PRESET_PROGRESSIONS[playAlongProgressionIndex].chords.length * playAlongSteps.length) {
-        stopPlayAlong();
-        return;
-      }
-      const subdivisionDuration = 60 / playAlongBpmSetting / stepCount;
-      for (const { tick, delay } of playAlongSubdivisionSchedule(beatTick, stepCount, subdivisionDuration)) {
-        playAlongAudioStep(time + delay, tick);
-        const generation = playAlongVisualGeneration;
-        playAlongVisualTimers.push(window.setTimeout(() => {
-          if (generation !== playAlongVisualGeneration || playAlongPhase !== "playing" || state.view !== "play-along") return;
-          playAlongTick = tick;
-          renderPlayAlong();
-        }, delay * 1000));
-      }
-    }
     renderPlayAlong();
   } else {
     metronomeBeat = beat;
@@ -720,7 +727,9 @@ async function startPlayAlong() {
   clearPlayAlongVisualTimers();
   playAlongVisualGeneration += 1;
   playAlongTick = 0;
+  playAlongVisualTick = -1;
   playAlongClockTick = 0;
+  playAlongScheduledBeat = 0;
   playAlongPhase = "count-in";
   playAlongLoop = playAlongOutput.querySelector("#play-along-loop")?.checked ?? playAlongLoop;
   try {
@@ -738,7 +747,9 @@ function stopPlayAlong() {
   clearPlayAlongVisualTimers();
   playAlongVisualGeneration += 1;
   playAlongTick = 0;
+  playAlongVisualTick = -1;
   playAlongClockTick = 0;
+  playAlongScheduledBeat = 0;
   playAlongPhase = "idle";
   renderPlayAlong();
 }
@@ -748,7 +759,7 @@ function clearPlayAlongVisualTimers() {
   playAlongVisualTimers = [];
 }
 
-function playAlongAudioStep(when, tick = playAlongTick) {
+function playAlongAudioStep(when, tick = playAlongTick, stepDuration) {
   const progression = PRESET_PROGRESSIONS[playAlongProgressionIndex];
   const position = playAlongPosition(tick, progression.chords.length, playAlongSteps.length, playAlongMeter, playAlongSubdivision);
   const chordSymbol = progression.chords[position.chordIndex];
@@ -759,12 +770,12 @@ function playAlongAudioStep(when, tick = playAlongTick) {
   const targets = playAlongTargets[position.stepIndex];
   if (playAlongPatternFamily === "bass" && action !== "-") {
     const note = bassNoteForChord(chordSymbol, action, tuning);
-    const profile = patternPlaybackProfile(action);
+    const profile = patternPlaybackProfile(action, { stepDuration, noteCount: 1 });
     void audioPlayer.playNotes([{ ...note, velocity: patternNoteVelocity(action, 0, 1, playAlongAccents[position.stepIndex] || 1), duration: profile.duration }], { spread: profile.spread, when });
     return;
   }
   const indexes = patternNoteIndexes(action, playAlongPatternFamily, chord.length, targets, chord);
-  const profile = patternPlaybackProfile(action);
+  const profile = patternPlaybackProfile(action, { stepDuration, noteCount: indexes.length });
   const notes = indexes.map((index, noteIndex) => chord[index]).filter(Boolean).map((note, noteIndex) => ({
     ...note,
     velocity: patternNoteVelocity(action, noteIndex, indexes.length, playAlongAccents[position.stepIndex] || 1),

@@ -119,6 +119,11 @@ export function playAlongSubdivisionSchedule(beatTick, subdivisionCount, subdivi
   }));
 }
 
+export function playAlongStepTimestamps(beatTime, subdivisionCount, beatDuration, stepCount) {
+  const stepDuration = beatDuration / subdivisionCount;
+  return Array.from({ length: stepCount }, (_, tick) => ({ tick, time: beatTime + Math.floor(tick / subdivisionCount) * beatDuration + (tick % subdivisionCount) * stepDuration }));
+}
+
 export function customPatternFamily(instrument, technique = "clawhammer") {
   if (instrument === "banjo5") return `banjo5-${technique}`;
   return instrument === "guitar" ? "guitar" : instrument;
@@ -228,11 +233,15 @@ function lowestChordToneIndex(notes) {
   return index;
 }
 
-export function patternPlaybackProfile(action) {
-  if (["D", "B"].includes(action)) return { spread: 0.04, velocity: 1, duration: 0.45 };
-  if (action === "U") return { spread: 0.015, velocity: 0.68, duration: 0.24 };
-  if (["C", "X"].includes(action)) return { spread: 0.008, velocity: .75, duration: .18 };
-  return { spread: 0.008, velocity: 0.75, duration: 0.3 };
+export function patternPlaybackProfile(action, { stepDuration, noteCount } = {}) {
+  const naturalSpread = ["D", "B"].includes(action) ? 0.04 : action === "U" ? 0.015 : 0.008;
+  const spread = Number.isFinite(stepDuration) && noteCount > 1
+    ? Math.min(naturalSpread, (stepDuration * 0.4) / (noteCount - 1))
+    : naturalSpread;
+  if (["D", "B"].includes(action)) return { spread, velocity: 1, duration: 0.45 };
+  if (action === "U") return { spread, velocity: 0.68, duration: 0.24 };
+  if (["C", "X"].includes(action)) return { spread, velocity: .75, duration: .18 };
+  return { spread, velocity: 0.75, duration: 0.3 };
 }
 
 export function patternNoteVelocity(action, index, count, accent = 1) {

@@ -159,7 +159,7 @@ export class AudioPlayer {
     const stopTime = when + DEFAULT_FADE_SECONDS;
     try {
       voice.gain.gain.cancelScheduledValues(when);
-      voice.gain.gain.setValueAtTime(voice.gain.gain.value, when);
+      voice.gain.gain.setValueAtTime(VOICE_GAIN, when);
       voice.gain.gain.linearRampToValueAtTime(0, stopTime);
       voice.source.stop(stopTime + 0.01);
     } catch {

@@ -34,6 +34,24 @@ test("notifies beats with their scheduled audio timestamp", async () => {
   }
 });
 
+test("notifies future beats when they enter the audio lookahead window", async () => {
+  const originalSetInterval = globalThis.setInterval;
+  const originalClearInterval = globalThis.clearInterval;
+  const scheduled = [];
+  const context = createFakeAudioContext();
+  globalThis.setInterval = () => 1;
+  globalThis.clearInterval = () => {};
+  try {
+    const metronome = new Metronome({ createAudioContext: () => context, onSchedule: (beat) => scheduled.push(beat) });
+    await metronome.start({ tpm: 120, pattern: "N" });
+    assert.deepEqual(scheduled, [{ index: 1, time: 0.05, currentTime: 0 }]);
+    metronome.stop();
+  } finally {
+    globalThis.setInterval = originalSetInterval;
+    globalThis.clearInterval = originalClearInterval;
+  }
+});
+
 test("accepts the desktop Space shortcut only in metronome mode", () => {
   assert.equal(isTapTempoShortcut({ code: "Space", repeat: false, target: { tagName: "BODY" } }, "metronome"), true);
   assert.equal(isTapTempoShortcut({ code: "Space", repeat: true, target: { tagName: "BODY" } }, "metronome"), false);

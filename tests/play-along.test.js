@@ -18,7 +18,8 @@ import {
   playAlongTickState,
   beatsPerMeasure,
   stepsPerBeat,
-  playAlongSubdivisionSchedule
+  playAlongSubdivisionSchedule,
+  playAlongStepTimestamps
 } from "../js/play-along.js";
 
 test("ships useful instrument-aware preset patterns", () => {
@@ -173,6 +174,29 @@ test("subdivision schedule separates displayed steps from audio scheduling", () 
     { tick: 7, delay: 333 },
     { tick: 8, delay: 666 }
   ]);
+});
+
+test("keeps straight eighth D/U steps evenly spaced at 120 BPM", () => {
+  const timestamps = playAlongStepTimestamps(0, 2, 0.5, 8);
+  assert.deepEqual(timestamps.map(({ time }) => time), [0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75]);
+  assert.equal(timestamps[1].time - timestamps[0].time, timestamps[2].time - timestamps[1].time);
+});
+
+test("keeps compound subdivisions evenly spaced", () => {
+  const timestamps = playAlongStepTimestamps(6, 3, 0.5, 6);
+  assert.deepEqual(timestamps.map(({ time }) => time), [6, 6 + 1 / 6, 6 + 1 / 3, 6.5, 6.5 + 1 / 6, 6.5 + 1 / 3]);
+});
+
+test("limits down-strum spread at fast eighth-note tempos", () => {
+  const profile = patternPlaybackProfile("D", { stepDuration: 60 / 180 / 2, noteCount: 6 });
+  assert.ok(profile.spread * 5 < 60 / 180 / 2);
+  assert.equal(profile.spread, (60 / 180 / 2 * 0.4) / 5);
+});
+
+test("keeps 180 BPM D/U spacing at one eighth-note", () => {
+  const timestamps = playAlongStepTimestamps(0, 2, 60 / 180, 4).map(({ time }) => time);
+  assert.ok(Math.abs(timestamps[1] - timestamps[0] - 60 / 180 / 2) < 1e-12);
+  assert.ok(Math.abs(timestamps[2] - timestamps[1] - 60 / 180 / 2) < 1e-12);
 });
 
 test("strum velocity is strongest at the start and responds to accents", () => {

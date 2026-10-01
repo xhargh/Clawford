@@ -24,7 +24,7 @@ import { FUN_FACTS, funFactPresentation } from "./fun-facts.js";
 import { createEarTrainingSession, PitchAnswerGate } from "./ear-training.js";
 import { renderEarTrainingOutput } from "./ear-training-renderer.js";
 import { midiToPitch, pitchToMidi } from "./pitch.js";
-import { PATTERNS, PRESET_PROGRESSIONS, actionsForInstrument, bassNoteForChord, beatsPerMeasure, customPatternFamily, cyclePatternStep, meterStepCount, parseChordSymbol, patternForInstrument, patternNoteIndexes, patternNoteVelocity, patternPlaybackProfile, playAlongPosition, playAlongSubdivisionSchedule, playAlongTickState, stepsPerBeat } from "./play-along.js";
+import { PATTERNS, PRESET_PROGRESSIONS, actionsForInstrument, bassNoteForChord, beatsPerMeasure, customPatternFamily, cyclePatternStep, meterStepCount, parseChordSymbol, patternForInstrument, patternNoteIndexes, patternNoteVelocity, patternPlaybackProfile, playAlongPosition, playAlongSubdivisionSchedule, playAlongTickState, progressionLabel, resolveProgression, stepsPerBeat } from "./play-along.js";
 import { renderPlayAlongOutput } from "./play-along-renderer.js";
 
 const form = document.querySelector("#settings-form");
@@ -122,7 +122,7 @@ let playAlongPatternName = PATTERNS[2].name;
 let playAlongMeter = PATTERNS[2].meter;
 let playAlongSubdivision = PATTERNS[2].subdivision;
 let playAlongGrouping = PATTERNS[2].grouping || [];
-let playAlongProgressionIndex = 0;
+let playAlongProgressionId = PRESET_PROGRESSIONS[0].id;
 let playAlongBpmSetting = 90;
 let playAlongTick = 0;
 let playAlongVisualTick = -1;
@@ -189,6 +189,7 @@ if (!tuningsFor(state.instrument).some((tuning) => tuning.id === state.tuning)) 
 }
 populateSelect(tuningSelect, tuningsFor(state.instrument).map((tuning) => ({ value: tuning.id, label: `${tuning.name} (${tuning.shortName})` })));
 syncPlayAlongPatternOptions();
+syncPlayAlongProgressionOptions();
 writeForm(state);
 
 let fitScheduled = false;
@@ -595,12 +596,14 @@ function renderMetronome() {
 }
 
 function renderPlayAlong() {
-  const progression = PRESET_PROGRESSIONS[playAlongProgressionIndex];
-  const position = playAlongPosition(playAlongTick, progression.chords.length, playAlongSteps.length, playAlongMeter, playAlongSubdivision);
+  syncPlayAlongProgressionOptions();
+  const progression = PRESET_PROGRESSIONS.find(({ id }) => id === playAlongProgressionId) || PRESET_PROGRESSIONS[0];
+  const chords = resolveProgression(progression, state.key);
+  const position = playAlongPosition(playAlongTick, chords.length, playAlongSteps.length, playAlongMeter, playAlongSubdivision);
   playAlongBpmValue.value = playAlongBpmSetting;
   playAlongBpmValue.textContent = playAlongBpmSetting;
   playAlongOutput.innerHTML = renderPlayAlongOutput({
-    chords: progression.chords,
+    chords,
     pattern: playAlongSteps,
     patternName: playAlongPatternName,
     bpm: playAlongBpmSetting,
@@ -618,6 +621,13 @@ function renderPlayAlong() {
   });
   playAlongTechniqueControl.hidden = state.instrument !== "banjo5" || playAlongPattern.value !== "custom";
   playAlongMeterControl.hidden = playAlongPattern.value !== "custom";
+}
+
+function syncPlayAlongProgressionOptions() {
+  const selected = playAlongProgressionId;
+  playAlongProgression.replaceChildren(...PRESET_PROGRESSIONS.map((progression) => new Option(progressionLabel(progression, state.key), progression.id)));
+  playAlongProgressionId = PRESET_PROGRESSIONS.some(({ id }) => id === selected) ? selected : PRESET_PROGRESSIONS[0].id;
+  playAlongProgression.value = playAlongProgressionId;
 }
 
 function syncPlayAlongPatternOptions() {
@@ -677,7 +687,7 @@ function setCustomMeter(value) {
 }
 
 function handlePlayAlongControls(event) {
-  if (event.target === playAlongProgression) playAlongProgressionIndex = Number(playAlongProgression.value);
+  if (event.target === playAlongProgression) playAlongProgressionId = playAlongProgression.value;
   if (event.target === playAlongBpm) {
     playAlongBpmSetting = Number(playAlongBpm.value);
     if (metronome.running) metronome.updateTpm(playAlongBpmSetting);
@@ -776,9 +786,10 @@ function clearPlayAlongVisualTimers() {
 }
 
 function playAlongAudioStep(when, tick = playAlongTick, stepDuration) {
-  const progression = PRESET_PROGRESSIONS[playAlongProgressionIndex];
-  const position = playAlongPosition(tick, progression.chords.length, playAlongSteps.length, playAlongMeter, playAlongSubdivision);
-  const chordSymbol = progression.chords[position.chordIndex];
+  const progression = PRESET_PROGRESSIONS.find(({ id }) => id === playAlongProgressionId) || PRESET_PROGRESSIONS[0];
+  const chords = resolveProgression(progression, state.key);
+  const position = playAlongPosition(tick, chords.length, playAlongSteps.length, playAlongMeter, playAlongSubdivision);
+  const chordSymbol = chords[position.chordIndex];
   const tuning = tunings.find((item) => item.id === state.tuning) || tunings[0];
   const chord = chordVoicing(chordSymbol, playAlongPatternFamily !== "strum");
   if (!chord.length) return;

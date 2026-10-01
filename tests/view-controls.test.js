@@ -25,12 +25,24 @@ test("shows the controls required by each view", () => {
   });
 });
 
-test("keeps the shared key and scale controls available for ear training", () => {
-  const visibility = viewControlVisibility("ear-training");
-  assert.equal(visibility.key, true);
-  assert.equal(visibility.scale, true);
-  assert.equal(visibility.earTrainingControls, true);
-  assert.equal(visibility.earTrainingOutput, true);
+test("shows the complete control set required by Ear Training", () => {
+  assert.deepEqual(viewControlVisibility("ear-training"), {
+    instrument: true, tuning: true, key: true, scale: true,
+    chordRoot: false, chordQuality: false, tunerControls: false, metronomeControls: false,
+    earTrainingControls: true, playAlongControls: false,
+    notationOutput: false, fretboardOutput: false, tunerOutput: false, metronomeOutput: false,
+    earTrainingOutput: true, earTrainingFretboardOutput: true, playAlongOutput: false
+  });
+});
+
+test("shows the complete control set required by Play Along", () => {
+  assert.deepEqual(viewControlVisibility("play-along"), {
+    instrument: true, tuning: false, key: true, scale: false,
+    chordRoot: false, chordQuality: false, tunerControls: false, metronomeControls: false,
+    earTrainingControls: false, playAlongControls: true,
+    notationOutput: false, fretboardOutput: false, tunerOutput: false, metronomeOutput: false,
+    earTrainingOutput: false, earTrainingFretboardOutput: false, playAlongOutput: true
+  });
 });
 
 test("hides only controls that are not available in each mode", () => {

@@ -3,6 +3,9 @@ import assert from "node:assert/strict";
 import {
   PATTERNS,
   PRESET_PROGRESSIONS,
+  resolveProgression,
+  progressionRomanNumerals,
+  progressionLabel,
   actionsForInstrument,
   cyclePatternStep,
   parseChordSymbol,
@@ -65,9 +68,23 @@ test("resolves bass roles relative to the active chord", () => {
   assert.deepEqual(resolveChordRole("Am", "octave"), { root: "A", role: "octave", pitchClass: 9 });
 });
 
-test("provides the requested starter progressions", () => {
-  assert.deepEqual(PRESET_PROGRESSIONS[0].chords, ["G", "C", "G", "D7"]);
-  assert.deepEqual(PRESET_PROGRESSIONS[2].chords, ["C", "F", "G", "C"]);
+test("resolves the common progression in major keys", () => {
+  const progression = PRESET_PROGRESSIONS.find(({ id }) => id === "pop-four-chord");
+  assert.deepEqual(resolveProgression(progression, "C"), ["C", "G", "Am", "F"]);
+  assert.deepEqual(resolveProgression(progression, "G"), ["G", "D", "Em", "C"]);
+  assert.deepEqual(resolveProgression(progression, "F"), ["F", "C", "Dm", "Bb"]);
+  assert.deepEqual(resolveProgression(progression, "D"), ["D", "A", "Bm", "G"]);
+  assert.deepEqual(resolveProgression(progression, "Bb"), ["Bb", "F", "Gm", "Eb"]);
+});
+
+test("keeps progression identity separate from its resolved chords", () => {
+  const progression = PRESET_PROGRESSIONS.find(({ id }) => id === "one-four-one-five7");
+  assert.equal(progression.id, "one-four-one-five7");
+  assert.deepEqual(resolveProgression(progression, "C"), ["C", "F", "C", "G7"]);
+  assert.deepEqual(resolveProgression(progression, "G"), ["G", "C", "G", "D7"]);
+  assert.equal(progressionRomanNumerals(progression), "I–IV–I–V7");
+  assert.equal(progressionLabel(progression, "C"), "I–IV–I–V7: C–F–C–G7");
+  assert.equal(progressionLabel(progression, "G"), "I–IV–I–V7: G–C–G–D7");
 });
 
 test("cycles a custom pattern cell through its instrument actions", () => {

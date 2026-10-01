@@ -1,10 +1,38 @@
 import { pitchToMidi } from "./pitch.js";
+import { getKey, getScale, spellScale } from "./scales.js";
 
 export const PRESET_PROGRESSIONS = [
-  { name: "G | C | G | D7", chords: ["G", "C", "G", "D7"] },
-  { name: "G | Em | C | D", chords: ["G", "Em", "C", "D"] },
-  { name: "C | F | G | C", chords: ["C", "F", "G", "C"] }
+  { id: "one-four-one-five7", degrees: ["I", "IV", "I", "V7"] },
+  { id: "one-six-four-five", degrees: ["I", "vi", "IV", "V"] },
+  { id: "one-four-five-one", degrees: ["I", "IV", "V", "I"] },
+  { id: "pop-four-chord", degrees: ["I", "V", "vi", "IV"] }
 ];
+
+const ROMAN_DEGREES = { I: 0, II: 1, III: 2, IV: 3, V: 4, VI: 5, VII: 6 };
+
+function progressionDegree(degree) {
+  const match = /^([ivIV]+)(7)?$/.exec(degree);
+  if (!match || ROMAN_DEGREES[match[1].toUpperCase()] == null) throw new Error(`Unsupported progression degree: ${degree}`);
+  return { index: ROMAN_DEGREES[match[1].toUpperCase()], minor: match[1] === match[1].toLowerCase(), seventh: Boolean(match[2]) };
+}
+
+export function resolveProgression(progression, keyValue) {
+  const key = typeof keyValue === "string" ? getKey(keyValue) : keyValue;
+  if (!key) throw new Error(`Unknown key: ${keyValue}`);
+  const scale = spellScale(key, getScale("major"));
+  return progression.degrees.map((degree) => {
+    const { index, minor, seventh } = progressionDegree(degree);
+    return `${scale[index]}${minor ? "m" : ""}${seventh ? "7" : ""}`;
+  });
+}
+
+export function progressionRomanNumerals(progression) {
+  return progression.degrees.join("–");
+}
+
+export function progressionLabel(progression, keyValue) {
+  return `${progressionRomanNumerals(progression)}: ${resolveProgression(progression, keyValue).join("–")}`;
+}
 
 const meter = (numerator, denominator, subdivision, steps, extra = {}) => ({
   meter: { numerator, denominator }, subdivision, steps, ...extra

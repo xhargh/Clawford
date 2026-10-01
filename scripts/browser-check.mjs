@@ -69,7 +69,12 @@ try {
   await page.click("#ear-training-stop");
   await chooseView("play-along");
   assert.equal(await page.locator("#workspace-title").innerText(), "Play along");
-  assert.equal(await page.locator(".play-along-chord").innerText(), "G");
+  assert.equal(await page.locator("#key-control").isVisible(), true, "Play Along exposes the shared Key selector");
+  assert.equal(await page.locator("#scale-control").isVisible(), false, "Play Along hides Scale");
+  await page.selectOption("#key", "C");
+  assert.equal(await page.locator("#play-along-progression").inputValue(), "one-four-one-five7");
+  assert.match(await page.locator("#play-along-progression").locator("option:checked").innerText(), /I–IV–I–V7: C–F–C–G7/);
+  assert.equal(await page.locator(".play-along-chord").innerText(), "C");
   await page.selectOption("#instrument", "guitar");
   await page.selectOption("#play-along-pattern", "custom");
   assert.equal(await page.locator("#play-along-meter-control").isVisible(), true);

@@ -2,7 +2,7 @@ export function viewControlVisibility(view) {
   return {
     instrument: view !== "metronome",
     tuning: view !== "metronome" && view !== "play-along",
-    key: view === "notation" || view === "ear-training",
+    key: view === "notation" || view === "ear-training" || view === "play-along",
     scale: view === "notation" || view === "ear-training",
     chordRoot: view === "fretboard",
     chordQuality: view === "fretboard",

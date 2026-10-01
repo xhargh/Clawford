@@ -51,6 +51,9 @@ try {
   assert.ok(await page.locator("#fretboard-output .shape-muted").count() > 0, "shape view shows muted strings");
   assert.ok(await page.locator("#fretboard-output .shape-open").count() > 0, "shape view shows open strings");
   assert.ok(await page.locator("#fretboard-output .shape-finger").count() > 0, "shape view shows finger numbers");
+  await page.selectOption("#fretboard-shape-select", { index: 1 });
+  assert.match(await page.locator("#fretboard-shape-select option:checked").innerText(), /Alternate 2/);
+  assert.deepEqual(await page.locator("#fretboard-output .shape-finger").allTextContents(), ["1", "2", "3", "4", "1"]);
   await chooseView("tuner");
   await page.waitForFunction(() => document.querySelector("#tuner-start").disabled);
   await page.evaluate(() => {

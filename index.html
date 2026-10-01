@@ -60,7 +60,6 @@
              <legend>Fretboard view</legend>
              <label><input type="radio" name="fretboardMode" value="tones"> All chord tones</label>
              <label><input type="radio" name="fretboardMode" value="shape"> Chord shape</label>
-             <label id="fretboard-shape-select-control" hidden>Voicing<select id="fretboard-shape-select"></select></label>
            </fieldset>
           <fieldset id="tuner-controls" class="tuner-controls full-control" hidden>
             <legend>Tuner mode</legend>
@@ -102,8 +101,9 @@
            <label for="play-along-bpm">BPM <output id="play-along-bpm-value">90</output><input id="play-along-bpm" type="range" min="40" max="220" step="1" value="90"></label>
          </fieldset>
         </div>
-      </form>
-    </aside>
+       </form>
+       <label id="fretboard-shape-select-control" hidden>Voicing<select id="fretboard-shape-select"></select></label>
+     </aside>
 
 
     <section id="workspace" class="output-panel" aria-labelledby="workspace-title" tabindex="-1">

@@ -158,14 +158,15 @@ fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 .play-along-next b { color: var(--ink); }
 .play-along-pattern-name { margin: 0; font-weight: 800; }
 .play-along-pattern-name span { margin-left: 8px; color: var(--muted); font: .78rem ui-monospace, monospace; }
-.play-along-pattern { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 8px; }
+.play-along-pattern { display: grid; grid-template-columns: repeat(var(--step-count, 8), minmax(0, 1fr)); gap: 8px; }
 .play-along-step { display: grid; min-width: 0; min-height: 74px; place-items: center; align-content: center; gap: 4px; color: var(--ink); border: 2px solid var(--line); border-radius: 8px; background: white; font-size: 1.4rem; font-weight: 900; }
 .play-along-step small { color: var(--muted); font-size: .7rem; }
 .play-along-step.active { color: white; border-color: var(--accent); background: var(--accent); transform: scale(1.08); }
 .play-along-step.active small { color: white; }
+.play-along-step.grouped { margin-left: 5px; border-left-color: var(--warm); }
 .play-along-custom { display: grid; gap: 8px; }
 .play-along-custom p { margin: 0; color: var(--muted); font-size: .78rem; }
-.play-along-custom > div { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 6px; }
+.play-along-custom > div { display: grid; grid-template-columns: repeat(var(--step-count, 8), minmax(0, 1fr)); gap: 6px; }
 .play-along-custom-step { min-height: 40px; border: 1px solid var(--line); border-radius: 6px; background: white; font-weight: 900; }
 .play-along-custom-step.active { border-color: var(--warm); background: #fff0e9; }
 .play-along-position span { display: inline-block; min-width: 1.3em; margin-left: 4px; color: var(--accent); }

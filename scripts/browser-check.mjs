@@ -72,7 +72,7 @@ try {
   assert.equal(await page.locator(".play-along-chord").innerText(), "G");
   await page.selectOption("#play-along-pattern", "custom");
   await page.locator(".play-along-custom-step").first().click();
-  assert.equal(await page.locator(".play-along-custom-step").first().innerText(), "D");
+  assert.equal(await page.locator(".play-along-custom-step").first().innerText(), "N");
   await page.click("#play-along-start");
   await page.waitForFunction(() => document.querySelector("#play-along-start").disabled);
   assert.match(await page.locator(".play-along-heading .eyebrow").innerText(), /COUNT IN/);

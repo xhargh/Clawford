@@ -9,6 +9,9 @@ import {
   patternNoteIndexes,
   patternPlaybackProfile,
   patternNoteVelocity,
+  meterStepCount,
+  patternForInstrument,
+  resolveChordRole,
   playAlongPosition,
   playAlongTickState
 } from "../js/play-along.js";
@@ -18,6 +21,39 @@ test("ships useful instrument-aware preset patterns", () => {
   assert.ok(PATTERNS.some((pattern) => pattern.instrument === "banjo5-three-finger" && pattern.name === "Forward Roll"));
   assert.deepEqual(actionsForInstrument("guitar"), ["-", "D", "U"]);
   assert.deepEqual(actionsForInstrument("banjo5-clawhammer"), ["-", "N", "B", "T"]);
+});
+
+test("defines valid, meter-aware presets for every supported instrument", () => {
+  const instruments = ["banjo5-clawhammer", "banjo5-three-finger", "banjo4", "guitar", "ukulele", "mandolin", "bass"];
+  const ids = new Set();
+  for (const pattern of PATTERNS) {
+    assert.ok(instruments.includes(pattern.instrument) || pattern.instrument === "strum");
+    assert.ok(pattern.meter.numerator > 0);
+    assert.ok([2, 4, 8].includes(pattern.meter.denominator));
+    assert.equal(pattern.steps.length, meterStepCount(pattern.meter, pattern.subdivision));
+    assert.equal(ids.has(pattern.id), false);
+    ids.add(pattern.id);
+  }
+  for (const instrument of instruments) assert.ok(patternForInstrument(instrument).length > 0);
+  assert.equal(patternForInstrument("bass").some((pattern) => pattern.name === "Bum-Ditty"), false);
+  assert.equal(patternForInstrument("guitar").some((pattern) => pattern.name === "Forward Roll"), false);
+  assert.equal(patternForInstrument("mandolin").some((pattern) => pattern.name === "Island Strum"), false);
+  assert.ok(patternForInstrument("banjo5").some((pattern) => pattern.name === "Forward Roll"));
+});
+
+test("maps variable meters to positions and chord measures", () => {
+  assert.equal(meterStepCount({ numerator: 2, denominator: 4 }, 1), 2);
+  assert.equal(meterStepCount({ numerator: 3, denominator: 4 }, 2), 6);
+  assert.equal(meterStepCount({ numerator: 4, denominator: 4 }, 2), 8);
+  assert.equal(meterStepCount({ numerator: 6, denominator: 8 }, 1), 6);
+  assert.equal(meterStepCount({ numerator: 12, denominator: 8 }, 1), 12);
+  assert.deepEqual(playAlongPosition(6, 4, 6, { numerator: 6, denominator: 8 }, 1), { chordIndex: 1, stepIndex: 0, beat: 1, subdivision: "1" });
+});
+
+test("resolves bass roles relative to the active chord", () => {
+  assert.deepEqual(resolveChordRole("C", "root"), { root: "C", role: "root", pitchClass: 0 });
+  assert.deepEqual(resolveChordRole("C", "fifth"), { root: "C", role: "fifth", pitchClass: 7 });
+  assert.deepEqual(resolveChordRole("Am", "octave"), { root: "A", role: "octave", pitchClass: 9 });
 });
 
 test("provides the requested starter progressions", () => {

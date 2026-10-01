@@ -26,6 +26,7 @@ export class Metronome {
   #settings = null;
   #pendingTpm = null;
   #scheduled = [];
+  #muted = false;
   #onBeat;
   #generation = 0;
 
@@ -42,6 +43,7 @@ export class Metronome {
     this.#settings = normalizeSettings(settings);
     this.#pendingTpm = null;
     this.#scheduled = [];
+    this.#muted = false;
     this.#context = this.#contextFactory();
     if (!this.#context) throw new Error("Web Audio is not available");
     if (this.#context.state !== "running") await this.#context.resume();
@@ -60,6 +62,14 @@ export class Metronome {
     this.#settings = null;
     this.#pendingTpm = null;
     this.#scheduled = [];
+    this.#muted = false;
+  }
+
+  setMuted(muted) {
+    this.#muted = Boolean(muted);
+    if (this.#muted) {
+      for (const event of [...this.#scheduled]) this.#cancelScheduled(event);
+    }
   }
 
   updateTpm(tpm) {
@@ -110,7 +120,7 @@ export class Metronome {
     let interval = tickDurationSeconds(this.#settings.tpm);
     while (this.#nextTime < horizon) {
       const tick = this.#nextBeat % this.#settings.pattern.length;
-      const event = { time: this.#nextTime, ...scheduleClick(this.#context, this.#nextTime, { type: this.#settings.pattern[tick] }) };
+      const event = { time: this.#nextTime, ...scheduleClick(this.#context, this.#nextTime, { type: this.#muted ? "silent" : this.#settings.pattern[tick] }) };
       this.#scheduled.push(event);
       this.#notifyBeat(tick + 1, event, generation);
       this.#nextBeat += 1;

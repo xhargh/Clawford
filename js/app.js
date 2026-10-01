@@ -1,7 +1,7 @@
 import { renderChordBoard, renderScaleBoard, renderEarTrainingBoard } from "./fretboard-renderer.js";
 import { generateNotes } from "./mapping.js";
 import { renderNotation } from "./notation-renderer.js";
-import { CHORD_QUALITIES, generateChordBoardNotes, hasChordVoicing } from "./chords.js";
+import { CHORD_QUALITIES, findChordVoicing, generateChordBoardNotes, getChordQuality, hasChordVoicing } from "./chords.js";
 import { INSTRUMENTS, getFretboardFrets, getInstrument } from "./instruments.js";
 import { CHROMATIC_SCALE, KEYS, SCALES, getKey, getScale, keySignatureFor } from "./scales.js";
 import { stateFromSources, stateToSearchParams, updateSettings } from "./state.js";
@@ -23,7 +23,9 @@ import { TapTempo } from "./tap-tempo.js";
 import { FUN_FACTS, funFactPresentation } from "./fun-facts.js";
 import { createEarTrainingSession, PitchAnswerGate } from "./ear-training.js";
 import { renderEarTrainingOutput } from "./ear-training-renderer.js";
-import { midiToPitch } from "./pitch.js";
+import { midiToPitch, pitchToMidi } from "./pitch.js";
+import { PATTERNS, PRESET_PROGRESSIONS, actionsForInstrument, cyclePatternStep, parseChordSymbol, patternNoteIndexes, patternPlaybackProfile, playAlongPosition, playAlongTickState } from "./play-along.js";
+import { renderPlayAlongOutput } from "./play-along-renderer.js";
 
 const form = document.querySelector("#settings-form");
 const instrumentSelect = document.querySelector("#instrument");
@@ -38,18 +40,24 @@ const tunerOutput = document.querySelector("#tuner-output");
 const metronomeOutput = document.querySelector("#metronome-output");
 const earTrainingOutput = document.querySelector("#ear-training-output");
 const earTrainingFretboardOutput = document.querySelector("#ear-training-fretboard-output");
+const playAlongOutput = document.querySelector("#play-along-output");
 const funFactImage = document.querySelector("#fun-fact-image");
 const funFactPreview = document.querySelector("#fun-fact-preview");
 const warningBanner = document.querySelector("#warning-banner");
 const tunerControls = document.querySelector("#tuner-controls");
 const metronomeControls = document.querySelector("#metronome-controls");
 const earTrainingControls = document.querySelector("#ear-training-controls");
+const playAlongControls = document.querySelector("#play-along-controls");
 const generalControls = document.querySelector("#general-controls");
 const metronomeTpmValue = document.querySelector("#metronome-tpm-value");
 const metronomeTicksValue = document.querySelector("#metronome-ticks-value");
 const tunerInputDevice = document.querySelector("#tuner-input-device");
 const tunerStart = document.querySelector("#tuner-start");
 const tunerStop = document.querySelector("#tuner-stop");
+const playAlongProgression = document.querySelector("#play-along-progression");
+const playAlongPattern = document.querySelector("#play-along-pattern");
+const playAlongBpm = document.querySelector("#play-along-bpm");
+const playAlongBpmValue = document.querySelector("#play-along-bpm-value");
 const tunings = [...BUILT_IN_TUNINGS];
 const FRETBOARD_SCALES = [...SCALES, CHROMATIC_SCALE];
 const scaleOptionValue = (scale) => `scale:${scale.id}`;
@@ -101,7 +109,35 @@ let tapBpm = null;
 let currentFunFact = -1;
 let funFactsActive = false;
 let funFactHoverTimer = null;
-const metronome = new Metronome({ onBeat: (beat) => { metronomeBeat = beat; renderMetronomeBeat(); } });
+let playAlongPatternFamily = "strum";
+let playAlongSteps = [...PATTERNS[2].steps];
+let playAlongPatternName = PATTERNS[2].name;
+let playAlongProgressionIndex = 0;
+let playAlongBpmSetting = 90;
+let playAlongTick = 0;
+let playAlongClockTick = 0;
+let playAlongPhase = "idle";
+let playAlongLoop = true;
+let playAlongError = "";
+const metronome = new Metronome({ onBeat: (beat) => {
+  if (state.view === "play-along") {
+    const wasCountIn = playAlongPhase === "count-in";
+    playAlongClockTick += 1;
+    const tickState = playAlongTickState(playAlongClockTick - 1);
+    playAlongPhase = tickState.phase;
+    playAlongTick = tickState.tick;
+    if (wasCountIn && playAlongPhase === "playing") metronome.setMuted(true);
+    if (playAlongPhase === "playing" && !playAlongLoop && playAlongTick >= PRESET_PROGRESSIONS[playAlongProgressionIndex].chords.length * playAlongSteps.length) {
+      stopPlayAlong();
+      return;
+    }
+    if (playAlongPhase === "playing") playAlongAudioStep();
+    renderPlayAlong();
+  } else {
+    metronomeBeat = beat;
+    renderMetronomeBeat();
+  }
+} });
 const tapTempo = new TapTempo();
 const tunerLifecycle = new TunerLifecycle({
   createSession: createMicrophoneSession,
@@ -118,6 +154,7 @@ if (!tuningsFor(state.instrument).some((tuning) => tuning.id === state.tuning)) 
   state = { ...state, tuning: tuningsFor(state.instrument)[0].id };
 }
 populateSelect(tuningSelect, tuningsFor(state.instrument).map((tuning) => ({ value: tuning.id, label: `${tuning.name} (${tuning.shortName})` })));
+syncPlayAlongPatternOptions();
 writeForm(state);
 
 let fitScheduled = false;
@@ -149,6 +186,7 @@ earTrainingOutput.addEventListener("click", (event) => {
 });
 earTrainingFretboardOutput.addEventListener("click", handleEarTrainingBoardInput);
 earTrainingFretboardOutput.addEventListener("keydown", handleEarTrainingBoardInput);
+playAlongOutput.addEventListener("click", handlePlayAlongClick);
 tunerOutput.addEventListener("pointerdown", handleTunerTargetPointerdown);
 tunerOutput.addEventListener("click", handleTunerTargetClick);
 tunerOutput.addEventListener("keydown", handleTunerTargetKeydown);
@@ -159,6 +197,7 @@ metronomeOutput.addEventListener("click", (event) => {
   if (event.target.closest("#tap-tempo-button")) tapMetronome();
   if (event.target.closest("#tap-tempo-reset")) resetTapTempo();
 });
+playAlongControls.addEventListener("input", handlePlayAlongControls);
 funFactImage.addEventListener("click", showRandomFunFact);
 funFactImage.addEventListener("pointerenter", startFunFactPreview);
 funFactImage.addEventListener("pointerleave", stopFunFactPreview);
@@ -172,7 +211,7 @@ fretboardOutput.addEventListener("pointerup", handleStrumEnd);
 fretboardOutput.addEventListener("pointercancel", handleStrumEnd);
 window.addEventListener("resize", scheduleDiagramFit);
 window.addEventListener("orientationchange", scheduleDiagramFit);
-window.addEventListener("pagehide", () => { void stopTuner(); stopMetronome(); void stopEarTraining(); });
+window.addEventListener("pagehide", () => { void stopTuner(); stopMetronome(); stopPlayAlong(); void stopEarTraining(); });
 document.addEventListener("visibilitychange", handleVisibilityChange);
 
 function createAudioPlayer(instrumentId) {
@@ -403,6 +442,7 @@ function updateFromForm() {
   }
   if (previousView === "tuner" && state.view !== "tuner") void stopTuner();
   if (previousView === "metronome" && state.view !== "metronome") stopMetronome();
+  if (previousView === "play-along" && state.view !== "play-along") stopPlayAlong();
   if (previousView === "ear-training" && state.view !== "ear-training") void stopEarTraining();
   if (state.view === "ear-training" && earSettingsChanged && earTrainingSession) void stopEarTraining();
   if (previousView !== "tuner" && state.view === "tuner") {
@@ -436,7 +476,8 @@ function render() {
     fretboard: ["Fretboard", "Select tones to build a shape, or swipe across the strings to strum."],
     tuner: ["Tuner", "Listen to your instrument. In Strings mode, select an open string to hear its reference pitch."],
     metronome: ["Metronome", "Find your pulse. Tap a beat to change its accent, or tap along to set the tempo."],
-    "ear-training": ["Ear training", "Listen, then find the note on your instrument or the fretboard below."]
+    "ear-training": ["Ear training", "Listen, then find the note on your instrument or the fretboard below."],
+    "play-along": ["Play along", "Choose a few chords and a pattern, then follow the highlighted step."]
   }[state.view];
   document.querySelector("#workspace-title").textContent = view[0];
   document.querySelector("#workspace-hint").textContent = view[1];
@@ -480,9 +521,11 @@ function render() {
   metronomeOutput.hidden = hiddenControls.metronomeOutput;
   earTrainingOutput.hidden = hiddenControls.earTrainingOutput;
   earTrainingFretboardOutput.hidden = hiddenControls.earTrainingFretboardOutput;
+  playAlongOutput.hidden = hiddenControls.playAlongOutput;
   tunerControls.hidden = hiddenControls.tunerControls;
   metronomeControls.hidden = hiddenControls.metronomeControls;
   earTrainingControls.hidden = hiddenControls.earTrainingControls;
+  playAlongControls.hidden = hiddenControls.playAlongControls;
   metronomeTpmValue.value = state.metronomeTpm;
   metronomeTpmValue.textContent = state.metronomeTpm;
   metronomeTicksValue.value = state.metronomeTicks;
@@ -497,6 +540,7 @@ function render() {
   document.title = `${view[0]} — Clawford`;
   renderTuner(tuning);
   renderMetronome();
+  renderPlayAlong();
   renderEarTraining(tuning);
   scheduleDiagramFit();
 }
@@ -509,6 +553,130 @@ function persistSettings() {
 
 function renderMetronome() {
   metronomeOutput.innerHTML = renderMetronomeOutput({ beat: metronomeBeat, tpm: state.metronomeTpm, pattern: state.metronomePattern, running: metronome.running, tapBpm, error: metronomeError });
+}
+
+function renderPlayAlong() {
+  const progression = PRESET_PROGRESSIONS[playAlongProgressionIndex];
+  const position = playAlongPosition(playAlongTick, progression.chords.length, playAlongSteps.length);
+  playAlongBpmValue.value = playAlongBpmSetting;
+  playAlongBpmValue.textContent = playAlongBpmSetting;
+  playAlongOutput.innerHTML = renderPlayAlongOutput({
+    chords: progression.chords,
+    pattern: playAlongSteps,
+    patternName: playAlongPatternName,
+    bpm: playAlongBpmSetting,
+    position,
+    running: metronome.running && state.view === "play-along",
+    phase: playAlongPhase,
+    countIn: playAlongPhase === "count-in" ? Math.min(8, Math.max(1, 8 - playAlongClockTick + 1)) : 0,
+    loop: playAlongLoop,
+    custom: playAlongPattern.value === "custom",
+    actions: actionsForInstrument(playAlongPatternFamily),
+    error: playAlongError
+  });
+}
+
+function syncPlayAlongPatternOptions() {
+  const selected = playAlongPattern.value || "strum-bum-ditty";
+  playAlongPattern.replaceChildren(
+    ...PATTERNS.map((pattern) => new Option(`${pattern.name} · ${pattern.instrument === "strum" ? "Strum" : pattern.instrument === "banjo5-clawhammer" ? "Clawhammer" : "Three-finger"}`, pattern.id)),
+    new Option("Custom pattern", "custom")
+  );
+  playAlongPattern.value = [...playAlongPattern.options].some((option) => option.value === selected) ? selected : "strum-bum-ditty";
+  const preset = PATTERNS.find((pattern) => pattern.id === playAlongPattern.value);
+  if (preset) {
+    playAlongPatternFamily = preset.instrument;
+    playAlongSteps = [...preset.steps];
+    playAlongPatternName = preset.name;
+  }
+}
+
+function handlePlayAlongControls(event) {
+  if (event.target === playAlongProgression) playAlongProgressionIndex = Number(playAlongProgression.value);
+  if (event.target === playAlongBpm) playAlongBpmSetting = Number(playAlongBpm.value);
+  if (event.target === playAlongPattern) {
+    const preset = PATTERNS.find((pattern) => pattern.id === playAlongPattern.value);
+    if (preset) {
+      playAlongPatternFamily = preset.instrument;
+      playAlongSteps = [...preset.steps];
+      playAlongPatternName = preset.name;
+    } else {
+      playAlongPatternName = "Custom pattern";
+      playAlongSteps = Array.from({ length: 8 }, () => "-");
+    }
+  }
+  renderPlayAlong();
+}
+
+function handlePlayAlongClick(event) {
+  const step = event.target.closest("[data-pattern-step]");
+  if (step && playAlongPattern.value === "custom") {
+    const index = Number(step.dataset.patternStep);
+    playAlongSteps[index] = cyclePatternStep(playAlongSteps[index], playAlongPatternFamily);
+    renderPlayAlong();
+    return;
+  }
+  if (event.target.closest("#play-along-start")) void startPlayAlong();
+  if (event.target.closest("#play-along-stop")) stopPlayAlong();
+  if (event.target.closest("#play-along-loop")) {
+    playAlongLoop = event.target.checked;
+    renderPlayAlong();
+  }
+}
+
+async function startPlayAlong() {
+  playAlongError = "";
+  playAlongTick = 0;
+  playAlongClockTick = 0;
+  playAlongPhase = "count-in";
+  playAlongLoop = playAlongOutput.querySelector("#play-along-loop")?.checked ?? playAlongLoop;
+  try {
+    await audioPlayer.warmUp();
+    metronome.setMuted(false);
+    await metronome.start({ tpm: playAlongBpmSetting * 2, pattern: "ANNNNNNN" });
+  } catch (error) {
+    playAlongError = error.message || "Unable to start play-along";
+  }
+  renderPlayAlong();
+}
+
+function stopPlayAlong() {
+  metronome.stop();
+  playAlongTick = 0;
+  playAlongClockTick = 0;
+  playAlongPhase = "idle";
+  renderPlayAlong();
+}
+
+function playAlongAudioStep() {
+  const progression = PRESET_PROGRESSIONS[playAlongProgressionIndex];
+  const chord = chordVoicing(progression.chords[playAlongPosition(playAlongTick, progression.chords.length, playAlongSteps.length).chordIndex]);
+  if (!chord.length) return;
+  const action = playAlongSteps[playAlongPosition(playAlongTick, progression.chords.length, playAlongSteps.length).stepIndex];
+  const indexes = patternNoteIndexes(action, playAlongPatternFamily, chord.length);
+  const profile = patternPlaybackProfile(action);
+  const notes = indexes.map((index) => chord[index]).filter(Boolean).map((note) => ({ ...note, velocity: profile.velocity, duration: profile.duration }));
+  if (!notes.length) return;
+  void audioPlayer.playNotes(notes, { spread: profile.spread }).catch((error) => {
+    playAlongError = error.message || "Unable to play accompaniment";
+    renderPlayAlong();
+  });
+}
+
+function chordVoicing(symbol) {
+  const { root, quality: qualityId } = parseChordSymbol(symbol);
+  const tuning = tunings.find((item) => item.id === state.tuning) || tunings[0];
+  const rootKey = getKey(root);
+  const quality = getChordQuality(qualityId);
+  const voicing = findChordVoicing(tuning, rootKey.pitchClass, qualityId);
+  if (voicing) {
+    return voicing.notes.map((note) => ({
+      midi: pitchToMidi(tuning.strings.find((string) => string.number === note.string).pitch) + note.fret,
+      string: note.string,
+      duration: 0.35
+    })).sort((a, b) => a.string - b.string);
+  }
+  return quality.intervals.map((interval, index) => ({ midi: pitchToMidi(`${root}3`) + interval, string: index + 1, duration: 0.35 }));
 }
 
 function renderEarTraining(tuning) {

@@ -67,14 +67,24 @@ try {
   await page.click("#ear-training-start");
   await page.waitForFunction(() => document.querySelector("#ear-training-stop") && !document.querySelector("#ear-training-stop").disabled);
   await page.click("#ear-training-stop");
+  await chooseView("play-along");
+  assert.equal(await page.locator("#workspace-title").innerText(), "Play along");
+  assert.equal(await page.locator(".play-along-chord").innerText(), "G");
+  await page.selectOption("#play-along-pattern", "custom");
+  await page.locator(".play-along-custom-step").first().click();
+  assert.equal(await page.locator(".play-along-custom-step").first().innerText(), "D");
+  await page.click("#play-along-start");
+  await page.waitForFunction(() => document.querySelector("#play-along-start").disabled);
+  assert.match(await page.locator(".play-along-heading .eyebrow").innerText(), /COUNT IN/);
+  await page.click("#play-along-stop");
   await page.reload();
   assert.equal(await page.inputValue("#ear-sequence-limit"), "7");
   assert.equal(await page.inputValue("#ear-exercise"), "simon");
   for (const width of [320, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 });
-    for (const view of ["notation", "fretboard", "tuner", "metronome", "ear-training"]) {
+    for (const view of ["notation", "fretboard", "tuner", "metronome", "ear-training", "play-along"]) {
       await chooseView(view);
-      assert.equal(await page.locator("#workspace-title").innerText(), { notation: "Notation", fretboard: "Fretboard", tuner: "Tuner", metronome: "Metronome", "ear-training": "Ear training" }[view]);
+      assert.equal(await page.locator("#workspace-title").innerText(), { notation: "Notation", fretboard: "Fretboard", tuner: "Tuner", metronome: "Metronome", "ear-training": "Ear training", "play-along": "Play along" }[view]);
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${view} fits ${width}px`);
       if (view === "fretboard" || view === "ear-training") {
         const output = view === "fretboard" ? "#fretboard-output" : "#ear-training-fretboard-output";
@@ -95,6 +105,7 @@ try {
       }
     }
   }
+  await chooseView("ear-training");
   await page.getByRole("link", { name: "Meet Clawford" }).click();
   await page.waitForURL("**/backstory.html");
   const images = page.locator(".illustration img");

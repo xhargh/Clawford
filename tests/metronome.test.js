@@ -51,6 +51,29 @@ test("keeps silent ticks in the cycle without scheduling audio", async () => {
   metronome.stop();
 });
 
+test("can mute future clicks without stopping tick callbacks", async () => {
+  const intervals = [];
+  const originalSetInterval = globalThis.setInterval;
+  const originalClearInterval = globalThis.clearInterval;
+  const context = createFakeAudioContext();
+  const beats = [];
+  globalThis.setInterval = (callback) => { intervals.push(callback); return intervals.length; };
+  globalThis.clearInterval = () => {};
+  try {
+    const metronome = new Metronome({ createAudioContext: () => context, onBeat: (beat) => beats.push(beat) });
+    await metronome.start({ tpm: 120, pattern: "NN" });
+    metronome.setMuted(true);
+    context.currentTime = 0.02;
+    intervals[0]();
+    assert.deepEqual(context.clickTimes, [0.05]);
+    assert.equal(beats.length, 0);
+    metronome.stop();
+  } finally {
+    globalThis.setInterval = originalSetInterval;
+    globalThis.clearInterval = originalClearInterval;
+  }
+});
+
 test("applies a tempo change after the next tick without restarting the beat", async () => {
   const intervals = [];
   const timeouts = new Map();

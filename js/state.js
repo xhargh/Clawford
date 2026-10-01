@@ -34,7 +34,7 @@ export const DEFAULT_STATE = {
 };
 
 const ENUMS = {
-  view: ["notation", "fretboard", "tuner", "metronome", "ear-training"],
+  view: ["notation", "fretboard", "tuner", "metronome", "ear-training", "play-along"],
   tunerMode: ["chromatic", "tuning"],
   earExercise: ["find", "follow", "simon"],
   earVariant: ["free", "same-string", "scale", "rolling", "open-string"]

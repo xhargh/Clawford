@@ -1,7 +1,7 @@
 export function viewControlVisibility(view) {
   return {
     instrument: view !== "metronome",
-    tuning: view !== "metronome",
+    tuning: view !== "metronome" && view !== "play-along",
     key: view === "notation" || view === "ear-training",
     scale: view === "notation" || view === "ear-training",
     chordRoot: view === "fretboard",
@@ -9,12 +9,14 @@ export function viewControlVisibility(view) {
     tunerControls: view === "tuner",
     metronomeControls: view === "metronome",
     earTrainingControls: view === "ear-training",
+    playAlongControls: view === "play-along",
     notationOutput: view === "notation",
     fretboardOutput: view === "fretboard",
     tunerOutput: view === "tuner",
     metronomeOutput: view === "metronome",
     earTrainingOutput: view === "ear-training",
-    earTrainingFretboardOutput: view === "ear-training"
+    earTrainingFretboardOutput: view === "ear-training",
+    playAlongOutput: view === "play-along"
   };
 }
 

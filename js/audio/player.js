@@ -52,6 +52,10 @@ export class AudioPlayer {
     return prepared.map((note, index) => this.#startVoice(context, note, start + index * spread));
   }
 
+  async warmUp() {
+    await this.#readyContext();
+  }
+
   async #readyContext() {
     const context = this.#ensureContext();
     if (context.state !== "running") await context.resume();

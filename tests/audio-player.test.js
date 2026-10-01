@@ -25,6 +25,15 @@ test("player lazily resumes, schedules notes, and reuses bounded buffers", async
   assert.equal(context.closeCalls, 1);
 });
 
+test("warms the audio context without playing a note", async () => {
+  const context = new FakeAudioContext();
+  const player = new AudioPlayer({ createAudioContext: () => context });
+  await player.warmUp();
+  assert.equal(context.resumeCalls, 1);
+  assert.equal(context.sources.length, 0);
+  await player.dispose();
+});
+
 test("retrigger fades only the previous voice on the same physical string", async () => {
   const context = new FakeAudioContext();
   const player = new AudioPlayer({ createAudioContext: () => context, duration: 0.05 });

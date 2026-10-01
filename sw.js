@@ -42,6 +42,8 @@ const APP_SHELL = [
   "js/metronome.js",
   "js/tap-tempo.js",
   "js/metronome-renderer.js",
+  "js/play-along.js",
+  "js/play-along-renderer.js",
   "js/tuner-renderer.js",
   "js/view-controls.js",
   "js/fun-facts.js",

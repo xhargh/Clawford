@@ -107,6 +107,10 @@ try {
   await page.click("#play-along-start");
   await page.waitForFunction(() => document.querySelector("#play-along-start").disabled);
   assert.match(await page.locator(".play-along-heading .eyebrow").innerText(), /COUNT IN · 4/);
+  await page.locator("#play-along-stop").dispatchEvent("pointerdown");
+  assert.match(await page.locator(".play-along-heading .eyebrow").innerText(), /READY TO PLAY/);
+  await page.click("#play-along-start");
+  await page.waitForFunction(() => document.querySelector("#play-along-start").disabled);
   await page.waitForTimeout(3500);
   assert.match(await page.locator(".play-along-heading .eyebrow").innerText(), /PLAYING/);
   await page.evaluate(() => {

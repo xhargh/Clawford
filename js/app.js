@@ -220,6 +220,10 @@ earTrainingOutput.addEventListener("click", (event) => {
 });
 earTrainingFretboardOutput.addEventListener("click", handleEarTrainingBoardInput);
 earTrainingFretboardOutput.addEventListener("keydown", handleEarTrainingBoardInput);
+playAlongOutput.addEventListener("pointerdown", (event) => {
+  if (!event.target.closest("#play-along-stop")) return;
+  stopPlayAlong();
+});
 playAlongOutput.addEventListener("click", handlePlayAlongClick);
 tunerOutput.addEventListener("pointerdown", handleTunerTargetPointerdown);
 tunerOutput.addEventListener("click", handleTunerTargetClick);
@@ -716,7 +720,9 @@ function handlePlayAlongClick(event) {
     return;
   }
   if (event.target.closest("#play-along-start")) void startPlayAlong();
-  if (event.target.closest("#play-along-stop")) stopPlayAlong();
+  if (event.target.closest("#play-along-stop")) {
+    stopPlayAlong();
+  }
   if (event.target.closest("#play-along-loop")) {
     playAlongLoop = event.target.checked;
     renderPlayAlong();

@@ -20,7 +20,7 @@ function normalizeBarres(barres, frets, fingers) {
 }
 
 function shape(instrument, tuning, rootPitchClass, qualityId, frets, fingers, source, tags = [], stringOrder = "low-to-high") {
-  return { instrument, tuning, rootPitchClass, qualityId, frets, fingers, stringOrder, barres: [], tags, source };
+  return { id: `${instrument}:${tuning}:${rootPitchClass}:${qualityId}:${frets.join(",")}`, instrument, tuning, rootPitchClass, qualityId, frets, fingers, stringOrder, barres: [], tags, source };
 }
 
 async function readJson(path) { return JSON.parse(await readFile(path, "utf8")); }

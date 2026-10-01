@@ -41,6 +41,13 @@ test("a banjo drone is muted when its open pitch is outside the chord", () => {
   assert.equal(shape.drone.state, "mute");
 });
 
+test("shape lookup returns stable unique shape identities for voicing selection", () => {
+  const guitar = tuning("guitar-standard");
+  const shapes = getChordShapes({ instrumentId: "guitar", tuning: guitar, rootPitchClass: 2, qualityId: "major" });
+  assert.ok(shapes.length > 1);
+  assert.equal(new Set(shapes.map((shape) => shape.id)).size, shapes.length);
+});
+
 test("validation allows a normal fifth omission but requires chord-defining tones", () => {
   const shape = getPreferredChordShape({ instrumentId: "guitar", tuning: tuning("guitar-standard"), rootPitchClass: 0, qualityId: "major" });
   assert.equal(validateChordShape(shape, tuning("guitar-standard")), true);

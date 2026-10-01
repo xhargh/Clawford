@@ -95,7 +95,7 @@ let selectedFretsByString = new Map();
 let selectedTonesByString = new Map();
 let fretboardSelectionKey = "";
 let fretboardShapeSelectionKey = "";
-let fretboardShapeIndex = 0;
+let fretboardShapeId = "";
 let fretboardShapeEdited = false;
 let strumGesture = null;
 let suppressClicksUntil = 0;
@@ -214,7 +214,7 @@ if (state.view === "tuner") {
 
 form.addEventListener("input", updateFromForm);
 document.querySelector("#tool-navigation").addEventListener("input", updateFromForm);
-fretboardShapeSelect.addEventListener("change", () => { fretboardShapeIndex = Number(fretboardShapeSelect.value); fretboardShapeEdited = false; render(); });
+fretboardShapeSelect.addEventListener("change", () => { fretboardShapeId = fretboardShapeSelect.value; fretboardShapeEdited = false; render(); });
 document.addEventListener("keydown", (event) => {
   if (!isTapTempoShortcut(event, state.view)) return;
   event.preventDefault();
@@ -557,14 +557,15 @@ function render() {
   }
   const shapeKey = `${nextSelectionKey}:${importedShapes.length}`;
   if (shapeKey !== fretboardShapeSelectionKey) {
-    fretboardShapeIndex = 0;
+    fretboardShapeId = "";
     fretboardShapeEdited = false;
     fretboardShapeSelectionKey = shapeKey;
   }
-  fretboardShapeIndex = Math.min(fretboardShapeIndex, Math.max(0, importedShapes.length - 1));
-  fretboardShapeSelect.replaceChildren(...importedShapes.map((shape, index) => new Option(`${shape.tags.includes("open") ? "Open" : "Alternate"} ${index + 1}${shape.tags.includes("preferred") ? " · preferred" : ""}`, String(index))));
-  fretboardShapeSelect.value = String(fretboardShapeIndex);
-  const importedShape = state.fretboardMode === "shape" && !fretboardShapeEdited ? importedShapes[fretboardShapeIndex] || null : null;
+  const selectedShape = importedShapes.find((shape) => shape.id === fretboardShapeId) || importedShapes[0] || null;
+  fretboardShapeId = selectedShape?.id || "";
+  fretboardShapeSelect.replaceChildren(...importedShapes.map((shape, index) => new Option(`${shape.tags.includes("open") ? "Open" : "Alternate"} ${index + 1}${shape.tags.includes("preferred") ? " · preferred" : ""}`, shape.id)));
+  fretboardShapeSelect.value = fretboardShapeId;
+  const importedShape = state.fretboardMode === "shape" && !fretboardShapeEdited ? selectedShape : null;
   if (importedShape && selectionChanged) selectedFretsByString = selectedFretsFromShape(importedShape, tuning);
   const fretboardBoard = fretboardScale
     ? generateScaleBoardNotes(tuning, chordRoot, fretboardScale, { displayMaxFret: fretboardFrets, selectedFretsByString })

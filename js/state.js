@@ -7,6 +7,7 @@ export const DEFAULT_STATE = {
   fifthMode: "excluded",
   preference: "all",
   displayMode: "scale",
+  fretboardMode: "tones",
   rangeMode: "auto",
   lowNote: "D3",
   highNote: "G4",
@@ -37,9 +38,10 @@ const ENUMS = {
   view: ["notation", "fretboard", "tuner", "metronome", "ear-training", "play-along"],
   tunerMode: ["chromatic", "tuning"],
   earExercise: ["find", "follow", "simon"],
-  earVariant: ["free", "same-string", "scale", "rolling", "open-string"]
+  earVariant: ["free", "same-string", "scale", "rolling", "open-string"],
+  fretboardMode: ["tones", "shape"]
 };
-const USER_SETTINGS = new Set(["instrument", "tuning", "key", "scale", "view", "tunerMode", "tunerA4", "metronomeTpm", "metronomeTicks", "metronomePattern", "chordRoot", "chordQuality", "earExercise", "earVariant", "earSequenceLimit"]);
+const USER_SETTINGS = new Set(["instrument", "tuning", "key", "scale", "view", "tunerMode", "tunerA4", "metronomeTpm", "metronomeTicks", "metronomePattern", "chordRoot", "chordQuality", "earExercise", "earVariant", "earSequenceLimit", "fretboardMode"]);
 
 export function stateFromSources(stored, searchParams, validValues) {
   const state = { ...DEFAULT_STATE };

@@ -43,6 +43,14 @@ try {
   await page.locator("#fretboard-output .fretboard-tone").first().click();
   await page.selectOption("#chord-quality", "scale:chromatic");
   assert.ok(await page.locator("#fretboard-output .fretboard-tone").count() > 20);
+  await page.selectOption("#instrument", "guitar");
+  await page.selectOption("#tuning", "guitar-standard");
+  await page.selectOption("#chord-root", "C");
+  await page.selectOption("#chord-quality", "major");
+  await page.locator("#fretboard-mode-control input[value=shape]").check();
+  assert.ok(await page.locator("#fretboard-output .shape-muted").count() > 0, "shape view shows muted strings");
+  assert.ok(await page.locator("#fretboard-output .shape-open").count() > 0, "shape view shows open strings");
+  assert.ok(await page.locator("#fretboard-output .shape-finger").count() > 0, "shape view shows finger numbers");
   await chooseView("tuner");
   await page.waitForFunction(() => document.querySelector("#tuner-start").disabled);
   await page.evaluate(() => {
@@ -76,6 +84,7 @@ try {
   assert.match(await page.locator("#play-along-progression").locator("option:checked").innerText(), /I–IV–I–V7: C–F–C–G7/);
   assert.equal(await page.locator(".play-along-chord").innerText(), "C");
   await page.selectOption("#instrument", "guitar");
+  assert.ok(await page.locator(".play-along-output .compact-chord-diagram").count() > 0, "Play Along shows the shared chord shape");
   await page.selectOption("#play-along-pattern", "custom");
   assert.equal(await page.locator("#play-along-meter-control").isVisible(), true);
   assert.equal(await page.locator(".play-along-step").count(), 8);

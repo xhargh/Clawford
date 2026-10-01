@@ -11,11 +11,45 @@ function element(name, attributes = {}, text = "") {
 }
 
 export function renderChordBoard(board, title, tuning, root, quality) {
+  return renderChordBoardWithShape(board, title, tuning, root, quality);
+}
+
+export function renderChordBoardWithShape(board, title, tuning, root, quality, shape = null) {
   const { displayMaxFret, tones, voicing } = board;
   const strings = tuning.strings.filter((string) => string.kind !== "drone").map((string) => string.number);
   const chordLabel = `${root.label.split(" ")[0]}${quality.symbol}`;
 
-  return renderVertical(strings, displayMaxFret, tones, title, tuning, chordLabel, root.preference, { voicing, rootPitchClass: root.pitchClass });
+  return renderVertical(strings, displayMaxFret, tones, title, tuning, chordLabel, root.preference, { voicing, rootPitchClass: root.pitchClass, shape });
+}
+
+export function renderCompactChordShape(shape, tuning, label = "Chord shape") {
+  if (!shape) return "";
+  const strings = tuning.strings.filter((string) => string.kind !== "drone");
+  if (shape.stringOrder !== "tuning") strings.sort((a, b) => pitchToMidi(a.pitch) - pitchToMidi(b.pitch));
+  const width = Math.max(180, strings.length * 30 + 35);
+  const height = 150;
+  const xFor = (index) => 25 + index * 30;
+  const fretted = shape.frets.filter((fret) => fret > 0);
+  const base = fretted.length ? Math.max(1, Math.min(...fretted)) : 1;
+  const svg = element("svg", { class: "compact-chord-diagram", viewBox: `0 0 ${width} ${height}`, role: "img", "aria-label": `${label}. ${shapeDescription(shape, strings)}`, xmlns: NS });
+  svg.append(element("title", {}, `${label}. ${shapeDescription(shape, strings)}`));
+  strings.forEach((_string, index) => svg.append(element("line", { x1: xFor(index), x2: xFor(index), y1: 32, y2: 122, class: "shape-string" })));
+  for (let fret = 0; fret <= 4; fret += 1) svg.append(element("line", { x1: 25, x2: width - 5, y1: 32 + fret * 22, y2: 32 + fret * 22, class: fret === 0 && base === 1 ? "shape-nut" : "shape-fret" }));
+  strings.forEach((string, index) => {
+    const fret = shape.frets[index];
+    const finger = shape.fingers?.[index] || 0;
+    const x = xFor(index);
+    if (fret < 0) svg.append(element("text", { x, y: 20, "text-anchor": "middle", class: "shape-muted" }, "X"));
+    else if (fret === 0) svg.append(element("text", { x, y: 20, "text-anchor": "middle", class: "shape-open" }, "O"));
+    else {
+      const group = element("g", { class: "shape-fretted" });
+      group.append(element("circle", { cx: x, cy: 32 + (fret - base + 0.5) * 22, r: 9 }));
+      group.append(element("text", { x, y: 36 + (fret - base + 0.5) * 22, "text-anchor": "middle", class: "shape-finger" }, finger ? String(finger) : ""));
+      svg.append(group);
+    }
+  });
+  if (shape.drone) svg.append(element("text", { x: width - 5, y: 145, "text-anchor": "end", class: shape.drone.state === "open" ? "shape-open" : "shape-muted" }, `drone ${shape.drone.state === "open" ? "O" : "X"}`));
+  return svg;
 }
 
 export function renderScaleBoard(board, title, tuning, root, scale) {
@@ -45,7 +79,7 @@ export function renderEarTrainingBoard({ tuning, maxFret = 5, targetMidi = null,
 }
 
 function renderVertical(strings, displayMaxFret, tones, title, tuning, label, preference, options = {}) {
-  const { type = "chord", voicing = true, rootPitchClass, targetMidi = null, targetString = null, detectedMidi = null, ariaLabel } = options;
+  const { type = "chord", voicing = true, rootPitchClass, targetMidi = null, targetString = null, detectedMidi = null, ariaLabel, shape = null } = options;
   const leftX = 65;
   const stringGap = 52;
   const rightX = leftX + Math.max(1, strings.length - 1) * stringGap;
@@ -105,12 +139,37 @@ function renderVertical(strings, displayMaxFret, tones, title, tuning, label, pr
     svg.append(element("text", { x, y: stringLabelY, "text-anchor": "middle", class: "string-number" }, openName ? `${string} - ${openName}` : String(string)));
   });
 
+  if (shape) appendShapeIndicators(svg, shape, tuning, strings, displayMaxFret, { leftX, rightX, stringGap, topY, openY, fretHeight });
+
   for (const tone of tones) {
     const x = xForString.get(tone.string);
     const y = tone.isOpen ? openY : topY + (tone.fret - 0.5) * fretHeight;
     appendTone(svg, tone, x, y, preference, rootPitchClass, type, { targetMidi, targetString, detectedMidi });
   }
   return svg;
+}
+
+function appendShapeIndicators(svg, shape, tuning, strings, displayMaxFret, layout) {
+  const ordered = tuning.strings.filter((string) => string.kind !== "drone");
+  if (shape.stringOrder !== "tuning") ordered.sort((a, b) => pitchToMidi(a.pitch) - pitchToMidi(b.pitch));
+  ordered.forEach((string, index) => {
+    const fret = shape.frets[index];
+    const finger = shape.fingers?.[index] || 0;
+    const x = layout.rightX - (string.number - 1) * layout.stringGap;
+    if (fret < 0) svg.append(element("text", { x, y: layout.openY - 26, "text-anchor": "middle", class: "shape-marker shape-muted", "data-string": string.number }, "X"));
+    else if (fret === 0) svg.append(element("text", { x, y: layout.openY - 26, "text-anchor": "middle", class: "shape-marker shape-open", "data-string": string.number }, "O"));
+    else if (fret <= displayMaxFret && finger) svg.append(element("text", { x, y: layout.topY + (fret - 0.5) * layout.fretHeight + 4, "text-anchor": "middle", class: "shape-finger", "data-string": string.number }, String(finger)));
+  });
+}
+
+function shapeDescription(shape, strings) {
+  return strings.map((string, index) => {
+    const fret = shape.frets[index];
+    const finger = shape.fingers?.[index] || 0;
+    if (fret < 0) return `String ${string.number} muted`;
+    if (fret === 0) return `String ${string.number} open`;
+    return `String ${string.number}, fret ${fret}${finger ? `, finger ${finger}` : ""}`;
+  }).join(". ");
 }
 
 function appendTone(svg, tone, x, y, preference, rootPitchClass, type, options = {}) {

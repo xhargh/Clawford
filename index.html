@@ -55,7 +55,13 @@
             <label id="scale-control">Scale<select id="scale" name="scale"></select></label>
           </div>
           <label id="chord-root-control">Root<select id="chord-root" name="chordRoot"></select></label>
-          <label id="chord-quality-control">Chord / Scale<select id="chord-quality" name="chordQuality"></select></label>
+           <label id="chord-quality-control">Chord / Scale<select id="chord-quality" name="chordQuality"></select></label>
+           <fieldset id="fretboard-mode-control" class="full-control" hidden>
+             <legend>Fretboard view</legend>
+             <label><input type="radio" name="fretboardMode" value="tones"> All chord tones</label>
+             <label><input type="radio" name="fretboardMode" value="shape"> Chord shape</label>
+             <label id="fretboard-shape-select-control" hidden>Voicing<select id="fretboard-shape-select"></select></label>
+           </fieldset>
           <fieldset id="tuner-controls" class="tuner-controls full-control" hidden>
             <legend>Tuner mode</legend>
             <label><input type="radio" name="tunerMode" value="tuning"> Strings</label>

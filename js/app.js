@@ -1,4 +1,4 @@
-import { renderChordBoard, renderScaleBoard, renderEarTrainingBoard } from "./fretboard-renderer.js";
+import { renderChordBoardWithShape, renderScaleBoard, renderEarTrainingBoard } from "./fretboard-renderer.js";
 import { generateNotes } from "./mapping.js";
 import { renderNotation } from "./notation-renderer.js";
 import { CHORD_QUALITIES, findChordVoicing, generateChordBoardNotes, getChordQuality, hasChordVoicing } from "./chords.js";
@@ -26,6 +26,7 @@ import { renderEarTrainingOutput } from "./ear-training-renderer.js";
 import { midiToPitch, pitchToMidi } from "./pitch.js";
 import { PATTERNS, PRESET_PROGRESSIONS, actionsForInstrument, bassNoteForChord, beatsPerMeasure, customPatternFamily, cyclePatternStep, meterStepCount, parseChordSymbol, patternForInstrument, patternNoteIndexes, patternNoteVelocity, patternPlaybackProfile, playAlongPosition, playAlongSubdivisionSchedule, playAlongTickState, progressionLabel, resolveProgression, stepsPerBeat } from "./play-along.js";
 import { renderPlayAlongOutput } from "./play-along-renderer.js";
+import { getChordShapes, getPreferredChordShape } from "./chord-shapes.js";
 
 const form = document.querySelector("#settings-form");
 const instrumentSelect = document.querySelector("#instrument");
@@ -62,6 +63,9 @@ const playAlongTechniqueControl = document.querySelector("#play-along-technique-
 const playAlongTechniqueSelect = document.querySelector("#play-along-technique");
 const playAlongMeterControl = document.querySelector("#play-along-meter-control");
 const playAlongMeterSelect = document.querySelector("#play-along-meter");
+const fretboardModeControl = document.querySelector("#fretboard-mode-control");
+const fretboardShapeSelectControl = document.querySelector("#fretboard-shape-select-control");
+const fretboardShapeSelect = document.querySelector("#fretboard-shape-select");
 const tunings = [...BUILT_IN_TUNINGS];
 const FRETBOARD_SCALES = [...SCALES, CHROMATIC_SCALE];
 const scaleOptionValue = (scale) => `scale:${scale.id}`;
@@ -90,6 +94,9 @@ let audioPlayer = createAudioPlayer(state.instrument);
 let selectedFretsByString = new Map();
 let selectedTonesByString = new Map();
 let fretboardSelectionKey = "";
+let fretboardShapeSelectionKey = "";
+let fretboardShapeIndex = 0;
+let fretboardShapeEdited = false;
 let strumGesture = null;
 let suppressClicksUntil = 0;
 let tunerAnimationFrame = null;
@@ -207,6 +214,7 @@ if (state.view === "tuner") {
 
 form.addEventListener("input", updateFromForm);
 document.querySelector("#tool-navigation").addEventListener("input", updateFromForm);
+fretboardShapeSelect.addEventListener("change", () => { fretboardShapeIndex = Number(fretboardShapeSelect.value); fretboardShapeEdited = false; render(); });
 document.addEventListener("keydown", (event) => {
   if (!isTapTempoShortcut(event, state.view)) return;
   event.preventDefault();
@@ -348,6 +356,7 @@ function handleTunerTargetKeydown(event) {
 function selectAndPlayFretboardTone(element) {
   const note = noteFromElement(element);
   selectedFretsByString = selectTone(selectedFretsByString, note.string, Number(element.dataset.fret));
+  if (state.fretboardMode === "shape") fretboardShapeEdited = true;
   playNotes([note]);
   render();
 }
@@ -534,7 +543,9 @@ function render() {
   const fretboardTitle = `${instrument.name} — ${tuning.name}`;
   const notes = generateNotes({ ...state, tuning, key, scale });
   updateChordOptionAvailability(tuning);
-  const nextSelectionKey = `${tuning.id}:${chordRoot.pitchClass}:${state.chordQuality}`;
+  const nextSelectionKey = `${tuning.id}:${chordRoot.pitchClass}:${state.chordQuality}:${state.fretboardMode}`;
+  const importedShapes = chordQuality ? getChordShapes({ instrumentId: instrument.id, tuning, rootPitchClass: chordRoot.pitchClass, qualityId: chordQuality.id }) : [];
+  const selectionChanged = nextSelectionKey !== fretboardSelectionKey;
   if (nextSelectionKey !== fretboardSelectionKey) {
     if (fretboardScale) {
       selectedFretsByString = new Map();
@@ -544,15 +555,26 @@ function render() {
     }
     fretboardSelectionKey = nextSelectionKey;
   }
+  const shapeKey = `${nextSelectionKey}:${importedShapes.length}`;
+  if (shapeKey !== fretboardShapeSelectionKey) {
+    fretboardShapeIndex = 0;
+    fretboardShapeEdited = false;
+    fretboardShapeSelectionKey = shapeKey;
+  }
+  fretboardShapeIndex = Math.min(fretboardShapeIndex, Math.max(0, importedShapes.length - 1));
+  fretboardShapeSelect.replaceChildren(...importedShapes.map((shape, index) => new Option(`${shape.tags.includes("open") ? "Open" : "Alternate"} ${index + 1}${shape.tags.includes("preferred") ? " · preferred" : ""}`, String(index))));
+  fretboardShapeSelect.value = String(fretboardShapeIndex);
+  const importedShape = state.fretboardMode === "shape" && !fretboardShapeEdited ? importedShapes[fretboardShapeIndex] || null : null;
+  if (importedShape && selectionChanged) selectedFretsByString = selectedFretsFromShape(importedShape, tuning);
   const fretboardBoard = fretboardScale
     ? generateScaleBoardNotes(tuning, chordRoot, fretboardScale, { displayMaxFret: fretboardFrets, selectedFretsByString })
     : generateChordBoardNotes(tuning, chordRoot.pitchClass, chordQuality.id, { minDisplayFret: fretboardFrets, selectedFretsByString });
-  selectedTonesByString = new Map(fretboardBoard.tones.filter((tone) => tone.isSelected).map((tone) => [tone.string, tone]));
+  selectedTonesByString = importedShape ? selectedToneMap(fretboardBoard, importedShape, tuning) : new Map(fretboardBoard.tones.filter((tone) => tone.isSelected).map((tone) => [tone.string, tone]));
 
   notationOutput.replaceChildren(renderNotation(notes, title, { ...state, tuning, keySignature: keySignatureFor(key, scale), clef: instrument.clef }));
   fretboardOutput.replaceChildren(fretboardScale
     ? renderScaleBoard(fretboardBoard, fretboardTitle, tuning, chordRoot, fretboardScale)
-    : renderChordBoard(fretboardBoard, fretboardTitle, tuning, chordRoot, chordQuality));
+     : renderChordBoardWithShape(fretboardBoard, fretboardTitle, tuning, chordRoot, chordQuality, importedShape));
   const hiddenControls = viewControlHidden(state.view);
   generalControls.hidden = !viewControlVisibility(state.view).instrument;
   notationOutput.hidden = hiddenControls.notationOutput;
@@ -566,6 +588,8 @@ function render() {
   metronomeControls.hidden = hiddenControls.metronomeControls;
   earTrainingControls.hidden = hiddenControls.earTrainingControls;
   playAlongControls.hidden = hiddenControls.playAlongControls;
+  fretboardModeControl.hidden = state.view !== "fretboard" || Boolean(fretboardScale);
+  fretboardShapeSelectControl.hidden = state.fretboardMode !== "shape" || importedShapes.length < 2;
   metronomeTpmValue.value = state.metronomeTpm;
   metronomeTpmValue.textContent = state.metronomeTpm;
   metronomeTicksValue.value = state.metronomeTicks;
@@ -591,6 +615,17 @@ function persistSettings() {
   history.replaceState(null, "", `${location.pathname}${query ? `?${query}` : ""}${location.hash}`);
 }
 
+function selectedFretsFromShape(shape, tuning) {
+  const strings = tuning.strings.filter((string) => string.kind !== "drone");
+  if (shape.stringOrder !== "tuning") strings.sort((a, b) => pitchToMidi(a.pitch) - pitchToMidi(b.pitch));
+  return new Map(strings.map((string, index) => [string.number, shape.frets[index]]).filter(([, fret]) => fret >= 0));
+}
+
+function selectedToneMap(board, shape, tuning) {
+  const selected = selectedFretsFromShape(shape, tuning);
+  return new Map([...selected.entries()].map(([string, fret]) => [string, board.tones.find((tone) => tone.string === string && tone.fret === fret)]).filter(([, tone]) => tone));
+}
+
 function renderMetronome() {
   metronomeOutput.innerHTML = renderMetronomeOutput({ beat: metronomeBeat, tpm: state.metronomeTpm, pattern: state.metronomePattern, running: metronome.running, tapBpm, error: metronomeError });
 }
@@ -600,6 +635,9 @@ function renderPlayAlong() {
   const progression = PRESET_PROGRESSIONS.find(({ id }) => id === playAlongProgressionId) || PRESET_PROGRESSIONS[0];
   const chords = resolveProgression(progression, state.key);
   const position = playAlongPosition(playAlongTick, chords.length, playAlongSteps.length, playAlongMeter, playAlongSubdivision);
+  const playAlongTuning = tunings.find((item) => item.id === state.tuning) || tunings[0];
+  const currentChord = parseChordSymbol(chords[position.chordIndex] || chords[0]);
+  const playAlongShape = getPreferredChordShape({ instrumentId: state.instrument, tuning: playAlongTuning, rootPitchClass: getKey(currentChord.root).pitchClass, qualityId: currentChord.quality });
   playAlongBpmValue.value = playAlongBpmSetting;
   playAlongBpmValue.textContent = playAlongBpmSetting;
   playAlongOutput.innerHTML = renderPlayAlongOutput({
@@ -617,6 +655,8 @@ function renderPlayAlong() {
     meter: playAlongMeter,
     subdivision: playAlongSubdivision,
     grouping: playAlongGrouping,
+    shape: playAlongShape,
+    tuning: playAlongTuning,
     error: playAlongError
   });
   playAlongTechniqueControl.hidden = state.instrument !== "banjo5" || playAlongPattern.value !== "custom";

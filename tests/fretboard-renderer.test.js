@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { renderChordBoard, renderScaleBoard, renderEarTrainingBoard } from "../js/fretboard-renderer.js";
+import { renderChordBoard, renderChordBoardWithShape, renderScaleBoard, renderEarTrainingBoard } from "../js/fretboard-renderer.js";
+import { getPreferredChordShape } from "../js/chord-shapes.js";
 import { generateChordBoardNotes } from "../js/chords.js";
 import { generateScaleBoardNotes } from "../js/scale-board.js";
 import { getKey, getScale, chromaticName } from "../js/scales.js";
@@ -56,6 +57,17 @@ test("marks the selected voicing bold and other chord tones faint", () => {
   assert.ok(selected.every((node) => node.attributes["data-midi"]));
   assert.ok(selected.every((node) => node.attributes["aria-pressed"] === "true"));
   assert.ok(faint.every((node) => node.attributes["aria-pressed"] === "false"));
+});
+
+test("shape view explicitly labels muted, open, and fingered strings", () => {
+  const board = generateChordBoardNotes(BUILT_IN_TUNINGS.find((item) => item.id === "guitar-standard"), 0, "major");
+  const guitar = BUILT_IN_TUNINGS.find((item) => item.id === "guitar-standard");
+  const shape = getPreferredChordShape({ instrumentId: "guitar", tuning: guitar, rootPitchClass: 0, qualityId: "major" });
+  const svg = renderChordBoardWithShape(board, "Guitar", guitar, getKey("C"), quality, shape);
+  const elements = descendants(svg);
+  assert.ok(elements.some((node) => node.attributes.class?.includes("shape-muted")));
+  assert.ok(elements.some((node) => node.attributes.class?.includes("shape-open")));
+  assert.ok(elements.some((node) => node.attributes.class?.includes("shape-finger")));
 });
 
 test("colors fretboard tones on an orange-to-white interval gradient", () => {

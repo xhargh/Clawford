@@ -67,6 +67,9 @@ css/
 js/
   app.js                    App bootstrap / UI wiring
   chords.js                 Chord definitions and logic
+  chord-shapes.js           Shared normalized voicing lookup
+  chord-shape-data.js       Offline generated normalized voicing data
+  chord-shape-validator.js  Musical and structural shape validation
   fretboard-renderer.js     Renders the fretboard view
   notation-renderer.js      Renders the standard-notation view
   instruments.js            Supported instrument definitions
@@ -81,6 +84,8 @@ js/
   state.js                  Application state management
   storage.js                Persisted user settings
 tests/                      Unit tests (node:test)
+scripts/import-chord-shapes.mjs  Offline upstream data importer
+third-party/                Upstream license and attribution notices
 deploy.sh                   Deploys the static site over SSH/rsync
 SPEC.md                     Full project specification
 ```
@@ -91,7 +96,13 @@ Tests are written using Node's built-in test runner:
 
 ```bash
 npm test
+npm run test:browser
 ```
+
+Chord shapes are imported from local checkouts of `tombatossals/chords-db`
+(MIT, guitar and ukulele) and the published `ShakaLei/open-source-orchestrator`
+shape output (CC0, mandolin and 5-string banjo). The importer emits the
+committed `js/chord-shape-data.js`; runtime code has no network dependency.
 
 ## Deployment
 

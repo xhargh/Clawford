@@ -16,15 +16,16 @@ function startsGroup(index, grouping) {
 export function renderPlayAlongOutput({
   chords = [], pattern = [], patternName = "Custom pattern", bpm = 90, position = {}, running = false,
   loop = true, custom = false, actions = [], error = "", phase = "idle", countIn = 0,
-  meter = { numerator: 4, denominator: 4 }, subdivision = 2, grouping = []
+  meter = { numerator: 4, denominator: 4 }, subdivision = 2, grouping = [], shape = null, tuning = null
 } = {}) {
   const chord = chords[position.chordIndex ?? 0] || chords[0] || "G";
   const next = chords.length > 1 ? chords[((position.chordIndex ?? 0) + 1) % chords.length] : "--";
   const steps = pattern.map((step, index) => `<button class="play-along-step${index === position.stepIndex ? " active" : ""}${startsGroup(index, grouping) ? " grouped" : ""}" type="button" ${custom ? `data-pattern-step="${index}"` : "disabled"} aria-label="${stepLabel(index, meter, subdivision)}: ${step === "-" ? "rest" : step}"><span>${step}</span><small>${stepLabel(index, meter, subdivision)}</small></button>`).join("");
   const actionButtons = custom ? pattern.map((step, index) => `<button class="play-along-custom-step${index === position.stepIndex ? " active" : ""}" type="button" data-pattern-step="${index}" aria-label="Edit pattern step ${index + 1}">${step}</button>`).join("") : "";
   const status = phase === "count-in" ? `Count in · ${countIn}` : running ? "Playing" : "Ready to play";
+  const diagram = shape && tuning ? `<div class="play-along-shape">${compactShapeMarkup(shape, tuning, `${chord} chord`)}</div>` : "";
   return `<div class="play-along-card">
-    <div class="play-along-heading"><p class="eyebrow">${status}</p><strong class="play-along-chord" aria-live="polite">${chord}</strong><p class="play-along-next">next: <b>${next}</b></p></div>
+    <div class="play-along-heading"><p class="eyebrow">${status}</p><strong class="play-along-chord" aria-live="polite">${chord}</strong>${diagram}<p class="play-along-next">next: <b>${next}</b></p></div>
      <p class="play-along-pattern-name">${patternName} <span>${meter.numerator}/${meter.denominator} · ${bpm} BPM</span></p>
    <div class="play-along-pattern meter-${meter.numerator}-${meter.denominator}" style="--step-count:${pattern.length}" aria-label="Current pattern">${steps}</div>
      ${custom ? `<div class="play-along-custom" aria-label="Custom pattern editor"><p>Tap a cell to cycle: ${actions.join(" ")}</p><div style="--step-count:${pattern.length}">${actionButtons}</div></div>` : ""}
@@ -32,4 +33,20 @@ export function renderPlayAlongOutput({
     <div class="play-along-actions"><button id="play-along-start" type="button"${running ? " disabled" : ""}>Play</button><button id="play-along-stop" type="button"${running ? "" : " disabled"}>Stop</button><label><input id="play-along-loop" type="checkbox"${loop ? " checked" : ""}> Loop</label></div>
     ${error ? `<p class="play-along-error" role="alert">${error}</p>` : ""}
   </div>`;
+}
+
+function compactShapeMarkup(shape, tuning, label) {
+  const strings = tuning.strings.filter((string) => string.kind !== "drone");
+  if (shape.stringOrder !== "tuning") strings.sort((a, b) => a.number - b.number).reverse();
+  const entries = strings.map((_string, index) => {
+    const fret = shape.frets[index];
+    const finger = shape.fingers?.[index] || 0;
+    return `<span class="compact-shape-string"><b>${fret < 0 ? "X" : fret === 0 ? "O" : "●"}</b>${fret > 0 && finger ? `<small>${finger}</small>` : ""}</span>`;
+  }).join("");
+  const description = strings.map((string, index) => {
+    const fret = shape.frets[index];
+    const finger = shape.fingers?.[index] || 0;
+    return fret < 0 ? `String ${string.number} muted` : fret === 0 ? `String ${string.number} open` : `String ${string.number}, fret ${fret}${finger ? `, finger ${finger}` : ""}`;
+  }).join(". ");
+  return `<div class="compact-chord-diagram" role="img" aria-label="${label}. ${description}">${entries}</div>`;
 }

@@ -1,0 +1,9 @@
+The published chord-shape database output in
+https://github.com/ShakaLei/open-source-orchestrator/tree/main/shapes is
+identified by its publisher as CC0 1.0 Universal.
+
+The complete CC0 1.0 legal code is available at:
+https://creativecommons.org/publicdomain/zero/1.0/legalcode
+
+Clawford's normalized mandolin and 5-string banjo entries retain this
+provenance as source.dataset "ohana" and source.license "CC0-1.0".

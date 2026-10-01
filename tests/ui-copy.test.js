@@ -30,3 +30,10 @@ test("main app keeps functional guidance without decorative motivational copy", 
   assert.match(app, /if \(metronome\.running\) metronome\.updateTpm\(playAlongBpmSetting\);/);
   assert.match(await readFile(new URL("js/metronome-renderer.js", root), "utf8"), /Tap a tick to cycle normal, accent, and silent\./);
 });
+
+test("hides redundant ear-training controls and heading", async () => {
+  const html = await readFile(new URL("index.html", root), "utf8");
+  assert.match(html, /<legend id="ear-training-heading" hidden>Ear training<\/legend>/);
+  assert.match(html, /<label id="ear-exercise-control" hidden>Exercise/);
+  assert.match(html, /<label id="ear-variant-control" hidden>Note generation/);
+});

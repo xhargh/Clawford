@@ -146,9 +146,6 @@ fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 .ear-training-actions button:last-child { color: var(--ink); background: white; }
 .ear-training-actions button:disabled { cursor: not-allowed; opacity: .45; }
 .ear-training-error { margin: 0; color: var(--warm); font-weight: 700; }
-.ear-training-fretboard-output { overflow: auto; margin-bottom: 16px; border: 1px solid var(--line); background: white; }
-.ear-training-fretboard-output:empty { display: none; }
-.ear-training-fretboard-output svg { display: block; width: auto; height: auto; max-width: 100%; max-height: var(--diagram-fit-height, none); margin: 0 auto; }
 .play-along-output { min-height: 420px; border: 1px solid var(--line); border-radius: 12px; background: #f1f4ec; }
 .play-along-card { display: grid; gap: 22px; max-width: 900px; margin: 0 auto; padding: clamp(26px, 7vw, 72px) clamp(14px, 5vw, 60px); text-align: center; }
 .play-along-heading { display: grid; gap: 4px; }
@@ -272,7 +269,6 @@ fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 }
 
 .tuner-output, .metronome-output, .ear-training-output { border-radius: 12px; background: #f1f4ec; }
-.ear-training-fretboard-output { margin-top: 18px; border-radius: 12px; }
 .tuner-actions button, .metronome-actions button, .ear-training-actions button, .tuner-target { border-radius: 8px; }
 
 @media (prefers-reduced-motion: reduce) {

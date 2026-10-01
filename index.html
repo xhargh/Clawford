@@ -78,19 +78,13 @@
             <label for="metronome-ticks">Ticks per cycle <output id="metronome-ticks-value" for="metronome-ticks">4</output><input id="metronome-ticks" name="metronomeTicks" type="range" min="1" max="16" step="1" required></label>
           </fieldset>
          <fieldset id="ear-training-controls" class="ear-training-controls full-control" hidden>
-            <legend>Ear training</legend>
-            <label>Exercise<select id="ear-exercise" name="earExercise">
-              <option value="find">Find: one note at a time</option>
-              <option value="follow">Follow: nearby same-string movement</option>
-              <option value="simon">Simon: remember the sequence</option>
+            <legend id="ear-training-heading" hidden>Ear training</legend>
+            <label id="ear-exercise-control" hidden>Exercise<select id="ear-exercise" name="earExercise">
+               <option value="find">One note at a time</option>
             </select></label>
-            <label>Note generation<select id="ear-variant" name="earVariant">
-              <option value="open-string">Open strings: find the string</option>
-              <option value="free">Low-position notes</option>
-              <option value="scale">Notes in current key and scale</option>
-              <option value="rolling">Rolling Simon sequence</option>
+            <label id="ear-variant-control" hidden>Note generation<select id="ear-variant" name="earVariant">
+               <option value="open-string">Find the string</option>
             </select></label>
-            <label id="ear-sequence-limit-control">Rolling memory length<input id="ear-sequence-limit" name="earSequenceLimit" type="number" min="1" max="32" step="1" inputmode="numeric"></label>
          </fieldset>
          <fieldset id="play-along-controls" class="play-along-controls full-control" hidden>
            <legend>Chord + pattern</legend>
@@ -114,7 +108,6 @@
       <div id="tuner-output" class="tuner-output" hidden></div>
       <div id="metronome-output" class="metronome-output" hidden></div>
       <div id="ear-training-output" class="ear-training-output" hidden></div>
-       <div id="ear-training-fretboard-output" class="ear-training-fretboard-output" hidden></div>
        <div id="play-along-output" class="play-along-output" hidden></div>
     </section>
   </main>

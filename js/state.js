@@ -30,15 +30,15 @@ export const DEFAULT_STATE = {
   chordRoot: "G",
   chordQuality: "major",
   earExercise: "find",
-  earVariant: "free",
+  earVariant: "open-string",
   earSequenceLimit: 5
 };
 
 const ENUMS = {
   view: ["notation", "fretboard", "tuner", "metronome", "ear-training", "play-along"],
   tunerMode: ["chromatic", "tuning"],
-  earExercise: ["find", "follow", "simon"],
-  earVariant: ["free", "same-string", "scale", "rolling", "open-string"],
+  earExercise: ["find"],
+  earVariant: ["open-string"],
   fretboardMode: ["tones", "shape"]
 };
 const USER_SETTINGS = new Set(["instrument", "tuning", "key", "scale", "view", "tunerMode", "tunerA4", "metronomeTpm", "metronomeTicks", "metronomePattern", "chordRoot", "chordQuality", "earExercise", "earVariant", "earSequenceLimit", "fretboardMode"]);
@@ -67,9 +67,7 @@ export function updateSettings(previous, changes, validValues, tunings) {
   return next;
 }
 
-function normalizeEarSettings(state) {
-  if (state.earExercise !== "simon" && state.earVariant === "rolling") state.earVariant = "free";
-}
+function normalizeEarSettings() {}
 
 function applyObject(state, source, validValues) {
   if (!source || typeof source !== "object") return;
@@ -96,6 +94,10 @@ export function stateToSearchParams(state) {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(state)) {
     if (USER_SETTINGS.has(key) && value !== DEFAULT_STATE[key]) params.set(key, String(value));
+  }
+  if (state.view === "ear-training") {
+    params.set("earExercise", state.earExercise);
+    params.set("earVariant", state.earVariant);
   }
   return params;
 }

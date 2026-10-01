@@ -44,18 +44,17 @@ test("accepts the tuner view", () => {
 });
 
 test("accepts and serializes ear-training settings", () => {
-  const state = stateFromSources(null, new URLSearchParams("view=ear-training&earExercise=simon&earVariant=rolling&earSequenceLimit=7"), validValues);
+  const state = stateFromSources(null, new URLSearchParams("view=ear-training&earExercise=find&earVariant=open-string"), validValues);
   assert.equal(state.view, "ear-training");
-  assert.equal(state.earExercise, "simon");
-  assert.equal(state.earVariant, "rolling");
-  assert.equal(state.earSequenceLimit, 7);
+  assert.equal(state.earExercise, "find");
+  assert.equal(state.earVariant, "open-string");
   const params = stateToSearchParams(state);
-  assert.equal(params.get("earExercise"), "simon");
-  assert.equal(params.get("earVariant"), "rolling");
+  assert.equal(params.get("earExercise"), "find");
+  assert.equal(params.get("earVariant"), "open-string");
 });
 
 test("accepts and serializes open-string ear training", () => {
-  const state = stateFromSources(null, new URLSearchParams("earVariant=open-string"), validValues);
+  const state = stateFromSources(null, new URLSearchParams("view=ear-training&earVariant=open-string"), validValues);
   assert.equal(state.earVariant, "open-string");
   assert.equal(stateToSearchParams(state).get("earVariant"), "open-string");
 });

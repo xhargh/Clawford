@@ -4,8 +4,8 @@ import { renderEarTrainingOutput } from "../js/ear-training-renderer.js";
 
 test("renders a screenless-friendly ear-training status and controls", () => {
   const html = renderEarTrainingOutput({
-    exercise: "simon",
-    variant: "rolling",
+    exercise: "find",
+    variant: "open-string",
     running: true,
     status: "Listening",
     streak: 3,
@@ -16,7 +16,7 @@ test("renders a screenless-friendly ear-training status and controls", () => {
   assert.match(html, /Ear training/);
   assert.match(html, /Listening/);
   assert.match(html, /Streak.*3/);
-  assert.match(html, /5 notes/);
+   assert.match(html, /2 \/ 5 notes/);
   assert.match(html, /Stop/);
   assert.doesNotMatch(html, /undefined/);
 });

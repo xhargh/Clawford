@@ -15,7 +15,6 @@ export function viewControlVisibility(view) {
     tunerOutput: view === "tuner",
     metronomeOutput: view === "metronome",
     earTrainingOutput: view === "ear-training",
-    earTrainingFretboardOutput: view === "ear-training",
     playAlongOutput: view === "play-along"
   };
 }

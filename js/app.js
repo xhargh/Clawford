@@ -1,4 +1,4 @@
-import { renderChordBoardWithShape, renderScaleBoard, renderEarTrainingBoard } from "./fretboard-renderer.js";
+import { renderChordBoardWithShape, renderScaleBoard } from "./fretboard-renderer.js";
 import { generateNotes } from "./mapping.js";
 import { renderNotation } from "./notation-renderer.js";
 import { CHORD_QUALITIES, findChordVoicing, generateChordBoardNotes, getChordQuality, hasChordVoicing } from "./chords.js";
@@ -40,7 +40,6 @@ const fretboardOutput = document.querySelector("#fretboard-output");
 const tunerOutput = document.querySelector("#tuner-output");
 const metronomeOutput = document.querySelector("#metronome-output");
 const earTrainingOutput = document.querySelector("#ear-training-output");
-const earTrainingFretboardOutput = document.querySelector("#ear-training-fretboard-output");
 const playAlongOutput = document.querySelector("#play-along-output");
 const funFactImage = document.querySelector("#fun-fact-image");
 const funFactPreview = document.querySelector("#fun-fact-preview");
@@ -48,6 +47,9 @@ const warningBanner = document.querySelector("#warning-banner");
 const tunerControls = document.querySelector("#tuner-controls");
 const metronomeControls = document.querySelector("#metronome-controls");
 const earTrainingControls = document.querySelector("#ear-training-controls");
+const earTrainingHeading = document.querySelector("#ear-training-heading");
+const earExerciseControl = document.querySelector("#ear-exercise-control");
+const earVariantControl = document.querySelector("#ear-variant-control");
 const playAlongControls = document.querySelector("#play-along-controls");
 const generalControls = document.querySelector("#general-controls");
 const metronomeTpmValue = document.querySelector("#metronome-tpm-value");
@@ -227,8 +229,6 @@ earTrainingOutput.addEventListener("click", (event) => {
   if (event.target.closest("#ear-training-start")) void startEarTraining();
   if (event.target.closest("#ear-training-stop")) void stopEarTraining();
 });
-earTrainingFretboardOutput.addEventListener("click", handleEarTrainingBoardInput);
-earTrainingFretboardOutput.addEventListener("keydown", handleEarTrainingBoardInput);
 playAlongOutput.addEventListener("pointerdown", (event) => {
   if (!event.target.closest("#play-along-stop")) return;
   stopPlayAlong();
@@ -432,7 +432,7 @@ function scheduleDiagramFit() {
 }
 
 function updateDiagramFit() {
-  const visible = [notationOutput, fretboardOutput, earTrainingFretboardOutput].find((el) => !el.hidden);
+  const visible = [notationOutput, fretboardOutput].find((el) => !el.hidden);
   if (!visible) return;
   // Size for the full viewport height (minus breathing room for the frame's
   // own border/padding), not the space currently left below the settings
@@ -583,11 +583,14 @@ function render() {
   tunerOutput.hidden = hiddenControls.tunerOutput;
   metronomeOutput.hidden = hiddenControls.metronomeOutput;
   earTrainingOutput.hidden = hiddenControls.earTrainingOutput;
-  earTrainingFretboardOutput.hidden = hiddenControls.earTrainingFretboardOutput;
   playAlongOutput.hidden = hiddenControls.playAlongOutput;
   tunerControls.hidden = hiddenControls.tunerControls;
   metronomeControls.hidden = hiddenControls.metronomeControls;
   earTrainingControls.hidden = hiddenControls.earTrainingControls;
+  const earTrainingComponentCount = [earExerciseControl, earVariantControl].filter((control) => control.querySelector("select").options.length > 1).length;
+  earTrainingHeading.hidden = earTrainingComponentCount === 0;
+  earExerciseControl.hidden = earExerciseControl.querySelector("select").options.length <= 1;
+  earVariantControl.hidden = earVariantControl.querySelector("select").options.length <= 1;
   playAlongControls.hidden = hiddenControls.playAlongControls;
   fretboardModeControl.hidden = state.view !== "fretboard" || Boolean(fretboardScale);
   fretboardShapeSelectControl.hidden = state.fretboardMode !== "shape" || importedShapes.length < 2;
@@ -601,7 +604,6 @@ function render() {
   document.querySelector("#tuning-control").hidden = hiddenControls.tuning;
   document.querySelector("#key-control").hidden = hiddenControls.key;
   document.querySelector("#scale-control").hidden = hiddenControls.scale;
-  document.querySelector("#ear-sequence-limit-control").hidden = state.earExercise !== "simon" || state.earVariant !== "rolling";
   document.title = `${view[0]} — Clawford`;
   renderTuner(tuning);
   renderMetronome();
@@ -894,7 +896,6 @@ function chordRoleForMidi(midi, rootPitchClass, rootSeen = false) {
 function renderEarTraining(tuning) {
   const engineState = earTrainingEngine?.state;
   const target = engineState?.target ? { ...engineState.target, note: midiToDisplayName(engineState.target.midi) } : null;
-  const sequenceTarget = engineState?.exercise === "simon" ? engineState.sequence[engineState.sequenceIndex] : null;
   earTrainingOutput.innerHTML = renderEarTrainingOutput({
     exercise: state.earExercise,
     variant: state.earVariant,
@@ -902,23 +903,12 @@ function renderEarTraining(tuning) {
     status: earTrainingStatus,
     streak: engineState?.streak ?? 0,
     attempts: engineState?.attempts ?? 0,
-    sequenceLength: engineState?.sequence.length ?? 0,
-    sequenceIndex: engineState?.sequenceIndex ?? 0,
+    sequenceLength: 0,
+    sequenceIndex: 0,
     target,
     heard: earTrainingDetectedMidi == null ? "--" : midiToDisplayName(earTrainingDetectedMidi),
     error: earTrainingError
   });
-  const targetMidi = target?.midi ?? sequenceTarget?.midi ?? null;
-  const targetString = target?.string ?? sequenceTarget?.string ?? null;
-  earTrainingFretboardOutput.replaceChildren(renderEarTrainingBoard({
-    tuning,
-    maxFret: 5,
-    targetMidi,
-    targetString,
-    detectedMidi: earTrainingDetectedMidi,
-    preference: getKey(state.key).preference,
-    title: `${tuning.name} — ${state.key} ${getScale(state.scale).name}`
-  }));
 }
 
 function midiToDisplayName(midi) {
@@ -1033,14 +1023,13 @@ async function startEarTraining() {
   try {
     const key = getKey(state.key);
     const scale = getScale(state.scale);
-    const variant = state.earExercise === "follow" && state.earVariant !== "open-string" ? "same-string" : state.earVariant;
-    earTrainingEngine = createEarTrainingSession({
+  earTrainingEngine = createEarTrainingSession({
       exercise: state.earExercise,
-      variant,
+      variant: state.earVariant,
       tuning,
       key,
       scale,
-      maxFret: state.earVariant === "open-string" ? 0 : 5,
+      maxFret: 0,
       sequenceLimit: state.earSequenceLimit
     });
     earTrainingGate = new PitchAnswerGate({ windowSize: 3, toleranceCents: 35, a4: state.tunerA4 });
@@ -1059,8 +1048,8 @@ async function startEarTraining() {
       readEarTrainingFrame(earTrainingSession);
     } catch (error) {
       earTrainingSession = null;
-      earTrainingError = `${error.message || "Microphone unavailable"}. Use the fretboard to answer.`;
-      earTrainingStatus = "Use fretboard";
+      earTrainingError = `${error.message || "Microphone unavailable"}.`;
+      earTrainingStatus = "Microphone unavailable";
     }
     render();
   } catch (error) {
@@ -1123,25 +1112,7 @@ function readEarTrainingFrame(session) {
 
 function handleEarTrainingAnswer(midi, string = null) {
   earTrainingDetectedMidi = midi;
-  const event = state.earExercise === "simon"
-    ? earTrainingEngine.submitSimonPitch(midi)
-    : earTrainingEngine.submitPitch(midi, string);
-  if (event.type === "awaiting-next") {
-    earTrainingStatus = "Listening";
-    const next = event.sequence[event.sequenceIndex];
-    earTrainingGate.setTarget(next.midi);
-    render();
-    return;
-  }
-  if (event.type === "repeat-sequence") {
-    earTrainingStatus = "Try again";
-    render();
-    const runToken = earTrainingRunToken;
-    window.setTimeout(() => {
-      if (runToken === earTrainingRunToken && earTrainingEngine) earTrainingPlayback(event);
-    }, 450);
-    return;
-  }
+  const event = earTrainingEngine.submitPitch(midi, string);
   earTrainingStatus = event.type === "repeat-target" ? "Try again" : "Correct";
   render();
   earTrainingPlayback(event);

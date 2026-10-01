@@ -1,6 +1,5 @@
 import { centsOffset, frequencyToNote, noteToFrequency } from "./pitch.js";
 import { getAutomaticRange, positionsForMidi, stringMaxFrets } from "./mapping.js";
-import { scalePitchClasses } from "./scales.js";
 
 const DEFAULT_TOLERANCE_CENTS = 35;
 const DEFAULT_MAX_FRET = 5;
@@ -51,7 +50,7 @@ export class PitchAnswerGate {
 
 export function createEarTrainingSession({
   exercise = "find",
-  variant = "free",
+  variant = "open-string",
   tuning,
   key,
   scale,
@@ -61,8 +60,8 @@ export function createEarTrainingSession({
   sequenceLimit = 5
 } = {}) {
   if (!tuning?.strings?.length) throw new Error("A tuning is required");
-  if (!["find", "follow", "simon"].includes(exercise)) throw new Error(`Invalid exercise: ${exercise}`);
-  if (!["free", "same-string", "scale", "rolling", "open-string"].includes(variant)) throw new Error(`Invalid variant: ${variant}`);
+  if (exercise !== "find") throw new Error(`Invalid exercise: ${exercise}`);
+  if (variant !== "open-string") throw new Error(`Invalid variant: ${variant}`);
   if (!Number.isSafeInteger(sequenceLimit) || sequenceLimit < 1) throw new RangeError("sequenceLimit must be positive");
 
   const candidates = createCandidates({ tuning, key, scale, maxFret, fifthMode, variant, exercise });
@@ -81,10 +80,6 @@ export function createEarTrainingSession({
     streak = 0;
     attempts = 0;
     sequenceIndex = 0;
-    if (exercise === "simon") {
-      sequence = [chooseCandidate(candidates, null, random)];
-      return { type: "play-sequence", sequence: [...sequence], state: state() };
-    }
     target = chooseCandidate(candidates, null, random);
     return { type: "play-target", target, notes: [target], state: state() };
   }
@@ -97,7 +92,6 @@ export function createEarTrainingSession({
   function submitPitch(midi, string = null) {
     if (!running) return { type: "ignored", state: state() };
     attempts += 1;
-    if (exercise === "simon") return submitSimonPitch(midi);
     const correctPitch = midi === target.midi;
     const correctString = variant !== "open-string" || string === null || string === target.string;
     if (!correctPitch || !correctString) {
@@ -106,43 +100,24 @@ export function createEarTrainingSession({
     }
     streak += 1;
     const previous = target;
-    target = chooseCandidate(candidates, exercise === "follow" ? previous : null, random);
+    target = chooseCandidate(candidates, null, random);
     return { type: "advance", previous, target, notes: [previous, target], state: state() };
   }
 
-  function submitSimonPitch(midi) {
-    if (midi !== sequence[sequenceIndex].midi) {
-      streak = 0;
-      sequenceIndex = 0;
-      return { type: "repeat-sequence", sequence: [...sequence], state: state() };
-    }
-    sequenceIndex += 1;
-    if (sequenceIndex < sequence.length) return { type: "awaiting-next", sequenceIndex, state: state() };
-    streak += 1;
-    const next = chooseCandidate(candidates, sequence.at(-1), random);
-    sequence = variant === "rolling" ? [...sequence, next].slice(-sequenceLimit) : [...sequence, next];
-    sequenceIndex = 0;
-    return { type: "extend-sequence", sequence: [...sequence], state: state() };
-  }
-
-  return { get state() { return state(); }, start, stop, submitPitch, submitSimonPitch };
+  return { get state() { return state(); }, start, stop, submitPitch };
 }
 
 function createCandidates({ tuning, key, scale, maxFret, fifthMode, variant, exercise }) {
   const limits = stringMaxFrets(tuning, maxFret);
   const range = getAutomaticRange(tuning, maxFret, fifthMode, limits);
-  const allowedClasses = variant === "scale" ? new Set(scalePitchClasses(key.pitchClass, scale.intervals)) : null;
   const candidates = [];
   for (let midi = range.low; midi <= range.high; midi += 1) {
-    if (allowedClasses && !allowedClasses.has(midi % 12)) continue;
     const positions = positionsForMidi(midi, tuning, { maxFret, fifthMode, stringMaxFrets: limits });
     for (const position of positions) {
-      if (variant === "same-string" && position.string === 5) continue;
       if (variant === "open-string" && position.fret !== 0) continue;
       candidates.push({ midi, string: position.string, fret: position.fret, sourceString: position.string, frequency: noteToFrequency(midi) });
     }
   }
-  if (exercise === "follow" || variant === "same-string") return candidates.filter((candidate) => candidate.string !== 5);
   return candidates;
 }
 

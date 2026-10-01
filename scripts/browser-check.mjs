@@ -93,6 +93,20 @@ try {
   await page.click("#play-along-start");
   await page.waitForFunction(() => document.querySelector("#play-along-start").disabled);
   assert.match(await page.locator(".play-along-heading .eyebrow").innerText(), /COUNT IN/);
+  await page.waitForTimeout(3500);
+  assert.match(await page.locator(".play-along-heading .eyebrow").innerText(), /PLAYING/);
+  await page.evaluate(() => {
+    window.playAlongStepChanges = [];
+    new MutationObserver(() => window.playAlongStepChanges.push(performance.now()))
+      .observe(document.querySelector("#play-along-output"), { childList: true, subtree: true });
+  });
+  await page.waitForTimeout(2200);
+  const normalTempoChanges = await page.evaluate(() => window.playAlongStepChanges.length);
+  await page.evaluate(() => { window.playAlongStepChanges = []; });
+  await page.locator("#play-along-bpm").fill("180");
+  await page.waitForTimeout(2200);
+  const fastTempoChanges = await page.evaluate(() => window.playAlongStepChanges.length);
+  assert.ok(fastTempoChanges > normalTempoChanges, `BPM change should speed up playback (${normalTempoChanges} to ${fastTempoChanges} step changes)`);
   await page.click("#play-along-stop");
   await page.reload();
   assert.equal(await page.inputValue("#ear-sequence-limit"), "7");

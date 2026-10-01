@@ -18,13 +18,15 @@ test("main app keeps functional guidance without decorative motivational copy", 
     "Your musical atlas",
     "A little curiosity. A world of music.",
     "The practice room",
-    "Audio-first practice"
+    "Audio-first practice",
+    "Choose a few chords and a pattern, then follow the highlighted step."
   ]) {
-    assert.doesNotMatch(`${html}\n${earTraining}`, new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), phrase);
+    assert.doesNotMatch(`${html}\n${app}\n${earTraining}`, new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), phrase);
   }
 
   assert.match(html, /warning-banner/);
   assert.match(app, /Select a note to hear it\./);
   assert.match(app, /Listen to your instrument\./);
+  assert.match(app, /if \(metronome\.running\) metronome\.updateTpm\(playAlongBpmSetting\);/);
   assert.match(await readFile(new URL("js/metronome-renderer.js", root), "utf8"), /Tap a tick to cycle normal, accent, and silent\./);
 });

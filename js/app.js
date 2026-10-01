@@ -495,7 +495,7 @@ function render() {
     tuner: ["Tuner", "Listen to your instrument. In Strings mode, select an open string to hear its reference pitch."],
     metronome: ["Metronome", "Find your pulse. Tap a beat to change its accent, or tap along to set the tempo."],
     "ear-training": ["Ear training", "Listen, then find the note on your instrument or the fretboard below."],
-    "play-along": ["Play along", "Choose a few chords and a pattern, then follow the highlighted step."]
+    "play-along": ["Play along", ""]
   }[state.view];
   document.querySelector("#workspace-title").textContent = view[0];
   document.querySelector("#workspace-hint").textContent = view[1];
@@ -655,7 +655,10 @@ function setCustomMeter(value) {
 
 function handlePlayAlongControls(event) {
   if (event.target === playAlongProgression) playAlongProgressionIndex = Number(playAlongProgression.value);
-  if (event.target === playAlongBpm) playAlongBpmSetting = Number(playAlongBpm.value);
+  if (event.target === playAlongBpm) {
+    playAlongBpmSetting = Number(playAlongBpm.value);
+    if (metronome.running) metronome.updateTpm(playAlongBpmSetting);
+  }
   if (event.target === playAlongTechniqueSelect) {
     playAlongTechnique = playAlongTechniqueSelect.value;
     if (playAlongPattern.value === "custom") {

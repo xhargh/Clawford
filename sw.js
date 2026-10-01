@@ -7,7 +7,7 @@
 // changes — no manual bump needed. The placeholder below is only used for
 // local/dev serving (npx serve, opening index.html directly, etc).
 
-const CACHE_VERSION = "clawford-dev-3";
+const CACHE_VERSION = "clawford-dev-4";
 
 const APP_SHELL = [
   "./",

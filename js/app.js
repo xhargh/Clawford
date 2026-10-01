@@ -593,7 +593,7 @@ function render() {
   earVariantControl.hidden = earVariantControl.querySelector("select").options.length <= 1;
   playAlongControls.hidden = hiddenControls.playAlongControls;
   fretboardModeControl.hidden = state.view !== "fretboard" || Boolean(fretboardScale);
-  fretboardShapeSelectControl.hidden = state.fretboardMode !== "shape" || importedShapes.length < 2;
+  fretboardShapeSelectControl.hidden = state.view !== "fretboard" || state.fretboardMode !== "shape" || importedShapes.length < 2;
   metronomeTpmValue.value = state.metronomeTpm;
   metronomeTpmValue.textContent = state.metronomeTpm;
   metronomeTicksValue.value = state.metronomeTicks;

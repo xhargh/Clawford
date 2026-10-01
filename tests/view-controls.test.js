@@ -37,7 +37,7 @@ test("shows the complete control set required by Ear Training", () => {
 
 test("shows the complete control set required by Play Along", () => {
   assert.deepEqual(viewControlVisibility("play-along"), {
-    instrument: true, tuning: false, key: true, scale: false,
+    instrument: true, tuning: true, key: true, scale: false,
     chordRoot: false, chordQuality: false, tunerControls: false, metronomeControls: false,
     earTrainingControls: false, playAlongControls: true,
     notationOutput: false, fretboardOutput: false, tunerOutput: false, metronomeOutput: false,
@@ -51,4 +51,14 @@ test("hides only controls that are not available in each mode", () => {
     chordRoot: false, chordQuality: false, tunerControls: true, metronomeControls: true,
      notationOutput: true, fretboardOutput: false, tunerOutput: true, metronomeOutput: true, earTrainingOutput: true, earTrainingControls: true, playAlongControls: true, playAlongOutput: true
   });
+});
+
+test("shows voicing only for fretboard chord-shape mode", () => {
+  const voicingVisible = (view, fretboardMode, importedShapeCount) =>
+    view === "fretboard" && fretboardMode === "shape" && importedShapeCount >= 2;
+
+  assert.equal(voicingVisible("fretboard", "shape", 2), true);
+  assert.equal(voicingVisible("play-along", "shape", 2), false);
+  assert.equal(voicingVisible("fretboard", "tones", 2), false);
+  assert.equal(voicingVisible("fretboard", "shape", 1), false);
 });

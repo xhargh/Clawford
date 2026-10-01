@@ -19,3 +19,11 @@ test("play along omits shape guidance when no imported shape applies", () => {
   const output = renderPlayAlongOutput({ chords: ["C"], pattern: ["D"] });
   assert.doesNotMatch(output, /compact-chord-diagram/);
 });
+
+test("play along shape output uses one reserved container regardless of drone metadata", () => {
+  const tuning = BUILT_IN_TUNINGS.find((item) => item.id === "guitar-standard");
+  const shape = getPreferredChordShape({ instrumentId: "guitar", tuning, rootPitchClass: 0, qualityId: "major" });
+  const output = renderPlayAlongOutput({ chords: ["C"], shape, tuning, pattern: ["D"] });
+  assert.match(output, /class="play-along-shape"/);
+  assert.match(output, /compact-chord-diagram/);
+});

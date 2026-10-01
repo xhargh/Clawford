@@ -152,7 +152,7 @@ fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 .play-along-output { min-height: 420px; border: 1px solid var(--line); border-radius: 12px; background: #f1f4ec; }
 .play-along-card { display: grid; gap: 22px; max-width: 900px; margin: 0 auto; padding: clamp(26px, 7vw, 72px) clamp(14px, 5vw, 60px); text-align: center; }
 .play-along-heading { display: grid; gap: 4px; }
-.play-along-shape { justify-self: center; margin: 8px auto 0; padding: 8px 14px; border: 1px solid var(--line); border-radius: 10px; background: white; }
+.play-along-shape { display: grid; width: min(100%, 260px); height: 112px; box-sizing: border-box; place-items: center; justify-self: center; margin: 8px auto 0; padding: 8px 14px; border: 1px solid var(--line); border-radius: 10px; background: white; }
 .compact-chord-diagram { display: flex; justify-content: center; gap: 10px; min-width: 150px; }
 .compact-shape-string { display: grid; justify-items: center; gap: 2px; color: var(--ink); }
 .compact-shape-string b { font-size: 1.15rem; line-height: 1; }

@@ -22,13 +22,13 @@ export const PATTERNS = [
   { id: "clawhammer-waltz", name: "Waltz Bum-Ditty", instrument: "banjo5-clawhammer", ...eighths(3, ["N", "-", "B", "T", "B", "T"], { grouping: [2, 2, 2] }) },
   { id: "clawhammer-waltz-single", name: "Waltz Single-Note", instrument: "banjo5-clawhammer", ...eighths(3, ["N", "-", "N", "T", "N", "T"], { grouping: [2, 2, 2] }) },
 
-  { id: "roll-forward", name: "Forward Roll", instrument: "banjo5-three-finger", ...eighths(4, ["T", "I", "M", "T", "I", "M", "T", "I"], { targets: [5, 2, 1, 5, 2, 1, 5, 2] }) },
-  { id: "roll-alternating", name: "Alternating Thumb", instrument: "banjo5-three-finger", ...eighths(4, ["T", "I", "T", "M", "T", "I", "T", "M"], { targets: [5, 2, 5, 1, 5, 2, 5, 1] }) },
-  { id: "roll-forward-reverse", name: "Forward-Reverse Roll", instrument: "banjo5-three-finger", ...eighths(4, ["T", "I", "M", "T", "M", "I", "T", "M"], { targets: [5, 2, 1, 5, 1, 2, 5, 1] }) },
-  { id: "roll-foggy-mountain", name: "Foggy Mountain Roll", instrument: "banjo5-three-finger", ...eighths(4, ["M", "T", "I", "T", "M", "T", "I", "T"], { targets: [1, 5, 2, 5, 1, 5, 2, 5] }) },
-  { id: "roll-backward", name: "Backward / Reverse Roll", instrument: "banjo5-three-finger", ...eighths(4, ["M", "I", "T", "M", "I", "T", "M", "I"]) },
-  { id: "roll-waltz", name: "Forward Waltz Roll", instrument: "banjo5-three-finger", ...eighths(3, ["T", "I", "M", "T", "I", "M"], { grouping: [2, 2, 2] }) },
-  { id: "roll-6-8", name: "Forward 6/8 Roll", instrument: "banjo5-three-finger", ...compound(6, ["T", "I", "M", "T", "I", "M"], { grouping: [3, 3] }) },
+  { id: "roll-forward", name: "Forward Roll", instrument: "banjo5-three-finger", ...eighths(4, ["T", "I", "M", "T", "I", "M", "I", "M"], { targets: [3, 2, 1, 5, 2, 1, 2, 1] }) },
+  { id: "roll-alternating", name: "Alternating Thumb", instrument: "banjo5-three-finger", ...eighths(4, ["T", "I", "T", "M", "T", "I", "T", "M"], { targets: [3, 2, 5, 1, 4, 2, 5, 1] }) },
+  { id: "roll-forward-reverse", name: "Forward-Reverse Roll", instrument: "banjo5-three-finger", ...eighths(4, ["T", "I", "M", "T", "M", "I", "T", "M"], { targets: [3, 2, 1, 5, 1, 2, 3, 1] }) },
+  { id: "roll-foggy-mountain", name: "Foggy Mountain Roll", instrument: "banjo5-three-finger", ...eighths(4, ["T", "M", "T", "I", "M", "T", "I", "M"], { targets: [3, 1, 5, 2, 1, 5, 2, 1] }) },
+  { id: "roll-backward", name: "Backward / Reverse Roll", instrument: "banjo5-three-finger", ...eighths(4, ["M", "I", "T", "M", "I", "T", "M", "I"], { targets: [1, 2, 5, 1, 2, 5, 1, 2] }) },
+  { id: "roll-waltz", name: "Forward Waltz Roll", instrument: "banjo5-three-finger", ...eighths(3, ["T", "I", "M", "T", "I", "M"], { targets: [3, 2, 1, 5, 2, 1], grouping: [2, 2, 2] }) },
+  { id: "roll-6-8", name: "Forward 6/8 Roll", instrument: "banjo5-three-finger", ...compound(6, ["T", "I", "M", "T", "I", "M"], { targets: [3, 2, 1, 5, 2, 1], grouping: [3, 3] }) },
   { id: "banjo5-vamp", name: "Bluegrass Vamp", instrument: "banjo5-three-finger", ...quarters(4, ["-", "C", "-", "C"], { accents: [1, 1.12, 1, 1.12] }) },
 
   { id: "guitar-quarter-downs", name: "Quarter-Note Downs", instrument: "guitar", ...eighths(4, ["D", "-", "D", "-", "D", "-", "D", "-"]) },
@@ -110,6 +110,13 @@ export function beatsPerMeasure({ numerator, denominator }) {
 
 export function stepsPerBeat({ denominator }, subdivision = denominator === 8 ? 3 : 1) {
   return subdivision;
+}
+
+export function playAlongSubdivisionSchedule(beatTick, subdivisionCount, subdivisionDuration) {
+  return Array.from({ length: subdivisionCount }, (_, step) => ({
+    tick: beatTick * subdivisionCount + step,
+    delay: step * subdivisionDuration
+  }));
 }
 
 export function customPatternFamily(instrument, technique = "clawhammer") {

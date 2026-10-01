@@ -17,7 +17,8 @@ import {
   playAlongPosition,
   playAlongTickState,
   beatsPerMeasure,
-  stepsPerBeat
+  stepsPerBeat,
+  playAlongSubdivisionSchedule
 } from "../js/play-along.js";
 
 test("ships useful instrument-aware preset patterns", () => {
@@ -144,10 +145,34 @@ test("gives down and up strums different audible articulation", () => {
 test("built-in patterns target physical strings without changing their display steps", () => {
   const roll = PATTERNS.find((pattern) => pattern.id === "roll-forward");
   const clawhammer = PATTERNS.find((pattern) => pattern.id === "clawhammer-bum-ditty-4");
-  assert.deepEqual(roll.steps, ["T", "I", "M", "T", "I", "M", "T", "I"]);
-  assert.deepEqual(roll.targets, [5, 2, 1, 5, 2, 1, 5, 2]);
+  assert.deepEqual(roll.steps, ["T", "I", "M", "T", "I", "M", "I", "M"]);
+  assert.deepEqual(roll.targets, [3, 2, 1, 5, 2, 1, 2, 1]);
   assert.deepEqual(clawhammer.targets, undefined);
   assert.deepEqual(PATTERNS.find((pattern) => pattern.id === "clawhammer-waltz").grouping, [2, 2, 2]);
+});
+
+test("every named three-finger roll has explicit five-string targets", () => {
+  const rolls = PATTERNS.filter((pattern) => pattern.instrument === "banjo5-three-finger" && pattern.steps.some((step) => ["T", "I", "M"].includes(step)));
+  assert.ok(rolls.length > 0);
+  for (const pattern of rolls) {
+    assert.equal(pattern.steps.length, pattern.targets?.length, pattern.name);
+    assert.ok(pattern.targets.every((string) => [1, 2, 3, 4, 5].includes(string)), pattern.name);
+  }
+  for (const id of ["roll-alternating", "roll-forward-reverse", "roll-forward", "roll-backward", "roll-waltz", "roll-6-8"]) {
+    assert.ok(PATTERNS.find((pattern) => pattern.id === id).targets, id);
+  }
+});
+
+test("subdivision schedule separates displayed steps from audio scheduling", () => {
+  assert.deepEqual(playAlongSubdivisionSchedule(0, 2, 500), [
+    { tick: 0, delay: 0 },
+    { tick: 1, delay: 500 }
+  ]);
+  assert.deepEqual(playAlongSubdivisionSchedule(2, 3, 333), [
+    { tick: 6, delay: 0 },
+    { tick: 7, delay: 333 },
+    { tick: 8, delay: 666 }
+  ]);
 });
 
 test("strum velocity is strongest at the start and responds to accents", () => {

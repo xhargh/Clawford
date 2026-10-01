@@ -5,14 +5,14 @@ export const PRESET_PROGRESSIONS = [
 ];
 
 export const PATTERNS = [
-  { id: "strum-down", name: "Down strokes", instrument: "strum", steps: ["D", "D", "D", "D"] },
-  { id: "strum-eighths", name: "Down-up eighths", instrument: "strum", steps: ["D", "U", "D", "U", "D", "U", "D", "U"] },
-  { id: "strum-bum-ditty", name: "Bum-Ditty", instrument: "strum", steps: ["D", "-", "D", "U", "-", "U", "D", "U"] },
-  { id: "clawhammer-bum-ditty", name: "Bum-Ditty", instrument: "banjo5-clawhammer", steps: ["B", "-", "T", "-", "B", "-", "T", "-"] },
-  { id: "clawhammer-double-thumb", name: "Double Thumb", instrument: "banjo5-clawhammer", steps: ["B", "T", "B", "T", "B", "T", "B", "T"] },
-  { id: "roll-forward", name: "Forward Roll", instrument: "banjo5-three-finger", steps: ["T", "I", "M", "T", "I", "M", "T", "I"] },
-  { id: "roll-alternating", name: "Alternating Thumb Roll", instrument: "banjo5-three-finger", steps: ["T", "I", "T", "M", "T", "I", "T", "M"] },
-  { id: "roll-forward-reverse", name: "Forward-Reverse Roll", instrument: "banjo5-three-finger", steps: ["T", "I", "M", "T", "M", "I", "T", "M"] }
+  { id: "strum-down", name: "Down strokes", instrument: "strum", steps: ["D", "D", "D", "D"], accents: [1.04, 0.96, 1, 0.96] },
+  { id: "strum-eighths", name: "Down-up eighths", instrument: "strum", steps: ["D", "U", "D", "U", "D", "U", "D", "U"], accents: [1.04, 0.9, 1, 0.9, 1, 0.9, 1, 0.9] },
+  { id: "strum-bum-ditty", name: "Bum-Ditty", instrument: "strum", steps: ["D", "-", "D", "U", "-", "U", "D", "U"], accents: [1.04, 1, 0.98, 0.9, 1, 0.9, 1, 0.92] },
+  { id: "clawhammer-bum-ditty", name: "Bum-Ditty", instrument: "banjo5-clawhammer", steps: ["B", "-", "T", "-", "B", "-", "T", "-"], targets: [[3, 2, 1], null, [5], null, [3, 2, 1], null, [5], null] },
+  { id: "clawhammer-double-thumb", name: "Double Thumb", instrument: "banjo5-clawhammer", steps: ["B", "T", "B", "T", "B", "T", "B", "T"], targets: [[3, 2, 1], [5], [3, 2, 1], [5], [3, 2, 1], [5], [3, 2, 1], [5]] },
+  { id: "roll-forward", name: "Forward Roll", instrument: "banjo5-three-finger", steps: ["T", "I", "M", "T", "I", "M", "T", "I"], targets: [5, 2, 1, 5, 2, 1, 5, 2] },
+  { id: "roll-alternating", name: "Alternating Thumb Roll", instrument: "banjo5-three-finger", steps: ["T", "I", "T", "M", "T", "I", "T", "M"], targets: [5, 2, 5, 1, 5, 2, 5, 1] },
+  { id: "roll-forward-reverse", name: "Forward-Reverse Roll", instrument: "banjo5-three-finger", steps: ["T", "I", "M", "T", "M", "I", "T", "M"], targets: [5, 2, 1, 5, 1, 2, 5, 1] }
 ];
 
 const ACTIONS = {
@@ -54,14 +54,18 @@ export function parseChordSymbol(symbol) {
   return { root: match[1], quality: match[2] === "m" ? "minor" : match[2] === "7" ? "dom7" : "major" };
 }
 
-export function patternNoteIndexes(action, instrument, noteCount) {
+export function patternNoteIndexes(action, instrument, noteCount, targetStrings = null, notes = []) {
   if (action === "-") return [];
   if (instrument === "strum") {
     const indexes = Array.from({ length: noteCount }, (_, index) => index);
     return action === "D" ? indexes.reverse() : indexes;
   }
+  if (targetStrings) {
+    const targets = Array.isArray(targetStrings) ? targetStrings : [targetStrings];
+    return targets.map((string) => notes.findIndex((note) => note.string === string)).filter((index) => index >= 0);
+  }
   if (instrument === "banjo5-three-finger") return [{ T: 0, I: 1, M: 2 }[action] ?? 0].filter((index) => index < noteCount);
-  if (action === "B") return Array.from({ length: noteCount }, (_, index) => index);
+  if (action === "B") return [0, 1, 2].filter((index) => index < noteCount);
   return [action === "T" ? noteCount - 1 : 0].filter((index) => index >= 0);
 }
 
@@ -70,6 +74,12 @@ export function patternPlaybackProfile(action) {
   if (action === "U") return { spread: 0.015, velocity: 0.68, duration: 0.24 };
   if (action === "B") return { spread: 0.018, velocity: 0.82, duration: 0.35 };
   return { spread: 0.008, velocity: 0.75, duration: 0.3 };
+}
+
+export function patternNoteVelocity(action, index, count, accent = 1) {
+  const profile = patternPlaybackProfile(action);
+  const position = count <= 1 ? 0 : index / (count - 1);
+  return Math.min(1, profile.velocity * (1 - position * 0.2) * accent);
 }
 
 export function patternsForInstrument(instrument) {

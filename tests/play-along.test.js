@@ -8,6 +8,7 @@ import {
   parseChordSymbol,
   patternNoteIndexes,
   patternPlaybackProfile,
+  patternNoteVelocity,
   playAlongPosition,
   playAlongTickState
 } from "../js/play-along.js";
@@ -59,4 +60,18 @@ test("gives down and up strums different audible articulation", () => {
   assert.ok(down.spread > up.spread);
   assert.ok(down.velocity > up.velocity);
   assert.ok(down.duration > up.duration);
+});
+
+test("built-in patterns target physical strings without changing their display steps", () => {
+  const roll = PATTERNS.find((pattern) => pattern.id === "roll-forward");
+  const clawhammer = PATTERNS.find((pattern) => pattern.id === "clawhammer-bum-ditty");
+  assert.deepEqual(roll.steps, ["T", "I", "M", "T", "I", "M", "T", "I"]);
+  assert.deepEqual(roll.targets, [5, 2, 1, 5, 2, 1, 5, 2]);
+  assert.deepEqual(clawhammer.targets, [[3, 2, 1], null, [5], null, [3, 2, 1], null, [5], null]);
+});
+
+test("strum velocity is strongest at the start and responds to accents", () => {
+  assert.ok(patternNoteVelocity("D", 0, 5) > patternNoteVelocity("D", 4, 5));
+  assert.ok(patternNoteVelocity("U", 0, 5) > patternNoteVelocity("U", 4, 5));
+  assert.ok(patternNoteVelocity("D", 1, 5, 1.1) > patternNoteVelocity("D", 1, 5));
 });

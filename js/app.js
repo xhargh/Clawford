@@ -24,7 +24,7 @@ import { FUN_FACTS, funFactPresentation } from "./fun-facts.js";
 import { createEarTrainingSession, PitchAnswerGate } from "./ear-training.js";
 import { renderEarTrainingOutput } from "./ear-training-renderer.js";
 import { midiToPitch, pitchToMidi } from "./pitch.js";
-import { PATTERNS, PRESET_PROGRESSIONS, actionsForInstrument, cyclePatternStep, parseChordSymbol, patternNoteIndexes, patternPlaybackProfile, playAlongPosition, playAlongTickState } from "./play-along.js";
+import { PATTERNS, PRESET_PROGRESSIONS, actionsForInstrument, cyclePatternStep, parseChordSymbol, patternNoteIndexes, patternNoteVelocity, patternPlaybackProfile, playAlongPosition, playAlongTickState } from "./play-along.js";
 import { renderPlayAlongOutput } from "./play-along-renderer.js";
 
 const form = document.querySelector("#settings-form");
@@ -111,6 +111,8 @@ let funFactsActive = false;
 let funFactHoverTimer = null;
 let playAlongPatternFamily = "strum";
 let playAlongSteps = [...PATTERNS[2].steps];
+let playAlongTargets = [...(PATTERNS[2].targets || [])];
+let playAlongAccents = [...(PATTERNS[2].accents || [])];
 let playAlongPatternName = PATTERNS[2].name;
 let playAlongProgressionIndex = 0;
 let playAlongBpmSetting = 90;
@@ -587,6 +589,8 @@ function syncPlayAlongPatternOptions() {
   if (preset) {
     playAlongPatternFamily = preset.instrument;
     playAlongSteps = [...preset.steps];
+    playAlongTargets = [...(preset.targets || [])];
+    playAlongAccents = [...(preset.accents || [])];
     playAlongPatternName = preset.name;
   }
 }
@@ -599,10 +603,14 @@ function handlePlayAlongControls(event) {
     if (preset) {
       playAlongPatternFamily = preset.instrument;
       playAlongSteps = [...preset.steps];
+      playAlongTargets = [...(preset.targets || [])];
+      playAlongAccents = [...(preset.accents || [])];
       playAlongPatternName = preset.name;
     } else {
       playAlongPatternName = "Custom pattern";
       playAlongSteps = Array.from({ length: 8 }, () => "-");
+      playAlongTargets = [];
+      playAlongAccents = [];
     }
   }
   renderPlayAlong();
@@ -650,12 +658,18 @@ function stopPlayAlong() {
 
 function playAlongAudioStep() {
   const progression = PRESET_PROGRESSIONS[playAlongProgressionIndex];
-  const chord = chordVoicing(progression.chords[playAlongPosition(playAlongTick, progression.chords.length, playAlongSteps.length).chordIndex]);
+  const chord = chordVoicing(progression.chords[playAlongPosition(playAlongTick, progression.chords.length, playAlongSteps.length).chordIndex], playAlongPatternFamily !== "strum");
   if (!chord.length) return;
   const action = playAlongSteps[playAlongPosition(playAlongTick, progression.chords.length, playAlongSteps.length).stepIndex];
-  const indexes = patternNoteIndexes(action, playAlongPatternFamily, chord.length);
+  const position = playAlongPosition(playAlongTick, progression.chords.length, playAlongSteps.length);
+  const targets = playAlongTargets[position.stepIndex];
+  const indexes = patternNoteIndexes(action, playAlongPatternFamily, chord.length, targets, chord);
   const profile = patternPlaybackProfile(action);
-  const notes = indexes.map((index) => chord[index]).filter(Boolean).map((note) => ({ ...note, velocity: profile.velocity, duration: profile.duration }));
+  const notes = indexes.map((index, noteIndex) => chord[index]).filter(Boolean).map((note, noteIndex) => ({
+    ...note,
+    velocity: patternNoteVelocity(action, noteIndex, indexes.length, playAlongAccents[position.stepIndex] || 1),
+    duration: profile.duration
+  }));
   if (!notes.length) return;
   void audioPlayer.playNotes(notes, { spread: profile.spread }).catch((error) => {
     playAlongError = error.message || "Unable to play accompaniment";
@@ -663,18 +677,23 @@ function playAlongAudioStep() {
   });
 }
 
-function chordVoicing(symbol) {
+function chordVoicing(symbol, includeDrone = false) {
   const { root, quality: qualityId } = parseChordSymbol(symbol);
   const tuning = tunings.find((item) => item.id === state.tuning) || tunings[0];
   const rootKey = getKey(root);
   const quality = getChordQuality(qualityId);
   const voicing = findChordVoicing(tuning, rootKey.pitchClass, qualityId);
   if (voicing) {
-    return voicing.notes.map((note) => ({
+    const notes = voicing.notes.map((note) => ({
       midi: pitchToMidi(tuning.strings.find((string) => string.number === note.string).pitch) + note.fret,
       string: note.string,
       duration: 0.35
-    })).sort((a, b) => a.string - b.string);
+    }));
+    if (includeDrone && tuning.strings.some((string) => string.kind === "drone")) {
+      const drone = tuning.strings.find((string) => string.kind === "drone");
+      notes.push({ midi: pitchToMidi(drone.pitch), string: drone.number, duration: 0.35 });
+    }
+    return notes.sort((a, b) => a.string - b.string);
   }
   return quality.intervals.map((interval, index) => ({ midi: pitchToMidi(`${root}3`) + interval, string: index + 1, duration: 0.35 }));
 }

@@ -2,6 +2,7 @@ import { BANJO_PROFILE, renderPluck } from "./synth.js";
 
 const DEFAULT_FADE_SECONDS = 0.015;
 const VOICE_GAIN = 0.16;
+const VARIATION_COUNT = 4;
 
 export class AudioPlayer {
   #contextFactory;
@@ -12,6 +13,7 @@ export class AudioPlayer {
   #cacheLimit;
   #closeAudioContext;
   #cache = new Map();
+  #roundRobin = new Map();
   #active = new Map();
   #voices = new Set();
   #disposed = false;
@@ -66,10 +68,11 @@ export class AudioPlayer {
   #prepareNote(context, request) {
     const velocity = request.velocity ?? 1;
     const duration = request.duration ?? this.#duration;
-    const key = this.#cacheKey(request.midi, request.string, velocity, duration, context.sampleRate);
+    const variation = request.variation ?? this.#nextVariation(request.midi, request.string);
+    const key = this.#cacheKey(request.midi, request.string, velocity, duration, variation, context.sampleRate);
     return {
       ...request,
-      buffer: this.#bufferFor(context, key, request.midi, request.string, velocity, duration)
+      buffer: this.#bufferFor(context, key, request.midi, request.string, velocity, duration, variation)
     };
   }
 
@@ -118,7 +121,7 @@ export class AudioPlayer {
     return this.#context;
   }
 
-  #bufferFor(context, key, midi, string, velocity, duration) {
+  #bufferFor(context, key, midi, string, velocity, duration, variation) {
     const cached = this.#cache.get(key);
     if (cached) {
       this.#cache.delete(key);
@@ -132,7 +135,7 @@ export class AudioPlayer {
       sampleRate: context.sampleRate,
       duration,
       velocity,
-      seed: this.#seed
+      seed: this.#seed + variation * 0x9e3779b9
     });
     const buffer = context.createBuffer(1, samples.length, context.sampleRate);
     buffer.getChannelData(0).set(samples);
@@ -141,8 +144,15 @@ export class AudioPlayer {
     return buffer;
   }
 
-  #cacheKey(midi, string, velocity, duration, sampleRate) {
-    return `${sampleRate}:${midi}:${string}:${velocity}:${duration}`;
+  #cacheKey(midi, string, velocity, duration, variation, sampleRate) {
+    return `${sampleRate}:${midi}:${string}:${velocity}:${duration}:${variation}`;
+  }
+
+  #nextVariation(midi, string) {
+    const key = `${midi}:${string}`;
+    const variation = this.#roundRobin.get(key) ?? 0;
+    this.#roundRobin.set(key, (variation + 1) % VARIATION_COUNT);
+    return variation;
   }
 
   #fadeVoice(voice, when) {

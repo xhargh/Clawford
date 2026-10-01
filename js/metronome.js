@@ -149,6 +149,9 @@ export class Metronome {
       event.gain.gain.cancelScheduledValues(this.#context.currentTime);
       event.gain.gain.setValueAtTime(0, this.#context.currentTime);
     }
+    if (event.oscillator) {
+      try { event.oscillator.stop(this.#context.currentTime); } catch {}
+    }
     this.#scheduled = this.#scheduled.filter((scheduled) => scheduled !== event);
   }
 }
@@ -172,7 +175,7 @@ function scheduleClick(context, time, { type }) {
   oscillator.connect(gain);
   oscillator.start(time);
   oscillator.stop(time + 0.08);
-  return { gain };
+  return { gain, oscillator };
 }
 
 function defaultAudioContextFactory() {

@@ -74,6 +74,16 @@ test("can mute future clicks without stopping tick callbacks", async () => {
   }
 });
 
+test("muting cuts off an already scheduled click immediately", async () => {
+  const context = createFakeAudioContext();
+  const metronome = new Metronome({ createAudioContext: () => context });
+  await metronome.start({ tpm: 120, pattern: "N" });
+  context.currentTime = 0.06;
+  metronome.setMuted(true);
+  assert.deepEqual(context.stopTimes, [0.13, 0.06]);
+  metronome.stop();
+});
+
 test("applies a tempo change after the next tick without restarting the beat", async () => {
   const intervals = [];
   const timeouts = new Map();
@@ -118,6 +128,7 @@ function createFakeAudioContext() {
     state: "running",
     destination: {},
     clickTimes: [],
+    stopTimes: [],
     createGain() {
       return {
         gain: {
@@ -134,7 +145,7 @@ function createFakeAudioContext() {
         frequency: { setValueAtTime() {} },
         connect() {},
         start: (time) => context.clickTimes.push(time),
-        stop() {}
+         stop: (time) => context.stopTimes.push(time)
       };
     },
     async resume() {},

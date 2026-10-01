@@ -20,7 +20,7 @@ test("player lazily resumes, schedules notes, and reuses bounded buffers", async
   assert.equal(context.buffers.length, 2);
 
   await player.playNote({ midi: 62, string: 2, when: 3 });
-  assert.equal(context.buffers.length, 2, "most recently used one-entry cache should hit");
+  assert.equal(context.buffers.length, 3, "round-robin variation intentionally bypasses the prior waveform");
   await player.dispose();
   assert.equal(context.closeCalls, 1);
 });
@@ -64,6 +64,18 @@ test("grouped notes are prepared before being scheduled as an ordered strum", as
 
   assert.deepEqual(context.sources.map((source) => source.startedAt.toFixed(3)), ["4.005", "4.035", "4.065"]);
   assert.ok(context.gains.every((gain) => gain.gain.sets[0].value === 0.16));
+  await player.dispose();
+});
+
+test("repeated notes round-robin deterministic rendered variations", async () => {
+  const context = new FakeAudioContext();
+  const player = new AudioPlayer({ createAudioContext: () => context, duration: 0.05 });
+  await player.playNote({ midi: 62, string: 1 });
+  await player.playNote({ midi: 62, string: 1 });
+  await player.playNote({ midi: 62, string: 1 });
+
+  assert.equal(context.buffers.length, 3);
+  assert.notDeepEqual(context.buffers[0].getChannelData(0), context.buffers[1].getChannelData(0));
   await player.dispose();
 });
 

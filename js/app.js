@@ -133,6 +133,7 @@ let playAlongVisualTimers = [];
 let playAlongPhase = "idle";
 let playAlongLoop = true;
 let playAlongError = "";
+let playAlongStartGeneration = 0;
 const metronome = new Metronome({
   createAudioContext: createSharedAudioContext,
   closeAudioContext: false,
@@ -723,7 +724,9 @@ function handlePlayAlongClick(event) {
 }
 
 async function startPlayAlong() {
+  const generation = ++playAlongStartGeneration;
   playAlongError = "";
+  audioPlayer.stopAll();
   clearPlayAlongVisualTimers();
   playAlongVisualGeneration += 1;
   playAlongTick = 0;
@@ -734,8 +737,13 @@ async function startPlayAlong() {
   playAlongLoop = playAlongOutput.querySelector("#play-along-loop")?.checked ?? playAlongLoop;
   try {
     await audioPlayer.warmUp();
+    if (generation !== playAlongStartGeneration) return;
     metronome.setMuted(false);
     await metronome.start({ tpm: playAlongBpmSetting, pattern: `A${"N".repeat(Math.max(0, beatsPerMeasure(playAlongMeter) - 1))}` });
+    if (generation !== playAlongStartGeneration) {
+      metronome.stop();
+      return;
+    }
   } catch (error) {
     playAlongError = error.message || "Unable to start play-along";
   }
@@ -743,7 +751,9 @@ async function startPlayAlong() {
 }
 
 function stopPlayAlong() {
+  playAlongStartGeneration += 1;
   metronome.stop();
+  audioPlayer.stopAll();
   clearPlayAlongVisualTimers();
   playAlongVisualGeneration += 1;
   playAlongTick = 0;

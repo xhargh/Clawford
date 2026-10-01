@@ -34,6 +34,26 @@ test("warms the audio context without playing a note", async () => {
   await player.dispose();
 });
 
+test("does not schedule notes that were waiting when playback stopped", async () => {
+  const context = new FakeAudioContext();
+  let finishResume;
+  context.resume = () => new Promise((resolve) => {
+    finishResume = () => {
+      context.state = "running";
+      resolve();
+    };
+  });
+  const player = new AudioPlayer({ createAudioContext: () => context });
+  const pending = player.playNotes([{ midi: 60, string: 1 }], { when: 10 });
+
+  player.stopAll();
+  finishResume();
+
+  assert.deepEqual(await pending, []);
+  assert.equal(context.sources.length, 0);
+  await player.dispose();
+});
+
 test("retrigger fades only the previous voice on the same physical string", async () => {
   const context = new FakeAudioContext();
   const player = new AudioPlayer({ createAudioContext: () => context, duration: 0.05 });

@@ -84,8 +84,8 @@ function renderVertical(strings, displayMaxFret, tones, title, tuning, label, pr
   const stringGap = 52;
   const rightX = leftX + Math.max(1, strings.length - 1) * stringGap;
   const stringLabelY = 82;
-  const openY = 122;
-  const topY = 138;
+  const openY = 140;
+  const topY = 156;
   const boardHeight = 302;
   const bottomY = topY + boardHeight;
   const fretHeight = boardHeight / displayMaxFret;
@@ -116,7 +116,7 @@ function renderVertical(strings, displayMaxFret, tones, title, tuning, label, pr
 
   svg.append(element("rect", {
     x: leftX - stringGap / 2,
-    y: openY - 24,
+    y: openY - 18,
     width: rightX - leftX + stringGap,
     height: bottomY - openY + 24,
     class: "strum-hit-area"
@@ -156,8 +156,8 @@ function appendShapeIndicators(svg, shape, tuning, strings, displayMaxFret, layo
     const fret = shape.frets[index];
     const finger = shape.fingers?.[index] || 0;
     const x = layout.rightX - (string.number - 1) * layout.stringGap;
-    if (fret < 0) svg.append(element("text", { x, y: layout.openY - 12, "text-anchor": "middle", class: "shape-marker shape-muted", "data-string": string.number }, "X"));
-    else if (fret === 0) svg.append(element("text", { x, y: layout.openY - 12, "text-anchor": "middle", class: "shape-marker shape-open", "data-string": string.number }, "O"));
+    if (fret < 0) svg.append(element("text", { x, y: layout.openY - 28, "text-anchor": "middle", class: "shape-marker shape-muted", "data-string": string.number }, "X"));
+    else if (fret === 0) svg.append(element("text", { x, y: layout.openY - 28, "text-anchor": "middle", class: "shape-marker shape-open", "data-string": string.number }, "O"));
     else if (fret <= displayMaxFret && finger) svg.append(element("text", { x, y: layout.topY + (fret - 0.5) * layout.fretHeight + 4, "text-anchor": "middle", class: "shape-finger", "data-string": string.number }, String(finger)));
   });
 }

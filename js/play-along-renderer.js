@@ -1,5 +1,5 @@
 function stepLabel(index, meter, subdivision) {
-  if (meter.denominator === 8 && subdivision === 1) return String(index + 1);
+  if (meter.denominator === 8) return index % subdivision === 0 ? String(Math.floor(index / subdivision) + 1) : index % subdivision === 1 ? "trip" : "let";
   if (subdivision === 1) return String(index + 1);
   return index % subdivision === 0 ? String(Math.floor(index / subdivision) + 1) : "&";
 }
@@ -26,9 +26,9 @@ export function renderPlayAlongOutput({
   return `<div class="play-along-card">
     <div class="play-along-heading"><p class="eyebrow">${status}</p><strong class="play-along-chord" aria-live="polite">${chord}</strong><p class="play-along-next">next: <b>${next}</b></p></div>
      <p class="play-along-pattern-name">${patternName} <span>${meter.numerator}/${meter.denominator} · ${bpm} BPM</span></p>
-   <div class="play-along-pattern" style="--step-count:${pattern.length}" aria-label="Current pattern">${steps}</div>
+   <div class="play-along-pattern meter-${meter.numerator}-${meter.denominator}" style="--step-count:${pattern.length}" aria-label="Current pattern">${steps}</div>
      ${custom ? `<div class="play-along-custom" aria-label="Custom pattern editor"><p>Tap a cell to cycle: ${actions.join(" ")}</p><div style="--step-count:${pattern.length}">${actionButtons}</div></div>` : ""}
-     <p class="play-along-position" aria-live="polite">Beat ${position.beat || 1} <span>${position.subdivision || "1"}</span> · measure ${(position.chordIndex ?? 0) + 1} of ${chords.length || 1}</p>
+     <p class="play-along-position" aria-live="polite">Beat ${position.beat || 1} · measure ${(position.chordIndex ?? 0) + 1} of ${chords.length || 1}</p>
     <div class="play-along-actions"><button id="play-along-start" type="button"${running ? " disabled" : ""}>Play</button><button id="play-along-stop" type="button"${running ? "" : " disabled"}>Stop</button><label><input id="play-along-loop" type="checkbox"${loop ? " checked" : ""}> Loop</label></div>
     ${error ? `<p class="play-along-error" role="alert">${error}</p>` : ""}
   </div>`;

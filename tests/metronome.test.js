@@ -8,6 +8,32 @@ test("uses ticks per minute for tick duration", () => {
   assert.equal(tickDurationSeconds(240), 0.25);
 });
 
+test("notifies beats with their scheduled audio timestamp", async () => {
+  const originalSetInterval = globalThis.setInterval;
+  const originalSetTimeout = globalThis.setTimeout;
+  const originalClearInterval = globalThis.clearInterval;
+  const originalClearTimeout = globalThis.clearTimeout;
+  const timers = [];
+  const beats = [];
+  globalThis.setInterval = () => 1;
+  globalThis.setTimeout = (callback, delay) => { timers.push({ callback, delay }); return timers.length; };
+  globalThis.clearInterval = () => {};
+  globalThis.clearTimeout = () => {};
+  try {
+    const context = createFakeAudioContext();
+    const metronome = new Metronome({ createAudioContext: () => context, onBeat: (beat) => beats.push(beat) });
+    await metronome.start({ tpm: 120, pattern: "N" });
+    timers[0].callback();
+    assert.deepEqual(beats, [{ index: 1, time: 0.05 }]);
+    metronome.stop();
+  } finally {
+    globalThis.setInterval = originalSetInterval;
+    globalThis.setTimeout = originalSetTimeout;
+    globalThis.clearInterval = originalClearInterval;
+    globalThis.clearTimeout = originalClearTimeout;
+  }
+});
+
 test("accepts the desktop Space shortcut only in metronome mode", () => {
   assert.equal(isTapTempoShortcut({ code: "Space", repeat: false, target: { tagName: "BODY" } }, "metronome"), true);
   assert.equal(isTapTempoShortcut({ code: "Space", repeat: true, target: { tagName: "BODY" } }, "metronome"), false);

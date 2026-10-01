@@ -12,12 +12,16 @@ import {
   meterStepCount,
   patternForInstrument,
   resolveChordRole,
+  bassNoteForChord,
+  customPatternFamily,
   playAlongPosition,
-  playAlongTickState
+  playAlongTickState,
+  beatsPerMeasure,
+  stepsPerBeat
 } from "../js/play-along.js";
 
 test("ships useful instrument-aware preset patterns", () => {
-  assert.ok(PATTERNS.some((pattern) => pattern.instrument === "strum" && pattern.name === "Bum-Ditty"));
+  assert.equal(PATTERNS.some((pattern) => pattern.instrument === "strum" && pattern.name === "Bum-Ditty"), false);
   assert.ok(PATTERNS.some((pattern) => pattern.instrument === "banjo5-three-finger" && pattern.name === "Forward Roll"));
   assert.deepEqual(actionsForInstrument("guitar"), ["-", "D", "U"]);
   assert.deepEqual(actionsForInstrument("banjo5-clawhammer"), ["-", "N", "B", "T"]);
@@ -45,9 +49,12 @@ test("maps variable meters to positions and chord measures", () => {
   assert.equal(meterStepCount({ numerator: 2, denominator: 4 }, 1), 2);
   assert.equal(meterStepCount({ numerator: 3, denominator: 4 }, 2), 6);
   assert.equal(meterStepCount({ numerator: 4, denominator: 4 }, 2), 8);
-  assert.equal(meterStepCount({ numerator: 6, denominator: 8 }, 1), 6);
-  assert.equal(meterStepCount({ numerator: 12, denominator: 8 }, 1), 12);
-  assert.deepEqual(playAlongPosition(6, 4, 6, { numerator: 6, denominator: 8 }, 1), { chordIndex: 1, stepIndex: 0, beat: 1, subdivision: "1" });
+  assert.equal(meterStepCount({ numerator: 6, denominator: 8 }, 3), 6);
+  assert.equal(meterStepCount({ numerator: 12, denominator: 8 }, 3), 12);
+  assert.equal(beatsPerMeasure({ numerator: 6, denominator: 8 }), 2);
+  assert.equal(beatsPerMeasure({ numerator: 12, denominator: 8 }), 4);
+  assert.equal(stepsPerBeat({ numerator: 6, denominator: 8 }, 3), 3);
+  assert.deepEqual(playAlongPosition(6, 4, 6, { numerator: 6, denominator: 8 }, 3), { chordIndex: 1, stepIndex: 0, beat: 1, subdivision: "1" });
 });
 
 test("resolves bass roles relative to the active chord", () => {
@@ -76,9 +83,14 @@ test("maps eighth-note ticks to the current measure and pattern step", () => {
 
 test("holds the first pattern step until a four-beat count-in completes", () => {
   assert.deepEqual(playAlongTickState(0), { phase: "count-in", count: 1, tick: 0 });
-  assert.deepEqual(playAlongTickState(7), { phase: "count-in", count: 8, tick: 0 });
-  assert.deepEqual(playAlongTickState(8), { phase: "playing", count: 0, tick: 0 });
-  assert.deepEqual(playAlongTickState(11), { phase: "playing", count: 0, tick: 3 });
+  assert.deepEqual(playAlongTickState(3, { numerator: 4, denominator: 4 }), { phase: "count-in", count: 4, tick: 0 });
+  assert.deepEqual(playAlongTickState(4, { numerator: 4, denominator: 4 }), { phase: "playing", count: 0, tick: 0 });
+  assert.deepEqual(playAlongTickState(1, { numerator: 6, denominator: 8 }), { phase: "count-in", count: 2, tick: 0 });
+  for (const [meter, beats] of [[[2, 4], 2], [[3, 4], 3], [[4, 4], 4], [[6, 8], 2], [[12, 8], 4]]) {
+    const patternMeter = { numerator: meter[0], denominator: meter[1] };
+    assert.equal(playAlongTickState(beats - 1, patternMeter).count, beats);
+    assert.equal(playAlongTickState(beats, patternMeter).phase, "playing");
+  }
 });
 
 test("turns chord symbols and pattern actions into playable note roles", () => {
@@ -88,6 +100,37 @@ test("turns chord symbols and pattern actions into playable note roles", () => {
   assert.deepEqual(patternNoteIndexes("D", "strum", 4), [3, 2, 1, 0]);
   assert.deepEqual(patternNoteIndexes("T", "banjo5-three-finger", 4), [0]);
   assert.deepEqual(patternNoteIndexes("M", "banjo5-three-finger", 4), [2]);
+  assert.deepEqual(patternNoteIndexes("B", "guitar", 4, null, [
+    { midi: 72, role: "root" }, { midi: 60, role: "octave" }, { midi: 67, role: "fifth" }, { midi: 64, role: null }
+  ]), [1]);
+});
+
+test("bass roles resolve to playable chord-relative pitches", () => {
+  const tuning = { strings: [{ number: 4, pitch: "E1" }, { number: 3, pitch: "A1" }, { number: 2, pitch: "D2" }, { number: 1, pitch: "G2" }] };
+  for (const [chord, root, fifth] of [["C", 0, 7], ["G", 7, 2], ["Am", 9, 4], ["D7", 2, 9]]) {
+    const rootNote = bassNoteForChord(chord, "R", tuning);
+    const fifthNote = bassNoteForChord(chord, "5", tuning);
+    const octaveNote = bassNoteForChord(chord, "8", tuning);
+    assert.equal(rootNote.midi % 12, root);
+    assert.equal(fifthNote.midi % 12, fifth);
+    assert.equal(octaveNote.midi, rootNote.midi + 12);
+  }
+});
+
+test("clawhammer actions keep single notes, brushes, and thumbs distinct", () => {
+  const notes = [{ string: 3 }, { string: 2 }, { string: 1 }, { string: 5 }];
+  assert.deepEqual(patternNoteIndexes("N", "banjo5-clawhammer", notes.length, [3, 2, 1], notes), [0]);
+  assert.deepEqual(patternNoteIndexes("B", "banjo5-clawhammer", notes.length, [3, 2, 1], notes), [0, 1, 2]);
+  assert.deepEqual(patternNoteIndexes("T", "banjo5-clawhammer", notes.length, [5], notes), [3]);
+});
+
+test("custom pattern vocabulary follows instrument and banjo technique", () => {
+  assert.equal(customPatternFamily("guitar"), "guitar");
+  assert.equal(customPatternFamily("bass"), "bass");
+  assert.equal(customPatternFamily("banjo5", "clawhammer"), "banjo5-clawhammer");
+  assert.equal(customPatternFamily("banjo5", "three-finger"), "banjo5-three-finger");
+  assert.deepEqual(actionsForInstrument(customPatternFamily("bass")), ["-", "R", "5", "8"]);
+  assert.notDeepEqual(actionsForInstrument(customPatternFamily("banjo5", "clawhammer")), actionsForInstrument(customPatternFamily("banjo5", "three-finger")));
 });
 
 test("gives down and up strums different audible articulation", () => {
@@ -100,10 +143,11 @@ test("gives down and up strums different audible articulation", () => {
 
 test("built-in patterns target physical strings without changing their display steps", () => {
   const roll = PATTERNS.find((pattern) => pattern.id === "roll-forward");
-  const clawhammer = PATTERNS.find((pattern) => pattern.id === "clawhammer-bum-ditty");
+  const clawhammer = PATTERNS.find((pattern) => pattern.id === "clawhammer-bum-ditty-4");
   assert.deepEqual(roll.steps, ["T", "I", "M", "T", "I", "M", "T", "I"]);
   assert.deepEqual(roll.targets, [5, 2, 1, 5, 2, 1, 5, 2]);
-  assert.deepEqual(clawhammer.targets, [[3, 2, 1], null, [5], null, [3, 2, 1], null, [5], null]);
+  assert.deepEqual(clawhammer.targets, undefined);
+  assert.deepEqual(PATTERNS.find((pattern) => pattern.id === "clawhammer-waltz").grouping, [2, 2, 2]);
 });
 
 test("strum velocity is strongest at the start and responds to accents", () => {

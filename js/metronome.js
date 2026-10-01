@@ -139,7 +139,7 @@ export class Metronome {
     const delay = Math.max(0, (event.time - this.#context.currentTime) * 1000);
     event.notification = setTimeout(() => {
       this.#scheduled = this.#scheduled.filter((scheduled) => scheduled !== event);
-      if (this.#timer !== null && generation === this.#generation) this.#onBeat(beat);
+      if (this.#timer !== null && generation === this.#generation) this.#onBeat({ index: beat, time: event.time });
     }, delay);
   }
 

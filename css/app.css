@@ -256,6 +256,7 @@ fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
   .metronome-controls { grid-template-columns: 1fr; }
   .ear-training-controls { grid-template-columns: 1fr; }
   .play-along-pattern { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+  .play-along-pattern.meter-6-8, .play-along-pattern.meter-12-8 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .play-along-custom > div { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .ear-training-controls legend, .ear-training-controls label:last-child { grid-column: auto; }
   .metronome-pattern { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }

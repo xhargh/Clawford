@@ -1,3 +1,5 @@
+import { pitchToMidi } from "./pitch.js";
+
 export const PRESET_PROGRESSIONS = [
   { name: "G | C | G | D7", chords: ["G", "C", "G", "D7"] },
   { name: "G | Em | C | D", chords: ["G", "Em", "C", "D"] },
@@ -10,26 +12,22 @@ const meter = (numerator, denominator, subdivision, steps, extra = {}) => ({
 
 const eighths = (numerator, steps, extra = {}) => meter(numerator, 4, 2, steps, extra);
 const quarters = (numerator, steps, extra = {}) => meter(numerator, 4, 1, steps, extra);
-const compound = (numerator, steps, extra = {}) => meter(numerator, 8, 1, steps, extra);
+const compound = (numerator, steps, extra = {}) => meter(numerator, 8, 3, steps, extra);
 
 export const PATTERNS = [
-  // Legacy generic strum remains available to existing callers.
-  { id: "strum-bum-ditty", name: "Bum-Ditty", instrument: "strum", ...eighths(4, ["D", "-", "D", "U", "-", "U", "D", "U"], { accents: [1.04, 1, .98, .9, 1, .9, 1, .92] }) },
-
-  { id: "clawhammer-bum-ditty", name: "Bum-Ditty", instrument: "banjo5-clawhammer", ...eighths(4, ["B", "-", "T", "-", "B", "-", "T", "-"], { targets: [[3, 2, 1], null, [5], null, [3, 2, 1], null, [5], null] }) },
-  { id: "clawhammer-bum-ditty-2-4", name: "Bum-Ditty", instrument: "banjo5-clawhammer", ...meter(2, 4, 2, ["N", "-", "B", "T"], { targets: [[3, 2, 1], null, [3, 2, 1], [5]], accents: [1.1, 1, 1, .9] }) },
+  { id: "clawhammer-bum-ditty-2-4", name: "Bum-Ditty", instrument: "banjo5-clawhammer", ...meter(2, 4, 2, ["N", "-", "B", "T"], { targets: [[3], null, [3, 2, 1], [5]], accents: [1.1, 1, 1, .9] }) },
   { id: "clawhammer-double-thumb", name: "Double Thumb", instrument: "banjo5-clawhammer", ...meter(2, 4, 2, ["N", "T", "N", "T"], { targets: [[3, 2, 1], [5], [3, 2, 1], [5]] }) },
   { id: "clawhammer-bum-ditty-4", name: "Bum-Ditty — 4/4", instrument: "banjo5-clawhammer", ...eighths(4, ["N", "-", "B", "T", "N", "-", "B", "T"]) },
   { id: "clawhammer-double-thumb-4", name: "Double Thumb — 4/4", instrument: "banjo5-clawhammer", ...eighths(4, ["N", "T", "N", "T", "N", "T", "N", "T"]) },
-  { id: "clawhammer-waltz", name: "Waltz Bum-Ditty", instrument: "banjo5-clawhammer", ...eighths(3, ["N", "-", "B", "T", "B", "T"], { grouping: [3, 3] }) },
-  { id: "clawhammer-waltz-single", name: "Waltz Single-Note", instrument: "banjo5-clawhammer", ...eighths(3, ["N", "-", "N", "T", "N", "T"], { grouping: [3, 3] }) },
+  { id: "clawhammer-waltz", name: "Waltz Bum-Ditty", instrument: "banjo5-clawhammer", ...eighths(3, ["N", "-", "B", "T", "B", "T"], { grouping: [2, 2, 2] }) },
+  { id: "clawhammer-waltz-single", name: "Waltz Single-Note", instrument: "banjo5-clawhammer", ...eighths(3, ["N", "-", "N", "T", "N", "T"], { grouping: [2, 2, 2] }) },
 
   { id: "roll-forward", name: "Forward Roll", instrument: "banjo5-three-finger", ...eighths(4, ["T", "I", "M", "T", "I", "M", "T", "I"], { targets: [5, 2, 1, 5, 2, 1, 5, 2] }) },
   { id: "roll-alternating", name: "Alternating Thumb", instrument: "banjo5-three-finger", ...eighths(4, ["T", "I", "T", "M", "T", "I", "T", "M"], { targets: [5, 2, 5, 1, 5, 2, 5, 1] }) },
   { id: "roll-forward-reverse", name: "Forward-Reverse Roll", instrument: "banjo5-three-finger", ...eighths(4, ["T", "I", "M", "T", "M", "I", "T", "M"], { targets: [5, 2, 1, 5, 1, 2, 5, 1] }) },
   { id: "roll-foggy-mountain", name: "Foggy Mountain Roll", instrument: "banjo5-three-finger", ...eighths(4, ["M", "T", "I", "T", "M", "T", "I", "T"], { targets: [1, 5, 2, 5, 1, 5, 2, 5] }) },
   { id: "roll-backward", name: "Backward / Reverse Roll", instrument: "banjo5-three-finger", ...eighths(4, ["M", "I", "T", "M", "I", "T", "M", "I"]) },
-  { id: "roll-waltz", name: "Forward Waltz Roll", instrument: "banjo5-three-finger", ...eighths(3, ["T", "I", "M", "T", "I", "M"], { grouping: [3, 3] }) },
+  { id: "roll-waltz", name: "Forward Waltz Roll", instrument: "banjo5-three-finger", ...eighths(3, ["T", "I", "M", "T", "I", "M"], { grouping: [2, 2, 2] }) },
   { id: "roll-6-8", name: "Forward 6/8 Roll", instrument: "banjo5-three-finger", ...compound(6, ["T", "I", "M", "T", "I", "M"], { grouping: [3, 3] }) },
   { id: "banjo5-vamp", name: "Bluegrass Vamp", instrument: "banjo5-three-finger", ...quarters(4, ["-", "C", "-", "C"], { accents: [1, 1.12, 1, 1.12] }) },
 
@@ -41,7 +39,7 @@ export const PATTERNS = [
   { id: "guitar-offbeat", name: "Reggae / Offbeat", instrument: "guitar", ...eighths(4, ["-", "U", "-", "U", "-", "U", "-", "U"]) },
   { id: "guitar-boom-chuck-2", name: "Boom-Chuck — 2/4", instrument: "guitar", ...quarters(2, ["B", "C"]) },
   { id: "guitar-boom-chuck", name: "Boom-Chuck", instrument: "guitar", ...quarters(4, ["B", "C", "B", "C"]) },
-  { id: "guitar-waltz", name: "Waltz", instrument: "guitar", ...eighths(3, ["D", "-", "D", "U", "D", "U"], { grouping: [3, 3] }) },
+  { id: "guitar-waltz", name: "Waltz", instrument: "guitar", ...eighths(3, ["D", "-", "D", "U", "D", "U"], { grouping: [2, 2, 2] }) },
   { id: "guitar-waltz-boom", name: "Boom-Chuck-Chuck Waltz", instrument: "guitar", ...quarters(3, ["B", "C", "C"]) },
   { id: "guitar-ballad-6-8", name: "6/8 Ballad", instrument: "guitar", ...compound(6, ["D", "-", "-", "D", "-", "U"], { grouping: [3, 3] }) },
   { id: "guitar-flowing-6-8", name: "Flowing 6/8", instrument: "guitar", ...compound(6, ["D", "-", "U", "D", "-", "U"], { grouping: [3, 3] }) },
@@ -53,8 +51,8 @@ export const PATTERNS = [
   { id: "ukulele-driving", name: "Driving Uke", instrument: "ukulele", ...eighths(4, ["D", "-", "D", "-", "D", "U", "D", "U"]) },
   { id: "ukulele-chunk", name: "Chunk Groove", instrument: "ukulele", ...eighths(4, ["D", "U", "X", "U", "D", "U", "X", "U"]) },
   { id: "ukulele-offbeat", name: "Reggae / Offbeat", instrument: "ukulele", ...eighths(4, ["-", "C", "-", "C", "-", "C", "-", "C"]) },
-  { id: "ukulele-waltz", name: "Waltz", instrument: "ukulele", ...eighths(3, ["D", "-", "D", "U", "D", "-"], { grouping: [3, 3] }) },
-  { id: "ukulele-busy-waltz", name: "Busy Waltz", instrument: "ukulele", ...eighths(3, ["D", "-", "D", "U", "D", "U"], { grouping: [3, 3] }) },
+  { id: "ukulele-waltz", name: "Waltz", instrument: "ukulele", ...eighths(3, ["D", "-", "D", "U", "D", "-"], { grouping: [2, 2, 2] }) },
+  { id: "ukulele-busy-waltz", name: "Busy Waltz", instrument: "ukulele", ...eighths(3, ["D", "-", "D", "U", "D", "U"], { grouping: [2, 2, 2] }) },
   { id: "ukulele-rocking-6-8", name: "Rocking 6/8", instrument: "ukulele", ...compound(6, ["D", "-", "-", "D", "-", "U"], { grouping: [3, 3] }) },
   { id: "ukulele-flowing-6-8", name: "Flowing 6/8", instrument: "ukulele", ...compound(6, ["D", "-", "U", "D", "-", "U"], { grouping: [3, 3] }) },
 
@@ -101,8 +99,22 @@ const ACTIONS = {
   bass: ["-", "R", "5", "8"]
 };
 
-export function meterStepCount({ numerator, denominator }, subdivision = 1) {
-  return numerator * subdivision;
+export function meterStepCount({ numerator, denominator }, subdivision) {
+  const steps = subdivision ?? (denominator === 8 ? 3 : 1);
+  return denominator === 8 ? (numerator / 3) * steps : numerator * steps;
+}
+
+export function beatsPerMeasure({ numerator, denominator }) {
+  return denominator === 8 ? numerator / 3 : numerator;
+}
+
+export function stepsPerBeat({ denominator }, subdivision = denominator === 8 ? 3 : 1) {
+  return subdivision;
+}
+
+export function customPatternFamily(instrument, technique = "clawhammer") {
+  if (instrument === "banjo5") return `banjo5-${technique}`;
+  return instrument === "guitar" ? "guitar" : instrument;
 }
 
 export function actionsForInstrument(instrument) {
@@ -129,15 +141,14 @@ export function playAlongPosition(tick, chordCount, stepCount, patternMeter = { 
   const measures = chordCount || 1;
   const stepIndex = ((tick % stepsPerMeasure) + stepsPerMeasure) % stepsPerMeasure;
   const chordIndex = Math.floor(tick / stepsPerMeasure) % measures;
-  const beat = patternMeter.denominator === 8 && subdivision === 1
-    ? stepIndex + 1
-    : Math.floor(stepIndex / subdivision) + 1;
+  const beat = Math.floor(stepIndex / subdivision) + 1;
   const withinBeat = stepIndex % subdivision;
   const subdivisionLabel = subdivision === 1 ? String(beat) : withinBeat === 0 ? String(beat) : "&";
   return { chordIndex, stepIndex, beat, subdivision: subdivisionLabel };
 }
 
-export function playAlongTickState(tick, countInTicks = 8) {
+export function playAlongTickState(tick, patternMeter = { numerator: 4, denominator: 4 }) {
+  const countInTicks = beatsPerMeasure(patternMeter);
   if (tick < countInTicks) return { phase: "count-in", count: tick + 1, tick: 0 };
   return { phase: "playing", count: 0, tick: tick - countInTicks };
 }
@@ -158,24 +169,56 @@ export function resolveChordRole(symbol, role) {
   return { root, role, pitchClass: (pitchClass + offset) % 12 };
 }
 
+export function bassNoteForChord(symbol, action, tuning) {
+  const role = action === "R" ? "root" : action === "5" ? "fifth" : action === "8" ? "octave" : action;
+  const resolved = resolveChordRole(symbol, role);
+  const low = tuning.strings.reduce((result, string) => {
+    const midi = pitchToMidi(string.pitch);
+    return !result || midi < result.midi ? { midi, string } : result;
+  }, null);
+  const rootMidi = low.midi + ((resolved.pitchClass - low.midi) + 12) % 12;
+  const midi = role === "octave" ? rootMidi + 12 : rootMidi;
+  const string = tuning.strings.reduce((result, candidate) => {
+    const open = pitchToMidi(candidate.pitch);
+    return open <= midi && (!result || open > result.open) ? { number: candidate.number, open } : result;
+  }, null);
+  return { midi, string: string?.number ?? low.string.number, role };
+}
+
 export function patternNoteIndexes(action, instrument, noteCount, targetStrings = null, notes = []) {
   if (["-", "rest"].includes(action)) return [];
   if (["strum", "guitar", "ukulele", "banjo4", "mandolin"].includes(instrument)) {
+    if (action === "B") {
+      return [lowestChordToneIndex(notes)];
+    }
     const indexes = Array.from({ length: noteCount }, (_, index) => index);
-    return ["D", "B"].includes(action) ? indexes.reverse() : indexes;
+    return action === "D" ? indexes.reverse() : indexes;
   }
   if (instrument === "bass") {
     const role = action === "R" ? "root" : action === "5" ? "fifth" : action === "8" ? "octave" : action;
     const index = notes.findIndex((note) => note.role === role);
-    return [index >= 0 ? index : 0].filter((value) => value < noteCount);
+    return index >= 0 ? [index] : [];
   }
   if (targetStrings) {
     const targets = Array.isArray(targetStrings) ? targetStrings : [targetStrings];
+    if (instrument === "banjo5-clawhammer" && action === "N") {
+      const index = notes.findIndex((note) => note.string === targets[0]);
+      return index >= 0 ? [index] : [];
+    }
     return targets.map((string) => notes.findIndex((note) => note.string === string)).filter((index) => index >= 0);
   }
   if (instrument === "banjo5-three-finger") return [{ T: 0, I: 1, M: 2 }[action] ?? 0].filter((index) => index < noteCount);
-  if (action === "B") return [0, 1, 2].filter((index) => index < noteCount);
+  if (action === "B") return Array.from({ length: Math.min(3, noteCount) }, (_, index) => index);
   return [action === "T" ? noteCount - 1 : 0].filter((index) => index >= 0);
+}
+
+function lowestChordToneIndex(notes) {
+  let index = notes.findIndex((note) => ["root", "octave"].includes(note.role));
+  if (index < 0) index = 0;
+  for (let candidate = index + 1; candidate < notes.length; candidate += 1) {
+    if (["root", "octave"].includes(notes[candidate].role) && notes[candidate].midi < notes[index].midi) index = candidate;
+  }
+  return index;
 }
 
 export function patternPlaybackProfile(action) {

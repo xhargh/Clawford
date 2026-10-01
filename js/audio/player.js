@@ -45,12 +45,12 @@ export class AudioPlayer {
     return this.#startVoice(context, prepared, request.when ?? context.currentTime);
   }
 
-  async playNotes(notes, { spread = 0.025 } = {}) {
+  async playNotes(notes, { spread = 0.025, when } = {}) {
     if (this.#disposed) throw new Error("AudioPlayer has been disposed");
     if (!notes.length) return [];
     const context = await this.#readyContext();
     const prepared = notes.map((note) => this.#prepareNote(context, note));
-    const start = context.currentTime + 0.005;
+    const start = Math.max(context.currentTime + 0.005, when ?? 0);
     return prepared.map((note, index) => this.#startVoice(context, note, start + index * spread));
   }
 

@@ -24,7 +24,7 @@ import { FUN_FACTS, funFactPresentation } from "./fun-facts.js";
 import { createEarTrainingSession, PitchAnswerGate } from "./ear-training.js";
 import { renderEarTrainingOutput } from "./ear-training-renderer.js";
 import { midiToPitch, pitchToMidi } from "./pitch.js";
-import { PATTERNS, PRESET_PROGRESSIONS, actionsForInstrument, cyclePatternStep, meterStepCount, parseChordSymbol, patternForInstrument, patternNoteIndexes, patternNoteVelocity, patternPlaybackProfile, playAlongPosition, playAlongTickState } from "./play-along.js";
+import { PATTERNS, PRESET_PROGRESSIONS, actionsForInstrument, bassNoteForChord, beatsPerMeasure, customPatternFamily, cyclePatternStep, meterStepCount, parseChordSymbol, patternForInstrument, patternNoteIndexes, patternNoteVelocity, patternPlaybackProfile, playAlongPosition, playAlongTickState, stepsPerBeat } from "./play-along.js";
 import { renderPlayAlongOutput } from "./play-along-renderer.js";
 
 const form = document.querySelector("#settings-form");
@@ -58,6 +58,10 @@ const playAlongProgression = document.querySelector("#play-along-progression");
 const playAlongPattern = document.querySelector("#play-along-pattern");
 const playAlongBpm = document.querySelector("#play-along-bpm");
 const playAlongBpmValue = document.querySelector("#play-along-bpm-value");
+const playAlongTechniqueControl = document.querySelector("#play-along-technique-control");
+const playAlongTechniqueSelect = document.querySelector("#play-along-technique");
+const playAlongMeterControl = document.querySelector("#play-along-meter-control");
+const playAlongMeterSelect = document.querySelector("#play-along-meter");
 const tunings = [...BUILT_IN_TUNINGS];
 const FRETBOARD_SCALES = [...SCALES, CHROMATIC_SCALE];
 const scaleOptionValue = (scale) => `scale:${scale.id}`;
@@ -110,6 +114,7 @@ let currentFunFact = -1;
 let funFactsActive = false;
 let funFactHoverTimer = null;
 let playAlongPatternFamily = "strum";
+let playAlongTechnique = "clawhammer";
 let playAlongSteps = [...PATTERNS[2].steps];
 let playAlongTargets = [...(PATTERNS[2].targets || [])];
 let playAlongAccents = [...(PATTERNS[2].accents || [])];
@@ -124,20 +129,26 @@ let playAlongClockTick = 0;
 let playAlongPhase = "idle";
 let playAlongLoop = true;
 let playAlongError = "";
-const metronome = new Metronome({ onBeat: (beat) => {
+const metronome = new Metronome({ onBeat: ({ index: beat, time }) => {
   if (state.view === "play-along") {
     const wasCountIn = playAlongPhase === "count-in";
     playAlongClockTick += 1;
-    const countInSteps = meterStepCount(playAlongMeter, playAlongSubdivision);
-    const tickState = playAlongTickState(playAlongClockTick - 1, countInSteps);
+    const tickState = playAlongTickState(playAlongClockTick - 1, playAlongMeter);
     playAlongPhase = tickState.phase;
     playAlongTick = tickState.tick;
     if (wasCountIn && playAlongPhase === "playing") metronome.setMuted(true);
-    if (playAlongPhase === "playing" && !playAlongLoop && playAlongTick >= PRESET_PROGRESSIONS[playAlongProgressionIndex].chords.length * playAlongSteps.length) {
-      stopPlayAlong();
-      return;
+    if (playAlongPhase === "playing") {
+      const stepCount = stepsPerBeat(playAlongMeter, playAlongSubdivision);
+      playAlongTick = tickState.tick * stepCount;
+      if (!playAlongLoop && playAlongTick >= PRESET_PROGRESSIONS[playAlongProgressionIndex].chords.length * playAlongSteps.length) {
+        stopPlayAlong();
+        return;
+      }
+      for (let step = 0; step < stepCount; step += 1) {
+        playAlongAudioStep(time + step * (60 / playAlongBpmSetting / stepCount));
+        playAlongTick += 1;
+      }
     }
-    if (playAlongPhase === "playing") playAlongAudioStep();
     renderPlayAlong();
   } else {
     metronomeBeat = beat;
@@ -575,7 +586,7 @@ function renderPlayAlong() {
     position,
     running: metronome.running && state.view === "play-along",
     phase: playAlongPhase,
-    countIn: playAlongPhase === "count-in" ? Math.min(8, Math.max(1, 8 - playAlongClockTick + 1)) : 0,
+    countIn: playAlongPhase === "count-in" ? Math.max(1, beatsPerMeasure(playAlongMeter) - playAlongClockTick + 1) : 0,
     loop: playAlongLoop,
     custom: playAlongPattern.value === "custom",
     actions: actionsForInstrument(playAlongPatternFamily),
@@ -584,6 +595,8 @@ function renderPlayAlong() {
     grouping: playAlongGrouping,
     error: playAlongError
   });
+  playAlongTechniqueControl.hidden = state.instrument !== "banjo5" || playAlongPattern.value !== "custom";
+  playAlongMeterControl.hidden = playAlongPattern.value !== "custom";
 }
 
 function syncPlayAlongPatternOptions() {
@@ -619,12 +632,39 @@ function syncPlayAlongPatternOptions() {
     playAlongMeter = preset.meter;
     playAlongSubdivision = preset.subdivision;
     playAlongGrouping = preset.grouping || [];
+  } else {
+    playAlongPatternFamily = customFamilyForInstrument(state.instrument);
+    const actions = actionsForInstrument(playAlongPatternFamily);
+    playAlongSteps = playAlongSteps.map((step) => actions.includes(step) ? step : "-");
   }
+}
+
+function customFamilyForInstrument(instrument) {
+  return customPatternFamily(instrument, playAlongTechnique);
+}
+
+function setCustomMeter(value) {
+  const [numerator, denominator] = value.split("/").map(Number);
+  playAlongMeter = { numerator, denominator };
+  playAlongSubdivision = denominator === 8 ? 3 : 2;
+  playAlongSteps = Array.from({ length: meterStepCount(playAlongMeter, playAlongSubdivision) }, () => "-");
+  playAlongTargets = [];
+  playAlongAccents = [];
+  playAlongGrouping = denominator === 8 ? Array.from({ length: numerator / 3 }, () => 3) : numerator === 3 ? [2, 2, 2] : [];
 }
 
 function handlePlayAlongControls(event) {
   if (event.target === playAlongProgression) playAlongProgressionIndex = Number(playAlongProgression.value);
   if (event.target === playAlongBpm) playAlongBpmSetting = Number(playAlongBpm.value);
+  if (event.target === playAlongTechniqueSelect) {
+    playAlongTechnique = playAlongTechniqueSelect.value;
+    if (playAlongPattern.value === "custom") {
+      playAlongPatternFamily = customFamilyForInstrument(state.instrument);
+      const actions = actionsForInstrument(playAlongPatternFamily);
+      playAlongSteps = playAlongSteps.map((step) => actions.includes(step) ? step : "-");
+    }
+  }
+  if (event.target === playAlongMeterSelect && playAlongPattern.value === "custom") setCustomMeter(playAlongMeterSelect.value);
   if (event.target === playAlongPattern) {
     const preset = PATTERNS.find((pattern) => pattern.id === playAlongPattern.value);
     if (preset) {
@@ -638,12 +678,8 @@ function handlePlayAlongControls(event) {
       playAlongGrouping = preset.grouping || [];
     } else {
       playAlongPatternName = "Custom pattern";
-      playAlongMeter = { numerator: 4, denominator: 4 };
-      playAlongSubdivision = 2;
-      playAlongSteps = Array.from({ length: meterStepCount(playAlongMeter, playAlongSubdivision) }, () => "-");
-      playAlongTargets = [];
-      playAlongAccents = [];
-      playAlongGrouping = [];
+      setCustomMeter(playAlongMeterSelect.value || "4/4");
+      playAlongPatternFamily = customFamilyForInstrument(state.instrument);
     }
   }
   renderPlayAlong();
@@ -674,7 +710,7 @@ async function startPlayAlong() {
   try {
     await audioPlayer.warmUp();
     metronome.setMuted(false);
-    await metronome.start({ tpm: playAlongBpmSetting * playAlongSubdivision, pattern: `A${"N".repeat(Math.max(0, meterStepCount(playAlongMeter, playAlongSubdivision) - 1))}` });
+    await metronome.start({ tpm: playAlongBpmSetting, pattern: `A${"N".repeat(Math.max(0, beatsPerMeasure(playAlongMeter) - 1))}` });
   } catch (error) {
     playAlongError = error.message || "Unable to start play-along";
   }
@@ -689,13 +725,21 @@ function stopPlayAlong() {
   renderPlayAlong();
 }
 
-function playAlongAudioStep() {
+function playAlongAudioStep(when) {
   const progression = PRESET_PROGRESSIONS[playAlongProgressionIndex];
   const position = playAlongPosition(playAlongTick, progression.chords.length, playAlongSteps.length, playAlongMeter, playAlongSubdivision);
-  const chord = chordVoicing(progression.chords[position.chordIndex], playAlongPatternFamily !== "strum");
+  const chordSymbol = progression.chords[position.chordIndex];
+  const tuning = tunings.find((item) => item.id === state.tuning) || tunings[0];
+  const chord = chordVoicing(chordSymbol, playAlongPatternFamily !== "strum");
   if (!chord.length) return;
   const action = playAlongSteps[position.stepIndex];
   const targets = playAlongTargets[position.stepIndex];
+  if (playAlongPatternFamily === "bass" && action !== "-") {
+    const note = bassNoteForChord(chordSymbol, action, tuning);
+    const profile = patternPlaybackProfile(action);
+    void audioPlayer.playNotes([{ ...note, velocity: patternNoteVelocity(action, 0, 1, playAlongAccents[position.stepIndex] || 1), duration: profile.duration }], { spread: profile.spread, when });
+    return;
+  }
   const indexes = patternNoteIndexes(action, playAlongPatternFamily, chord.length, targets, chord);
   const profile = patternPlaybackProfile(action);
   const notes = indexes.map((index, noteIndex) => chord[index]).filter(Boolean).map((note, noteIndex) => ({
@@ -704,7 +748,7 @@ function playAlongAudioStep() {
     duration: profile.duration
   }));
   if (!notes.length) return;
-  void audioPlayer.playNotes(notes, { spread: profile.spread }).catch((error) => {
+  void audioPlayer.playNotes(notes, { spread: profile.spread, when }).catch((error) => {
     playAlongError = error.message || "Unable to play accompaniment";
     renderPlayAlong();
   });

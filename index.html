@@ -90,7 +90,9 @@
          <fieldset id="play-along-controls" class="play-along-controls full-control" hidden>
            <legend>Chord + pattern</legend>
            <label>Progression<select id="play-along-progression"><option value="0">G | C | G | D7</option><option value="1">G | Em | C | D</option><option value="2">C | F | G | C</option></select></label>
-           <label>Pattern<select id="play-along-pattern"></select></label>
+            <label>Pattern<select id="play-along-pattern"></select></label>
+            <label id="play-along-technique-control" hidden>Technique<select id="play-along-technique"><option value="clawhammer">Clawhammer</option><option value="three-finger">Three-finger</option></select></label>
+            <label id="play-along-meter-control" hidden>Custom meter<select id="play-along-meter"><option value="2/4">2/4</option><option value="3/4">3/4</option><option value="4/4" selected>4/4</option><option value="6/8">6/8</option><option value="12/8">12/8</option></select></label>
            <label for="play-along-bpm">BPM <output id="play-along-bpm-value">90</output><input id="play-along-bpm" type="range" min="40" max="220" step="1" value="90"></label>
          </fieldset>
         </div>

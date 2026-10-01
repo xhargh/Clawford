@@ -67,6 +67,15 @@ test("grouped notes are prepared before being scheduled as an ordered strum", as
   await player.dispose();
 });
 
+test("schedules grouped notes at an explicit audio-clock timestamp", async () => {
+  const context = new FakeAudioContext();
+  context.currentTime = 1;
+  const player = new AudioPlayer({ createAudioContext: () => context, duration: 0.05 });
+  await player.playNotes([{ midi: 55, string: 4 }, { midi: 59, string: 3 }], { when: 2, spread: 0.03 });
+  assert.deepEqual(context.sources.map((source) => source.startedAt), [2, 2.03]);
+  await player.dispose();
+});
+
 test("repeated notes round-robin deterministic rendered variations", async () => {
   const context = new FakeAudioContext();
   const player = new AudioPlayer({ createAudioContext: () => context, duration: 0.05 });

@@ -277,3 +277,31 @@ export function patternNoteVelocity(action, index, count, accent = 1) {
   const position = count <= 1 ? 0 : index / (count - 1);
   return Math.min(1, profile.velocity * (1 - position * 0.2) * accent);
 }
+
+export function chordNotesFromShape(shape, tuning, rootPitchClass, includeDrone = false) {
+  if (!shape || !tuning) return [];
+  const strings = tuning.strings.filter((string) => string.kind !== "drone");
+  if (shape.stringOrder !== "tuning") strings.sort((a, b) => pitchToMidi(a.pitch) - pitchToMidi(b.pitch));
+  let rootSeen = false;
+  const notes = shape.frets.map((fret, index) => {
+    if (fret < 0) return null;
+    const string = strings[index];
+    if (!string) return null;
+    const midi = pitchToMidi(string.pitch) + fret;
+    const role = chordRoleForMidi(midi, rootPitchClass, rootSeen);
+    if (role === "root") rootSeen = true;
+    return { midi, string: string.number, duration: 0.35, role };
+  }).filter(Boolean);
+  if (includeDrone && shape.drone?.state === "open") {
+    const drone = tuning.strings.find((string) => string.kind === "drone");
+    if (drone) notes.push({ midi: pitchToMidi(drone.pitch), string: drone.number, duration: 0.35, role: chordRoleForMidi(pitchToMidi(drone.pitch), rootPitchClass) });
+  }
+  return notes.sort((a, b) => a.string - b.string);
+}
+
+function chordRoleForMidi(midi, rootPitchClass, rootSeen = false) {
+  const interval = (midi - rootPitchClass + 12) % 12;
+  if (interval === 0) return rootSeen ? "octave" : "root";
+  if (interval === 7) return "fifth";
+  return null;
+}

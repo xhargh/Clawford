@@ -24,6 +24,19 @@ import {
   playAlongSubdivisionSchedule,
   playAlongStepTimestamps
 } from "../js/play-along.js";
+import { getPreferredChordShape } from "../js/chord-shapes.js";
+import { BUILT_IN_TUNINGS } from "../js/tunings.js";
+import { getKey } from "../js/scales.js";
+import { chordNotesFromShape } from "../js/play-along.js";
+
+test("shape audio omits muted strings and uses the preferred imported grip", () => {
+  const tuning = BUILT_IN_TUNINGS.find((item) => item.id === "guitar-standard");
+  const shape = getPreferredChordShape({ instrumentId: "guitar", tuning, rootPitchClass: getKey("C").pitchClass, qualityId: "major" });
+  const notes = chordNotesFromShape(shape, tuning, 0);
+  assert.deepEqual(notes.map((note) => note.string), [1, 2, 3, 4, 5]);
+  assert.equal(notes.some((note) => note.string === 6), false);
+  assert.deepEqual(notes.map((note) => note.midi), [64, 60, 55, 52, 48]);
+});
 
 test("ships useful instrument-aware preset patterns", () => {
   assert.equal(PATTERNS.some((pattern) => pattern.instrument === "strum" && pattern.name === "Bum-Ditty"), false);

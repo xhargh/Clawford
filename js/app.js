@@ -24,7 +24,7 @@ import { FUN_FACTS, funFactPresentation } from "./fun-facts.js";
 import { createEarTrainingSession, PitchAnswerGate } from "./ear-training.js";
 import { renderEarTrainingOutput } from "./ear-training-renderer.js";
 import { midiToPitch, pitchToMidi } from "./pitch.js";
-import { PATTERNS, PRESET_PROGRESSIONS, actionsForInstrument, bassNoteForChord, beatsPerMeasure, customPatternFamily, cyclePatternStep, meterStepCount, parseChordSymbol, patternForInstrument, patternNoteIndexes, patternNoteVelocity, patternPlaybackProfile, playAlongPosition, playAlongSubdivisionSchedule, playAlongTickState, progressionLabel, resolveProgression, stepsPerBeat } from "./play-along.js";
+import { PATTERNS, PRESET_PROGRESSIONS, actionsForInstrument, bassNoteForChord, beatsPerMeasure, chordNotesFromShape, customPatternFamily, cyclePatternStep, meterStepCount, parseChordSymbol, patternForInstrument, patternNoteIndexes, patternNoteVelocity, patternPlaybackProfile, playAlongPosition, playAlongSubdivisionSchedule, playAlongTickState, progressionLabel, resolveProgression, stepsPerBeat } from "./play-along.js";
 import { renderPlayAlongOutput } from "./play-along-renderer.js";
 import { getChordShapes, getPreferredChordShape } from "./chord-shapes.js";
 
@@ -860,6 +860,8 @@ function chordVoicing(symbol, includeDrone = false) {
   const tuning = tunings.find((item) => item.id === state.tuning) || tunings[0];
   const rootKey = getKey(root);
   const quality = getChordQuality(qualityId);
+  const importedShape = getPreferredChordShape({ instrumentId: state.instrument, tuning, rootPitchClass: rootKey.pitchClass, qualityId });
+  if (importedShape) return chordNotesFromShape(importedShape, tuning, rootKey.pitchClass, includeDrone);
   const voicing = findChordVoicing(tuning, rootKey.pitchClass, qualityId);
   if (voicing) {
     let rootSeen = false;

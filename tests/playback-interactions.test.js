@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { crossedStrings, selectTone, selectedFretsFromVoicing } from "../js/playback-interactions.js";
+import { crossedStrings, replaceChildrenIfChanged, selectTone, selectedFretsFromVoicing } from "../js/playback-interactions.js";
 
 test("selection replaces only the chosen string", () => {
   const initial = selectedFretsFromVoicing({ notes: [{ string: 1, fret: 0 }, { string: 2, fret: 3 }] });
@@ -20,4 +20,11 @@ test("does not replay a string at the shared endpoint of consecutive moves", () 
   assert.deepEqual(crossedStrings(75, 150, positions, true), [3, 2]);
   assert.deepEqual(crossedStrings(150, 210, positions), [1]);
   assert.deepEqual(crossedStrings(150, 90, positions), [3]);
+});
+
+test("does not replace unchanged progression menu options during playback redraws", () => {
+  const element = { children: [{ value: "a" }], replaceChildren(...children) { this.children = children; } };
+  assert.equal(replaceChildrenIfChanged(element, [{ value: "a" }], (child) => child.value), false);
+  assert.deepEqual(element.children, [{ value: "a" }]);
+  assert.equal(replaceChildrenIfChanged(element, [{ value: "b" }], (child) => child.value), true);
 });

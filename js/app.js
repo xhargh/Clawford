@@ -9,7 +9,7 @@ import { loadStoredState, saveStoredState } from "./storage.js";
 import { BUILT_IN_TUNINGS } from "./tunings.js";
 import { AudioPlayer } from "./audio/player.js";
 import { BANJO_PROFILE, GUITAR_PROFILE } from "./audio/synth.js";
-import { crossedStrings, selectTone, selectedFretsFromVoicing } from "./playback-interactions.js";
+import { crossedStrings, replaceChildrenIfChanged, selectTone, selectedFretsFromVoicing } from "./playback-interactions.js";
 import { generateScaleBoardNotes } from "./scale-board.js";
 import { MicrophoneSession } from "./audio/microphone-session.js";
 import { estimatePitch, PitchStabilizer } from "./audio/pitch-detector.js";
@@ -757,7 +757,8 @@ function renderPlayAlong() {
 
 function syncPlayAlongProgressionOptions() {
   const selected = playAlongProgressionId;
-  playAlongProgression.replaceChildren(...PRESET_PROGRESSIONS.map((progression) => new Option(progressionLabel(progression, state.key), progression.id)));
+  const options = PRESET_PROGRESSIONS.map((progression) => new Option(progressionLabel(progression, state.key), progression.id));
+  replaceChildrenIfChanged(playAlongProgression, options, (option) => `${option.value}:${option.textContent}`);
   playAlongProgressionId = PRESET_PROGRESSIONS.some(({ id }) => id === selected) ? selected : PRESET_PROGRESSIONS[0].id;
   playAlongProgression.value = playAlongProgressionId;
 }

@@ -18,3 +18,11 @@ export function crossedStrings(previousX, currentX, stringPositions, includeStar
     .sort((a, b) => movingRight ? a[1] - b[1] : b[1] - a[1])
     .map(([string]) => string);
 }
+
+export function replaceChildrenIfChanged(element, children, key = (child) => child) {
+  const nextKeys = children.map(key);
+  const currentKeys = [...element.children].map(key);
+  if (nextKeys.length === currentKeys.length && nextKeys.every((value, index) => value === currentKeys[index])) return false;
+  element.replaceChildren(...children);
+  return true;
+}

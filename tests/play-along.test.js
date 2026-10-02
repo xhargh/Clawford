@@ -151,7 +151,21 @@ test("keeps blues labels concise while ordinary labels show resolved chords", ()
   const blues = PRESET_PROGRESSIONS.find(({ id }) => id === "twelve-bar-blues");
   assert.equal(progressionLabel(blues, "C"), "12-bar blues");
   const turnaround = PRESET_PROGRESSIONS.find(({ id }) => id === "classic-turnaround");
-  assert.equal(progressionLabel(turnaround, "C"), "Classic turnaround: C–Am–Dm–G7");
+  assert.equal(progressionLabel(turnaround, "C"), "Classic turnaround — I–vi–ii–V7: C–Am–Dm–G7");
+  const existing = PRESET_PROGRESSIONS.find(({ id }) => id === "pop-four-chord");
+  assert.equal(progressionLabel(existing, "C"), "I–V–vi–IV: C–G–Am–F");
+});
+
+test("wraps playback positions for three-, eight-, and twelve-measure progressions", () => {
+  assert.equal(playAlongPosition(0, 3, 8).chordIndex, 0);
+  assert.equal(playAlongPosition(16, 3, 8).chordIndex, 2);
+  assert.equal(playAlongPosition(24, 3, 8).chordIndex, 0);
+
+  assert.equal(playAlongPosition(56, 8, 8).chordIndex, 7);
+  assert.equal(playAlongPosition(64, 8, 8).chordIndex, 0);
+
+  assert.equal(playAlongPosition(88, 12, 8).chordIndex, 11);
+  assert.equal(playAlongPosition(96, 12, 8).chordIndex, 0);
 });
 
 test("cycles a custom pattern cell through its instrument actions", () => {

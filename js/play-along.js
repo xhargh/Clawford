@@ -39,7 +39,9 @@ export function progressionRomanNumerals(progression) {
 
 export function progressionLabel(progression, keyValue) {
   if (progression.id.startsWith("twelve-bar-blues")) return progression.name;
-  return `${progression.name}: ${resolveProgression(progression, keyValue).join("–")}`;
+  const numerals = progressionRomanNumerals(progression);
+  const resolved = resolveProgression(progression, keyValue).join("–");
+  return `${progression.name === numerals ? numerals : `${progression.name} — ${numerals}`}: ${resolved}`;
 }
 
 const meter = (numerator, denominator, subdivision, steps, extra = {}) => ({

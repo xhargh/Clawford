@@ -90,6 +90,53 @@ test("resolves the common progression in major keys", () => {
   assert.deepEqual(resolveProgression(progression, "Bb"), ["Bb", "F", "Gm", "Eb"]);
 });
 
+test("includes the complete set of named progressions", () => {
+  assert.deepEqual(PRESET_PROGRESSIONS.map(({ id }) => id), [
+    "one-four-one-five7",
+    "one-six-four-five",
+    "one-four-five-one",
+    "pop-four-chord",
+    "pop-four-chord-minor-start",
+    "classic-turnaround",
+    "ii-v-i",
+    "canon-progression",
+    "rock-folk-loop",
+    "twelve-bar-blues",
+    "twelve-bar-blues-quick-change"
+  ]);
+  assert.deepEqual(PRESET_PROGRESSIONS.map(({ name }) => name), [
+    "I–IV–I–V7",
+    "I–vi–IV–V",
+    "I–IV–V–I",
+    "I–V–vi–IV",
+    "Pop four-chord — minor start",
+    "Classic turnaround",
+    "ii–V–I",
+    "Canon progression",
+    "Rock / folk loop",
+    "12-bar blues",
+    "12-bar blues — quick change"
+  ]);
+});
+
+test("resolves added progressions and dominant sevenths in multiple keys", () => {
+  const expected = [
+    ["pop-four-chord-minor-start", ["Am", "F", "C", "G"]],
+    ["classic-turnaround", ["C", "Am", "Dm", "G7"]],
+    ["ii-v-i", ["Dm", "G7", "C"]],
+    ["canon-progression", ["C", "G", "Am", "Em", "F", "C", "F", "G"]],
+    ["twelve-bar-blues", ["C7", "C7", "C7", "C7", "F7", "F7", "C7", "C7", "G7", "F7", "C7", "G7"]],
+    ["twelve-bar-blues-quick-change", ["C7", "F7", "C7", "C7", "F7", "F7", "C7", "C7", "G7", "F7", "C7", "G7"]]
+  ];
+  for (const [id, chords] of expected) {
+    const progression = PRESET_PROGRESSIONS.find((item) => item.id === id);
+    assert.deepEqual(resolveProgression(progression, "C"), chords, id);
+  }
+  assert.deepEqual(resolveProgression(PRESET_PROGRESSIONS.find(({ id }) => id === "twelve-bar-blues"), "G"), [
+    "G7", "G7", "G7", "G7", "C7", "C7", "G7", "G7", "D7", "C7", "G7", "D7"
+  ]);
+});
+
 test("keeps progression identity separate from its resolved chords", () => {
   const progression = PRESET_PROGRESSIONS.find(({ id }) => id === "one-four-one-five7");
   assert.equal(progression.id, "one-four-one-five7");
@@ -98,6 +145,13 @@ test("keeps progression identity separate from its resolved chords", () => {
   assert.equal(progressionRomanNumerals(progression), "I–IV–I–V7");
   assert.equal(progressionLabel(progression, "C"), "I–IV–I–V7: C–F–C–G7");
   assert.equal(progressionLabel(progression, "G"), "I–IV–I–V7: G–C–G–D7");
+});
+
+test("keeps blues labels concise while ordinary labels show resolved chords", () => {
+  const blues = PRESET_PROGRESSIONS.find(({ id }) => id === "twelve-bar-blues");
+  assert.equal(progressionLabel(blues, "C"), "12-bar blues");
+  const turnaround = PRESET_PROGRESSIONS.find(({ id }) => id === "classic-turnaround");
+  assert.equal(progressionLabel(turnaround, "C"), "Classic turnaround: C–Am–Dm–G7");
 });
 
 test("cycles a custom pattern cell through its instrument actions", () => {

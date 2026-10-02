@@ -2,10 +2,17 @@ import { pitchToMidi } from "./pitch.js";
 import { getKey, getScale, spellScale } from "./scales.js";
 
 export const PRESET_PROGRESSIONS = [
-  { id: "one-four-one-five7", degrees: ["I", "IV", "I", "V7"] },
-  { id: "one-six-four-five", degrees: ["I", "vi", "IV", "V"] },
-  { id: "one-four-five-one", degrees: ["I", "IV", "V", "I"] },
-  { id: "pop-four-chord", degrees: ["I", "V", "vi", "IV"] }
+  { id: "one-four-one-five7", name: "I–IV–I–V7", degrees: ["I", "IV", "I", "V7"] },
+  { id: "one-six-four-five", name: "I–vi–IV–V", degrees: ["I", "vi", "IV", "V"] },
+  { id: "one-four-five-one", name: "I–IV–V–I", degrees: ["I", "IV", "V", "I"] },
+  { id: "pop-four-chord", name: "I–V–vi–IV", degrees: ["I", "V", "vi", "IV"] },
+  { id: "pop-four-chord-minor-start", name: "Pop four-chord — minor start", degrees: ["vi", "IV", "I", "V"] },
+  { id: "classic-turnaround", name: "Classic turnaround", degrees: ["I", "vi", "ii", "V7"] },
+  { id: "ii-v-i", name: "ii–V–I", degrees: ["ii", "V7", "I"] },
+  { id: "canon-progression", name: "Canon progression", degrees: ["I", "V", "vi", "iii", "IV", "I", "IV", "V"] },
+  { id: "rock-folk-loop", name: "Rock / folk loop", degrees: ["I", "V", "IV", "I"] },
+  { id: "twelve-bar-blues", name: "12-bar blues", degrees: ["I7", "I7", "I7", "I7", "IV7", "IV7", "I7", "I7", "V7", "IV7", "I7", "V7"] },
+  { id: "twelve-bar-blues-quick-change", name: "12-bar blues — quick change", degrees: ["I7", "IV7", "I7", "I7", "IV7", "IV7", "I7", "I7", "V7", "IV7", "I7", "V7"] }
 ];
 
 const ROMAN_DEGREES = { I: 0, II: 1, III: 2, IV: 3, V: 4, VI: 5, VII: 6 };
@@ -31,7 +38,8 @@ export function progressionRomanNumerals(progression) {
 }
 
 export function progressionLabel(progression, keyValue) {
-  return `${progressionRomanNumerals(progression)}: ${resolveProgression(progression, keyValue).join("–")}`;
+  if (progression.id.startsWith("twelve-bar-blues")) return progression.name;
+  return `${progression.name}: ${resolveProgression(progression, keyValue).join("–")}`;
 }
 
 const meter = (numerator, denominator, subdivision, steps, extra = {}) => ({

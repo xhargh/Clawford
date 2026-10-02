@@ -49,6 +49,7 @@ const APP_SHELL = [
   "js/play-along-renderer.js",
   "js/tuner-renderer.js",
   "js/view-controls.js",
+  "js/tools.js",
   "js/fun-facts.js",
   "img/clawford-16.png",
   "img/clawford-32.png",

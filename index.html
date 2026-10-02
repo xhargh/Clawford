@@ -30,21 +30,19 @@
     <div class="brand-copy">
       <h1>Clawford</h1>
       <p id="warning-banner" class="warning-banner" role="status">⚠ Built entirely by AI. Trust it like you'd trust a ferret walking on your keyboard.</p>
+     </div>
+     <div class="header-actions">
+       <div class="tools-menu-wrap">
+         <button id="tools-launcher" class="tools-button" type="button" aria-label="Choose tool" aria-haspopup="menu" aria-controls="tools-menu" aria-expanded="false"><span class="tools-button-mobile-label">Tools </span><span class="tools-button-prefix">Tools: </span><span id="current-tool-name">Notation</span> <span aria-hidden="true">▾</span></button>
+         <div id="tools-menu" class="tools-menu" role="menu" hidden>
+          <div id="tools-menu-content" class="tools-menu-content" aria-label="Tool list"></div>
+        </div>
+      </div>
     </div>
-    <a class="story-link" href="backstory.html">Meet Clawford <span aria-hidden="true">↗</span></a>
   </header>
 
   <main class="app-shell">
-    <fieldset id="tool-navigation" class="segmented tool-navigation">
-      <legend class="visually-hidden">Choose a tool</legend>
-      <label><input type="radio" name="view" value="notation" form="settings-form"><span aria-hidden="true" class="tool-number">01</span> Notation</label>
-      <label><input type="radio" name="view" value="fretboard" form="settings-form"><span aria-hidden="true" class="tool-number">02</span> Fretboard</label>
-      <label><input type="radio" name="view" value="tuner" form="settings-form"><span aria-hidden="true" class="tool-number">03</span> Tuner</label>
-      <label><input type="radio" name="view" value="metronome" form="settings-form"><span aria-hidden="true" class="tool-number">04</span> Metronome</label>
-     <label><input type="radio" name="view" value="ear-training" form="settings-form"><span aria-hidden="true" class="tool-number">05</span> Ear training</label>
-     <label><input type="radio" name="view" value="play-along" form="settings-form"><span aria-hidden="true" class="tool-number">06</span> Play along</label>
-    </fieldset>
-    <aside class="settings-panel" aria-label="Settings">
+     <aside class="settings-panel" aria-label="Settings">
       <div class="panel-heading"><h2>Your setup</h2></div>
       <form id="settings-form">
         <div class="control-grid">

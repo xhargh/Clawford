@@ -27,6 +27,7 @@ import { midiToPitch, pitchToMidi } from "./pitch.js";
 import { PATTERNS, PRESET_PROGRESSIONS, actionsForInstrument, bassNoteForChord, beatsPerMeasure, chordNotesFromShape, customPatternFamily, cyclePatternStep, meterStepCount, parseChordSymbol, patternForInstrument, patternNoteIndexes, patternNoteVelocity, patternPlaybackProfile, playAlongPosition, playAlongSubdivisionSchedule, playAlongTickState, progressionLabel, resolveProgression, stepsPerBeat } from "./play-along.js";
 import { renderPlayAlongOutput } from "./play-along-renderer.js";
 import { getChordShapes, getPreferredChordShape } from "./chord-shapes.js";
+import { TOOL_CATEGORIES, TOOLS, getTool } from "./tools.js";
 
 const form = document.querySelector("#settings-form");
 const instrumentSelect = document.querySelector("#instrument");
@@ -41,6 +42,12 @@ const tunerOutput = document.querySelector("#tuner-output");
 const metronomeOutput = document.querySelector("#metronome-output");
 const earTrainingOutput = document.querySelector("#ear-training-output");
 const playAlongOutput = document.querySelector("#play-along-output");
+const toolsLauncher = document.querySelector("#tools-launcher");
+const toolsMenu = document.querySelector("#tools-menu");
+const toolsMenuContent = document.querySelector("#tools-menu-content");
+const currentToolName = document.querySelector("#current-tool-name");
+const settingsPanel = document.querySelector(".settings-panel");
+const workspace = document.querySelector("#workspace");
 const funFactImage = document.querySelector("#fun-fact-image");
 const funFactPreview = document.querySelector("#fun-fact-preview");
 const warningBanner = document.querySelector("#warning-banner");
@@ -81,6 +88,7 @@ populateSelect(keySelect, KEYS.map((key) => ({ value: key.value, label: key.labe
 populateSelect(scaleSelect, SCALES.map((scale) => ({ value: scale.id, label: scale.name })));
 populateSelect(chordRootSelect, KEYS.map((key) => ({ value: key.value, label: key.label })));
 populateFretboardPatterns();
+renderToolNavigation();
 
 const validSettings = {
   instruments: INSTRUMENTS.map((instrument) => instrument.id),
@@ -90,7 +98,8 @@ const validSettings = {
   chordRoots: KEYS.map((key) => key.value),
   chordQualities: [...CHORD_QUALITIES.map((quality) => quality.id), ...FRETBOARD_SCALES.map(scaleOptionValue)]
 };
-let state = stateFromSources(loadStoredState(), new URLSearchParams(location.search), validSettings);
+const storedState = loadStoredState();
+let state = stateFromSources(storedState, new URLSearchParams(location.search), validSettings);
 let sharedAudioContext = null;
 let audioPlayer = createAudioPlayer(state.instrument);
 let selectedFretsByString = new Map();
@@ -215,7 +224,13 @@ if (state.view === "tuner") {
 }
 
 form.addEventListener("input", updateFromForm);
-document.querySelector("#tool-navigation").addEventListener("input", updateFromForm);
+toolsLauncher.addEventListener("click", toggleToolsMenu);
+document.addEventListener("click", (event) => {
+  if (!event.target.closest(".tools-menu-wrap")) closeToolsMenu();
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closeToolsMenu();
+});
 fretboardShapeSelect.addEventListener("change", () => { fretboardShapeId = fretboardShapeSelect.value; fretboardShapeEdited = false; render(); });
 document.addEventListener("keydown", (event) => {
   if (!isTapTempoShortcut(event, state.view)) return;
@@ -258,6 +273,14 @@ fretboardOutput.addEventListener("pointerup", handleStrumEnd);
 fretboardOutput.addEventListener("pointercancel", handleStrumEnd);
 window.addEventListener("resize", scheduleDiagramFit);
 window.addEventListener("orientationchange", scheduleDiagramFit);
+window.addEventListener("popstate", () => {
+  const next = stateFromSources(state, new URLSearchParams(location.search), validSettings);
+  if (next.view !== state.view) {
+    state = next;
+    writeForm(state);
+    render();
+  }
+});
 window.addEventListener("pagehide", () => { void stopTuner(); stopMetronome(); stopPlayAlong(); void stopEarTraining(); });
 document.addEventListener("visibilitychange", handleVisibilityChange);
 
@@ -467,6 +490,61 @@ function writeForm(values) {
   }
 }
 
+function renderToolNavigation() {
+  toolsMenuContent.replaceChildren(...TOOL_CATEGORIES.map((category) => {
+    const section = document.createElement("section");
+    section.className = "tool-category";
+    const heading = document.createElement("h3");
+    heading.textContent = category.name;
+    section.append(heading, ...TOOLS.filter((tool) => tool.category === category.id).map((tool) => toolLink(tool, "launcher")));
+    return section;
+  }), toolLink({ id: "backstory", name: "Meet Clawford", description: "The ferret, the banjo, and his backstory." }, "about"));
+}
+
+function toolLink(tool, location) {
+  const link = document.createElement("a");
+  link.className = "tool-link";
+  link.href = tool.id === "backstory" ? "backstory.html" : `?view=${tool.id}`;
+  link.dataset.view = tool.id;
+  const name = document.createElement("strong");
+  name.textContent = tool.name;
+  const description = document.createElement("span");
+  description.textContent = tool.description || "";
+  link.append(name, description);
+  link.addEventListener("click", handleToolLinkClick);
+  return link;
+}
+
+function handleToolLinkClick(event) {
+  const view = event.currentTarget.dataset.view;
+  if (view === "backstory") return;
+  event.preventDefault();
+  const next = updateSettings(state, { view }, validSettings, tunings);
+  state = next;
+  render();
+  writeForm(state);
+  persistSettings();
+  render();
+  closeToolsMenu();
+  document.querySelector("#workspace").focus({ preventScroll: true });
+}
+
+function toggleToolsMenu() {
+  if (toolsMenu.hidden) openToolsMenu();
+  else closeToolsMenu();
+}
+
+function openToolsMenu() {
+  toolsMenu.hidden = false;
+  toolsLauncher.setAttribute("aria-expanded", "true");
+  toolsMenuContent.querySelector(`[data-view="${state.view}"]`)?.focus();
+}
+
+function closeToolsMenu() {
+  toolsMenu.hidden = true;
+  toolsLauncher.setAttribute("aria-expanded", "false");
+}
+
 function updateFromForm() {
   const previousView = state.view;
   const previousMetronome = state;
@@ -528,6 +606,13 @@ function render() {
     "ear-training": ["Ear training", "Listen, then find the note on your instrument or the fretboard below."],
     "play-along": ["Play along", ""]
   }[state.view];
+  const tool = getTool(state.view);
+  currentToolName.textContent = tool.name;
+  for (const link of toolsMenuContent.querySelectorAll("[data-view]")) {
+    const selected = link.dataset.view === state.view;
+    link.toggleAttribute("aria-current", selected);
+    link.classList.toggle("is-current", selected);
+  }
   document.querySelector("#workspace-title").textContent = view[0];
   document.querySelector("#workspace-hint").textContent = view[1];
   const tuning = tunings.find((item) => item.id === state.tuning) || tunings[0];

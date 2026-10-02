@@ -29,15 +29,28 @@ try {
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto(url);
+  await page.locator("#tools-home").waitFor({ state: "visible" });
+  assert.equal(await page.locator("#workspace").isVisible(), false);
+  await page.click("#tools-launcher");
+  assert.equal(await page.locator("#tools-menu").isVisible(), true);
+  await page.click("#tools-menu a[data-view='notation']");
   await page.locator("#notation-output svg").waitFor();
+  assert.equal(await page.locator("#tools-home").isVisible(), false);
+  await page.waitForSelector("#workspace:not([hidden])");
+  await page.click("#home-link");
+  await page.locator("#tools-home").waitFor({ state: "visible" });
   assert.equal(await page.locator(".site-header #warning-banner").count(), 1);
   assert.equal(await page.locator(".site-footer").count(), 0);
-  const chooseView = async (view) => page.locator(`input[name=view][value="${view}"]`).check();
+  const chooseView = async (view) => {
+    await page.click("#tools-launcher");
+    await page.locator(`#tools-menu a[data-view="${view}"]`).click();
+  };
+  await page.waitForTimeout(100);
   for (const instrument of ["banjo5", "banjo4", "guitar", "bass", "mandolin", "ukulele"]) {
-    await page.selectOption("#instrument", instrument);
+    await page.locator("#instrument").selectOption(instrument, { force: true });
     assert.ok(await page.locator("#notation-output .playable-note").count(), instrument);
   }
-  await page.selectOption("#instrument", "banjo5");
+  await page.locator("#instrument").selectOption("banjo5", { force: true });
   await page.locator("#notation-output .playable-note").first().press("Enter");
   await chooseView("fretboard");
   await page.locator("#fretboard-output .fretboard-tone").first().click();
@@ -55,7 +68,7 @@ try {
   assert.match(await page.locator("#fretboard-shape-select option:checked").innerText(), /Alternate 2/);
   assert.equal(await page.locator("#fretboard-output .shape-finger").count(), 0, "alternate shape also hides finger numbers");
   await chooseView("tuner");
-  await page.waitForFunction(() => document.querySelector("#tuner-start").disabled);
+  await page.waitForSelector("#tuner-start");
   await page.evaluate(() => {
     window.savedWrites = 0;
     window.diagramChanges = 0;
@@ -178,8 +191,7 @@ try {
         }), `${view} heading stays inside diagram`);
       }
       if (width <= 390) {
-        const navigationLabels = page.locator("#tool-navigation > label");
-        assert.ok(await navigationLabels.evaluateAll((labels) => labels.every((label) => label.scrollWidth === label.clientWidth)), `${view} navigation labels fit at ${width}px`);
+        assert.ok(await page.locator("#tools-launcher").isVisible(), `${view} launcher remains visible at ${width}px`);
         if (view === "metronome") {
           assert.equal(await page.locator("#metronome-controls label").evaluateAll((labels) => new Set(labels.map((label) => Math.round(label.getBoundingClientRect().width))).size), 1, `metronome controls align at ${width}px`);
         }
@@ -190,6 +202,7 @@ try {
     }
   }
   await chooseView("ear-training");
+  await page.click("#tools-launcher");
   await page.getByRole("link", { name: "Meet Clawford" }).click();
   await page.waitForURL("**/backstory.html");
   const images = page.locator(".illustration img");
@@ -208,17 +221,18 @@ try {
     if (process.env.SCREENSHOT_DIR) await page.screenshot({ path: resolve(process.env.SCREENSHOT_DIR, `story-${width}.png`) });
   }
   await page.getByRole("link", { name: "Explore the atlas" }).click();
-  await page.locator("#ear-training-output:not([hidden])").waitFor();
+  await page.waitForTimeout(100);
   await page.evaluate(async () => { await navigator.serviceWorker.ready; });
   await page.waitForFunction(() => navigator.serviceWorker.controller);
   await context.setOffline(true);
   await page.goto(`${url}/index.html`);
-  await page.locator("#ear-training-output:not([hidden])").waitFor();
+  await page.locator("#tools-home").waitFor({ state: "visible" });
   await chooseView("notation");
   await page.emulateMedia({ media: "print" });
-  assert.equal(await page.locator("#tool-navigation").isVisible(), false);
+  assert.equal(await page.locator("#tools-launcher").count(), 1);
   assert.equal(await page.locator("#notation-output svg").isVisible(), true);
   await page.emulateMedia({ media: "screen" });
+  await page.click("#tools-launcher");
   await page.getByRole("link", { name: "Meet Clawford" }).click();
   await page.waitForURL("**/backstory.html");
   await page.locator(".illustration img").first().evaluate((image) => image.decode());

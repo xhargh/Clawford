@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { getChordShapes, getPreferredChordShape, validateChordShape } from "../js/chord-shapes.js";
+import { CHORD_SHAPES } from "../js/chord-shape-data.js";
 import { BUILT_IN_TUNINGS } from "../js/tunings.js";
 
 const tuning = (id) => BUILT_IN_TUNINGS.find((item) => item.id === id);
@@ -46,6 +47,10 @@ test("shape lookup returns stable unique shape identities for voicing selection"
   const shapes = getChordShapes({ instrumentId: "guitar", tuning: guitar, rootPitchClass: 2, qualityId: "major" });
   assert.ok(shapes.length > 1);
   assert.equal(new Set(shapes.map((shape) => shape.id)).size, shapes.length);
+});
+
+test("the imported chord-shape dataset has unique IDs", () => {
+  assert.equal(new Set(CHORD_SHAPES.map((shape) => shape.id)).size, CHORD_SHAPES.length);
 });
 
 test("validation allows a normal fifth omission but requires chord-defining tones", () => {

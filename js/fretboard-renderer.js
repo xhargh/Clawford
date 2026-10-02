@@ -37,14 +37,12 @@ export function renderCompactChordShape(shape, tuning, label = "Chord shape") {
   for (let fret = 0; fret <= 4; fret += 1) svg.append(element("line", { x1: 25, x2: width - 5, y1: 32 + fret * 22, y2: 32 + fret * 22, class: fret === 0 && base === 1 ? "shape-nut" : "shape-fret" }));
   strings.forEach((string, index) => {
     const fret = shape.frets[index];
-    const finger = shape.fingers?.[index] || 0;
     const x = xFor(index);
     if (fret < 0) svg.append(element("text", { x, y: 20, "text-anchor": "middle", class: "shape-muted" }, "X"));
     else if (fret === 0) svg.append(element("text", { x, y: 20, "text-anchor": "middle", class: "shape-open" }, "O"));
     else {
       const group = element("g", { class: "shape-fretted" });
       group.append(element("circle", { cx: x, cy: 32 + (fret - base + 0.5) * 22, r: 9 }));
-      group.append(element("text", { x, y: 36 + (fret - base + 0.5) * 22, "text-anchor": "middle", class: "shape-finger" }, finger ? String(finger) : ""));
       svg.append(group);
     }
   });
@@ -154,11 +152,10 @@ function appendShapeIndicators(svg, shape, tuning, strings, displayMaxFret, layo
   if (shape.stringOrder !== "tuning") ordered.sort((a, b) => pitchToMidi(a.pitch) - pitchToMidi(b.pitch));
   ordered.forEach((string, index) => {
     const fret = shape.frets[index];
-    const finger = shape.fingers?.[index] || 0;
     const x = layout.rightX - (string.number - 1) * layout.stringGap;
     if (fret < 0) svg.append(element("text", { x, y: layout.openY - 28, "text-anchor": "middle", class: "shape-marker shape-muted", "data-string": string.number }, "X"));
     else if (fret === 0) svg.append(element("text", { x, y: layout.openY - 28, "text-anchor": "middle", class: "shape-marker shape-open", "data-string": string.number }, "O"));
-    else if (fret <= displayMaxFret && finger) svg.append(element("text", { x, y: layout.topY + (fret - 0.5) * layout.fretHeight + 4, "text-anchor": "middle", class: "shape-finger", "data-string": string.number }, String(finger)));
+    else if (fret <= displayMaxFret) svg.append(element("circle", { cx: x, cy: layout.topY + (fret - 0.5) * layout.fretHeight, r: 16, class: "shape-marker shape-fretted", "data-string": string.number }));
   });
 }
 

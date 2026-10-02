@@ -9872,38 +9872,6 @@ export const CHORD_SHAPES = [
     }
   },
   {
-    "id": "guitar:EADGBE:7:major:3,2,0,0,0,3",
-    "instrument": "guitar",
-    "tuning": "EADGBE",
-    "rootPitchClass": 7,
-    "qualityId": "major",
-    "frets": [
-      3,
-      2,
-      0,
-      0,
-      0,
-      3
-    ],
-    "fingers": [
-      3,
-      2,
-      0,
-      0,
-      0,
-      4
-    ],
-    "stringOrder": "low-to-high",
-    "barres": [],
-    "tags": [
-      "alternate"
-    ],
-    "source": {
-      "dataset": "chords-db",
-      "license": "MIT"
-    }
-  },
-  {
     "id": "guitar:EADGBE:7:major:3,5,5,4,3,3",
     "instrument": "guitar",
     "tuning": "EADGBE",

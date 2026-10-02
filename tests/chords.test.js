@@ -63,6 +63,16 @@ test("applies one valid selected-fret override per string and ignores invalid ov
   assert.equal(selectedTones.find((tone) => tone.string === 1).midi, 67);
 });
 
+test("an imported high-position shape expands the board and selects its frets", () => {
+  const guitar = tuning("guitar-standard");
+  const shape = { frets: [8, 10, 10, 9, 8, 8] };
+  const selected = new Map(guitar.strings.map((string, index) => [string.number, shape.frets[index]]));
+  const board = generateChordBoardNotes(guitar, 0, "major", { selectedFretsByString: selected, selectedShape: shape });
+
+  assert.equal(board.displayMaxFret, 10);
+  assert.deepEqual(board.tones.filter((tone) => tone.isSelected).map((tone) => tone.fret), [8, 10, 10, 9, 8, 8]);
+});
+
 test("every chord quality is defined with a root-relative interval set", () => {
   assert.equal(CHORD_QUALITIES.length, 10);
   assert.ok(CHORD_QUALITIES.every((quality) => quality.intervals[0] === 0));

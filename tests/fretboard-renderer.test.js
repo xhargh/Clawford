@@ -59,7 +59,7 @@ test("marks the selected voicing bold and other chord tones faint", () => {
   assert.ok(faint.every((node) => node.attributes["aria-pressed"] === "false"));
 });
 
-test("shape view explicitly labels muted, open, and fingered strings", () => {
+test("shape view explicitly labels muted and open strings without finger numbers", () => {
   const board = generateChordBoardNotes(BUILT_IN_TUNINGS.find((item) => item.id === "guitar-standard"), 0, "major");
   const guitar = BUILT_IN_TUNINGS.find((item) => item.id === "guitar-standard");
   const shape = getPreferredChordShape({ instrumentId: "guitar", tuning: guitar, rootPitchClass: 0, qualityId: "major" });
@@ -67,7 +67,7 @@ test("shape view explicitly labels muted, open, and fingered strings", () => {
   const elements = descendants(svg);
   assert.ok(elements.some((node) => node.attributes.class?.includes("shape-muted")));
   assert.ok(elements.some((node) => node.attributes.class?.includes("shape-open")));
-  assert.ok(elements.some((node) => node.attributes.class?.includes("shape-finger")));
+  assert.equal(elements.some((node) => node.attributes.class?.includes("shape-finger")), false);
 });
 
 test("colors fretboard tones on an orange-to-white interval gradient", () => {

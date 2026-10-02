@@ -561,15 +561,19 @@ function render() {
     fretboardShapeEdited = false;
     fretboardShapeSelectionKey = shapeKey;
   }
+  const previousShapeId = fretboardShapeId;
   const selectedShape = importedShapes.find((shape) => shape.id === fretboardShapeId) || importedShapes[0] || null;
   fretboardShapeId = selectedShape?.id || "";
   fretboardShapeSelect.replaceChildren(...importedShapes.map((shape, index) => new Option(`${shape.tags.includes("open") ? "Open" : "Alternate"} ${index + 1}${shape.tags.includes("preferred") ? " · preferred" : ""}`, shape.id)));
   fretboardShapeSelect.value = fretboardShapeId;
   const importedShape = state.fretboardMode === "shape" && !fretboardShapeEdited ? selectedShape : null;
-  if (importedShape && selectionChanged) selectedFretsByString = selectedFretsFromShape(importedShape, tuning);
+  if (importedShape && (selectionChanged || importedShape.id !== previousShapeId)) {
+    fretboardShapeEdited = false;
+    selectedFretsByString = selectedFretsFromShape(importedShape, tuning);
+  }
   const fretboardBoard = fretboardScale
     ? generateScaleBoardNotes(tuning, chordRoot, fretboardScale, { displayMaxFret: fretboardFrets, selectedFretsByString })
-    : generateChordBoardNotes(tuning, chordRoot.pitchClass, chordQuality.id, { minDisplayFret: fretboardFrets, selectedFretsByString });
+    : generateChordBoardNotes(tuning, chordRoot.pitchClass, chordQuality.id, { minDisplayFret: fretboardFrets, selectedFretsByString, selectedShape: importedShape });
   selectedTonesByString = importedShape ? selectedToneMap(fretboardBoard, importedShape, tuning) : new Map(fretboardBoard.tones.filter((tone) => tone.isSelected).map((tone) => [tone.string, tone]));
 
   notationOutput.replaceChildren(renderNotation(notes, title, { ...state, tuning, keySignature: keySignatureFor(key, scale), clef: instrument.clef }));

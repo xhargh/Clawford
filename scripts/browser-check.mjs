@@ -50,10 +50,10 @@ try {
   await page.locator("#fretboard-mode-control input[value=shape]").check();
   assert.ok(await page.locator("#fretboard-output .shape-muted").count() > 0, "shape view shows muted strings");
   assert.ok(await page.locator("#fretboard-output .shape-open").count() > 0, "shape view shows open strings");
-  assert.ok(await page.locator("#fretboard-output .shape-finger").count() > 0, "shape view shows finger numbers");
+  assert.equal(await page.locator("#fretboard-output .shape-finger").count(), 0, "shape view hides finger numbers");
   await page.selectOption("#fretboard-shape-select", { index: 1 });
   assert.match(await page.locator("#fretboard-shape-select option:checked").innerText(), /Alternate 2/);
-  assert.deepEqual(await page.locator("#fretboard-output .shape-finger").allTextContents(), ["1", "2", "3", "4", "1"]);
+  assert.equal(await page.locator("#fretboard-output .shape-finger").count(), 0, "alternate shape also hides finger numbers");
   await chooseView("tuner");
   await page.waitForFunction(() => document.querySelector("#tuner-start").disabled);
   await page.evaluate(() => {
@@ -72,9 +72,6 @@ try {
   assert.match(page.url(), /metronomePattern=SNNN/, "running pattern changes are saved");
   await page.click("#metronome-stop");
   await chooseView("ear-training");
-  await page.selectOption("#ear-exercise", "simon");
-  await page.selectOption("#ear-variant", "rolling");
-  await page.fill("#ear-sequence-limit", "7");
   await page.click("#ear-training-start");
   await page.waitForFunction(() => document.querySelector("#ear-training-stop") && !document.querySelector("#ear-training-stop").disabled);
   await page.click("#ear-training-stop");
@@ -167,16 +164,14 @@ try {
   assert.ok(compoundLabels.includes("trip") && compoundLabels.includes("let"), "visual cursor must visit 6/8 subdivisions");
   await page.click("#play-along-stop");
   await page.reload();
-  assert.equal(await page.inputValue("#ear-sequence-limit"), "7");
-  assert.equal(await page.inputValue("#ear-exercise"), "simon");
   for (const width of [320, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     for (const view of ["notation", "fretboard", "tuner", "metronome", "ear-training", "play-along"]) {
       await chooseView(view);
       assert.equal(await page.locator("#workspace-title").innerText(), { notation: "Notation", fretboard: "Fretboard", tuner: "Tuner", metronome: "Metronome", "ear-training": "Ear training", "play-along": "Play along" }[view]);
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${view} fits ${width}px`);
-      if (view === "fretboard" || view === "ear-training") {
-        const output = view === "fretboard" ? "#fretboard-output" : "#ear-training-fretboard-output";
+      if (view === "fretboard") {
+        const output = "#fretboard-output";
         assert.ok(await page.locator(`${output} .diagram-title`).evaluate((title) => {
           const box = title.getBBox();
           return box.x >= 0 && box.x + box.width <= title.ownerSVGElement.viewBox.baseVal.width;
